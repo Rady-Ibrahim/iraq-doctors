@@ -1,0 +1,16 @@
+{
+    "name": "modules/Appointment",
+    "description": "Appointment module",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Appointment\\": "./"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Appointment\\Providers\\AppointmentServiceProvider"
+            ]
+        }
+    }
+}

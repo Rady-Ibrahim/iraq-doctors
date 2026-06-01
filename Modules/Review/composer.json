@@ -1,0 +1,16 @@
+{
+    "name": "modules/Review",
+    "description": "Review module",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Review\\": "./"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Review\\Providers\\ReviewServiceProvider"
+            ]
+        }
+    }
+}

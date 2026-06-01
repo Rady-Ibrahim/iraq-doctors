@@ -1,0 +1,16 @@
+{
+    "name": "modules/Doctor",
+    "description": "Doctor module",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Doctor\\": "./"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Doctor\\Providers\\DoctorServiceProvider"
+            ]
+        }
+    }
+}

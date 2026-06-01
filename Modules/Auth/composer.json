@@ -1,0 +1,16 @@
+{
+    "name": "modules/Auth",
+    "description": "Auth module",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Auth\\": "./"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Auth\\Providers\\AuthServiceProvider"
+            ]
+        }
+    }
+}
