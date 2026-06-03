@@ -65,14 +65,16 @@ class MedicalRecordService
 
     public function addAttachment(string $recordId, array $fileData): ?MedicalRecord
     {
-        $record = MedicalRecord::findOrFail($recordId);
+        return DB::transaction(function () use ($recordId, $fileData) {
+            $record = MedicalRecord::findOrFail($recordId);
 
-        $attachments = $record->attachments ?? [];
-        $attachments[] = $fileData;
+            $attachments = $record->attachments ?? [];
+            $attachments[] = $fileData;
 
-        $record->update(['attachments' => $attachments]);
+            $record->update(['attachments' => $attachments]);
 
-        return $record;
+            return $record;
+        });
     }
 
     public function uploadFile($file): array

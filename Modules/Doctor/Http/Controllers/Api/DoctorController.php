@@ -6,9 +6,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Modules\Doctor\Http\Requests\Api\SearchDoctorsRequest;
 use Modules\Doctor\Services\Api\DoctorService;
+use App\Traits\ApiResponse;
 
 class DoctorController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private DoctorService $doctorService)
     {
     }
@@ -20,16 +23,12 @@ class DoctorController extends Controller
         $limit = $request->limit ?? 20;
         $doctors = $query->paginate($limit);
 
-        return response()->json([
-            'success' => true,
-            'data' => $doctors->items(),
-            'meta' => [
-                'page' => $doctors->currentPage(),
-                'limit' => $limit,
-                'total' => $doctors->total(),
-                'last_page' => $doctors->lastPage(),
-            ],
-        ], 200);
+        return $this->paginated(
+            $doctors->items(),
+            $doctors->total(),
+            $doctors->currentPage(),
+            $limit
+        );
     }
 
     public function show(string $id): JsonResponse
@@ -37,57 +36,45 @@ class DoctorController extends Controller
         $doctor = $this->doctorService->getProfile($id);
 
         if (!$doctor) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'DOCTOR_NOT_FOUND',
-                    'message' => 'الطبيب غير موجود',
-                ],
-            ], 404);
+            return $this->notFound('الطبيب غير موجود');
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $doctor->id,
-                'name' => $doctor->user->name,
-                'speciality' => [
-                    'id' => $doctor->speciality->id,
-                    'name_ar' => $doctor->speciality->name_ar,
-                    'name_en' => $doctor->speciality->name_en,
-                ],
-                'bio' => $doctor->bio_ar,
-                'experience_years' => $doctor->experience_years,
-                'consultation_fee' => $doctor->consultation_fee,
-                'rating' => $doctor->rating,
-                'rating_count' => $doctor->rating_count,
-                'address' => $doctor->address,
-                'schedules' => $doctor->schedules->map(function ($schedule) {
-                    return [
-                        'day_of_week' => $schedule->day_of_week,
-                        'start_time' => $schedule->start_time,
-                        'end_time' => $schedule->end_time,
-                    ];
-                }),
+        return $this->success([
+            'id' => $doctor->id,
+            'name' => $doctor->user->name,
+            'speciality' => [
+                'id' => $doctor->speciality->id,
+                'name_ar' => $doctor->speciality->name_ar,
+                'name_en' => $doctor->speciality->name_en,
             ],
-        ], 200);
+            'bio' => $doctor->bio_ar,
+            'experience_years' => $doctor->experience_years,
+            'consultation_fee' => $doctor->consultation_fee,
+            'rating' => $doctor->rating,
+            'rating_count' => $doctor->rating_count,
+            'address' => $doctor->address,
+            'schedules' => $doctor->schedules->map(function ($schedule) {
+                return [
+                    'day_of_week' => $schedule->day_of_week,
+                    'start_time' => $schedule->start_time,
+                    'end_time' => $schedule->end_time,
+                ];
+            }),
+        ]);
     }
 
     public function specialities(): JsonResponse
     {
         $specialities = $this->doctorService->getSpecialities();
 
-        return response()->json([
-            'success' => true,
-            'data' => $specialities->map(function ($speciality) {
-                return [
-                    'id' => $speciality->id,
-                    'name_ar' => $speciality->name_ar,
-                    'name_en' => $speciality->name_en,
-                    'icon' => $speciality->icon,
-                ];
-            }),
-        ], 200);
+        return $this->success($specialities->map(function ($speciality) {
+            return [
+                'id' => $speciality->id,
+                'name_ar' => $speciality->name_ar,
+                'name_en' => $speciality->name_en,
+                'icon' => $speciality->icon,
+            ];
+        }));
     }
 
     public function schedule(string $id): JsonResponse
@@ -95,27 +82,18 @@ class DoctorController extends Controller
         $doctor = $this->doctorService->getDoctorSchedule($id);
 
         if (!$doctor) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'DOCTOR_NOT_FOUND',
-                    'message' => 'الطبيب غير موجود',
-                ],
-            ], 404);
+            return $this->notFound('الطبيب غير موجود');
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'doctor_id' => $doctor->id,
-                'schedules' => $doctor->schedules->map(function ($schedule) {
-                    return [
-                        'day_of_week' => $schedule->day_of_week,
-                        'start_time' => $schedule->start_time,
-                        'end_time' => $schedule->end_time,
-                    ];
-                }),
-            ],
-        ], 200);
+        return $this->success([
+            'doctor_id' => $doctor->id,
+            'schedules' => $doctor->schedules->map(function ($schedule) {
+                return [
+                    'day_of_week' => $schedule->day_of_week,
+                    'start_time' => $schedule->start_time,
+                    'end_time' => $schedule->end_time,
+                ];
+            }),
+        ]);
     }
 }

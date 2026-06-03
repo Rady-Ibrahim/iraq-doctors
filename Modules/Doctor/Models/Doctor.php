@@ -12,7 +12,12 @@ class Doctor extends Model
 
     protected $table = 'doctors';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
+        'id',
         'user_id',
         'speciality_id',
         'bio_ar',
@@ -26,6 +31,7 @@ class Doctor extends Model
         'longitude',
         'address',
         'status',
+        'subscription_id',
     ];
 
     protected $casts = [
@@ -70,6 +76,21 @@ class Doctor extends Model
     public function reviews()
     {
         return $this->hasMany(\Modules\Review\Models\Review::class);
+    }
+
+    public function subscription()
+    {
+        return $this->belongsTo(\Modules\Subscription\Models\Subscription::class);
+    }
+
+    public function doctorSubscriptions()
+    {
+        return $this->hasMany(\Modules\Subscription\Models\DoctorSubscription::class);
+    }
+
+    public function activeSubscription()
+    {
+        return $this->doctorSubscriptions()->active()->with('subscription')->first();
     }
 
     public function isApproved(): bool

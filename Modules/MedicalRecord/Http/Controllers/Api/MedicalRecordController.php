@@ -7,9 +7,12 @@ use Illuminate\Routing\Controller;
 use Modules\MedicalRecord\Http\Requests\Api\CreateMedicalRecordRequest;
 use Modules\MedicalRecord\Http\Requests\Api\UploadAttachmentRequest;
 use Modules\MedicalRecord\Services\Api\MedicalRecordService;
+use App\Traits\ApiResponse;
 
 class MedicalRecordController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private MedicalRecordService $medicalRecordService)
     {
     }
@@ -19,25 +22,13 @@ class MedicalRecordController extends Controller
         $user = auth('sanctum')->user();
 
         if (!$user->isDoctor()) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'NOT_DOCTOR',
-                    'message' => 'فقط الأطباء يمكنهم إضافة سجلات طبية',
-                ],
-            ], 403);
+            return $this->forbidden('فقط الأطباء يمكنهم إضافة سجلات طبية', 'NOT_DOCTOR');
         }
 
         $appointment = \Modules\Appointment\Models\Appointment::findOrFail($request->appointment_id);
 
         if ($appointment->doctor->user_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'UNAUTHORIZED',
-                    'message' => 'غير مصرح، هذا الموعد ليس لك',
-                ],
-            ], 403);
+            return $this->forbidden('غير مصرح، هذا الموعد ليس لك');
         }
 
         $data = $request->validated();
@@ -46,27 +37,17 @@ class MedicalRecordController extends Controller
         $record = $this->medicalRecordService->create($data);
 
         if (!$record) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'RECORD_NOT_ALLOWED',
-                    'message' => 'لا يمكن إضافة سجل طبي، الموعد غير مكتمل أو السجل موجود بالفعل',
-                ],
-            ], 400);
+            return $this->error('لا يمكن إضافة سجل طبي، الموعد غير مكتمل أو السجل موجود بالفعل', 'RECORD_NOT_ALLOWED', 400);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $record->id,
-                'appointment_id' => $record->appointment_id,
-                'record_type' => $record->record_type,
-                'diagnosis' => $record->diagnosis,
-                'prescription' => $record->prescription,
-                'notes' => $record->notes,
-            ],
-            'message' => 'تم إضافة السجل الطبي بنجاح',
-        ], 201);
+        return $this->created([
+            'id' => $record->id,
+            'appointment_id' => $record->appointment_id,
+            'record_type' => $record->record_type,
+            'diagnosis' => $record->diagnosis,
+            'prescription' => $record->prescription,
+            'notes' => $record->notes,
+        ], 'تم إضافة السجل الطبي بنجاح');
     }
 
     public function show(string $appointmentId): JsonResponse
@@ -75,53 +56,32 @@ class MedicalRecordController extends Controller
         $record = $this->medicalRecordService->getByAppointment($appointmentId);
 
         if (!$record) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'RECORD_NOT_FOUND',
-                    'message' => 'السجل الطبي غير موجود',
-                ],
-            ], 404);
+            return $this->notFound('السجل الطبي غير موجود', 'RECORD_NOT_FOUND');
         }
 
         if ($user->isPatient() && $record->patient_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'UNAUTHORIZED',
-                    'message' => 'غير مصرح',
-                ],
-            ], 403);
+            return $this->forbidden('غير مصرح');
         }
 
         if ($user->isDoctor()) {
             $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $user->id)->first();
             if (!$doctor || $record->doctor_id !== $doctor->id) {
-                return response()->json([
-                    'success' => false,
-                    'error' => [
-                        'code' => 'UNAUTHORIZED',
-                        'message' => 'غير مصرح',
-                    ],
-                ], 403);
+                return $this->forbidden('غير مصرح');
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $record->id,
-                'appointment_id' => $record->appointment_id,
-                'doctor_name' => $record->doctor->user->name,
-                'speciality' => $record->doctor->speciality->name_ar,
-                'record_type' => $record->record_type,
-                'diagnosis' => $record->diagnosis,
-                'prescription' => $record->prescription,
-                'notes' => $record->notes,
-                'attachments' => $record->attachments,
-                'created_at' => $record->created_at,
-            ],
-        ], 200);
+        return $this->success([
+            'id' => $record->id,
+            'appointment_id' => $record->appointment_id,
+            'doctor_name' => $record->doctor->user->name,
+            'speciality' => $record->doctor->speciality->name_ar,
+            'record_type' => $record->record_type,
+            'diagnosis' => $record->diagnosis,
+            'prescription' => $record->prescription,
+            'notes' => $record->notes,
+            'attachments' => $record->attachments,
+            'created_at' => $record->created_at,
+        ]);
     }
 
     public function patientHistory(): JsonResponse
@@ -129,34 +89,25 @@ class MedicalRecordController extends Controller
         $user = auth('sanctum')->user();
 
         if (!$user->isPatient()) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'NOT_PATIENT',
-                    'message' => 'فقط المرضى يمكنهم عرض سجلهم الطبي',
-                ],
-            ], 403);
+            return $this->forbidden('فقط المرضى يمكنهم عرض سجلهم الطبي', 'NOT_PATIENT');
         }
 
         $recordType = request('record_type');
         $records = $this->medicalRecordService->getPatientHistory($user->id, $recordType);
 
-        return response()->json([
-            'success' => true,
-            'data' => $records->map(function ($record) {
-                return [
-                    'id' => $record->id,
-                    'appointment_id' => $record->appointment_id,
-                    'appointment_date' => $record->appointment->appointment_date,
-                    'doctor_name' => $record->doctor->user->name,
-                    'speciality' => $record->doctor->speciality->name_ar,
-                    'record_type' => $record->record_type,
-                    'diagnosis' => $record->diagnosis,
-                    'has_attachments' => !empty($record->attachments),
-                    'created_at' => $record->created_at,
-                ];
-            }),
-        ], 200);
+        return $this->success($records->map(function ($record) {
+            return [
+                'id' => $record->id,
+                'appointment_id' => $record->appointment_id,
+                'appointment_date' => $record->appointment->appointment_date,
+                'doctor_name' => $record->doctor->user->name,
+                'speciality' => $record->doctor->speciality->name_ar,
+                'record_type' => $record->record_type,
+                'diagnosis' => $record->diagnosis,
+                'has_attachments' => !empty($record->attachments),
+                'created_at' => $record->created_at,
+            ];
+        }));
     }
 
     public function uploadAttachment(string $recordId, UploadAttachmentRequest $request): JsonResponse
@@ -164,39 +115,23 @@ class MedicalRecordController extends Controller
         $user = auth('sanctum')->user();
 
         if (!$user->isDoctor()) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'NOT_DOCTOR',
-                    'message' => 'فقط الأطباء يمكنهم رفع ملفات',
-                ],
-            ], 403);
+            return $this->forbidden('فقط الأطباء يمكنهم رفع ملفات', 'NOT_DOCTOR');
         }
 
         $record = \Modules\MedicalRecord\Models\MedicalRecord::findOrFail($recordId);
 
         $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $user->id)->first();
         if (!$doctor || $record->doctor_id !== $doctor->id) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'UNAUTHORIZED',
-                    'message' => 'غير مصرح',
-                ],
-            ], 403);
+            return $this->forbidden('غير مصرح');
         }
 
         $fileData = $this->medicalRecordService->uploadFile($request->file('file'));
         $updatedRecord = $this->medicalRecordService->addAttachment($recordId, $fileData);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'file_name' => $fileData['file_name'],
-                'file_path' => $fileData['file_path'],
-                'file_type' => $fileData['file_type'],
-            ],
-            'message' => 'تم رفع الملف بنجاح',
-        ], 201);
+        return $this->created([
+            'file_name' => $fileData['file_name'],
+            'file_path' => $fileData['file_path'],
+            'file_type' => $fileData['file_type'],
+        ], 'تم رفع الملف بنجاح');
     }
 }

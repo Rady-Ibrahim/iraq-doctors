@@ -13,7 +13,12 @@ class Appointment extends Model
 
     protected $table = 'appointments';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
+        'id',
         'doctor_id',
         'patient_id',
         'doctor_schedule_id',

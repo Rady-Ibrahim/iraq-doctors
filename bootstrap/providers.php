@@ -8,4 +8,6 @@ return [
     Modules\Review\Providers\ReviewServiceProvider::class,
     Modules\MedicalRecord\Providers\MedicalRecordServiceProvider::class,
     Modules\StaticPage\Providers\StaticPageServiceProvider::class,
+    Modules\Subscription\Providers\SubscriptionServiceProvider::class,
+    Modules\Admin\Providers\AdminServiceProvider::class,
 ];

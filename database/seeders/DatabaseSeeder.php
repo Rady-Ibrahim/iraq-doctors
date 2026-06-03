@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(StaticPageSeeder::class);
+        $this->call(SubscriptionPlanSeeder::class);
 
         User::query()->firstOrCreate(
             ['phone' => '07700000000'],

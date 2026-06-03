@@ -1,0 +1,10 @@
+{
+    "name": "modules/admin",
+    "description": "Admin Dashboard Module for Iraq Doctors",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Admin\\": ""
+        }
+    }
+}

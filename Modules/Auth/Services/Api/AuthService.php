@@ -5,22 +5,25 @@ namespace Modules\Auth\Services\Api;
 use Modules\Auth\Models\User;
 use Modules\Auth\Models\Otp;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class AuthService
 {
     public function register(array $data): User
     {
-        $user = User::create([
-            'name' => $data['name'],
-            'phone' => $data['phone'],
-            'email' => $data['email'] ?? null,
-            'password' => Hash::make($data['password']),
-            'role' => $data['role'] ?? 'patient',
-            'status' => 'active',
-        ]);
+        return DB::transaction(function () use ($data) {
+            $user = User::create([
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+                'email' => $data['email'] ?? null,
+                'password' => Hash::make($data['password']),
+                'role' => $data['role'] ?? 'patient',
+                'status' => 'active',
+            ]);
 
-        return $user;
+            return $user;
+        });
     }
 
     public function login(string $phone, string $password): ?User
@@ -103,44 +106,48 @@ class AuthService
 
     public function resetPassword(string $phone, string $code, string $newPassword): ?User
     {
-        $otp = $this->verifyOtp($phone, $code, 'password_reset');
+        return DB::transaction(function () use ($phone, $code, $newPassword) {
+            $otp = $this->verifyOtp($phone, $code, 'password_reset');
 
-        if (!$otp) {
-            return null;
-        }
+            if (!$otp) {
+                return null;
+            }
 
-        $user = User::where('phone', $phone)->first();
+            $user = User::where('phone', $phone)->first();
 
-        if (!$user) {
-            return null;
-        }
+            if (!$user) {
+                return null;
+            }
 
-        $user->update(['password' => Hash::make($newPassword)]);
+            $user->update(['password' => Hash::make($newPassword)]);
 
-        $otp->delete();
+            $otp->delete();
 
-        return $user;
+            return $user;
+        });
     }
 
     public function updateProfile(User $user, array $data): User
     {
-        $user->update([
-            'name' => $data['name'] ?? $user->name,
-            'email' => $data['email'] ?? $user->email,
-            'phone' => $data['phone'] ?? $user->phone,
-        ]);
+        return DB::transaction(function () use ($user, $data) {
+            $user->update([
+                'name' => $data['name'] ?? $user->name,
+                'email' => $data['email'] ?? $user->email,
+                'phone' => $data['phone'] ?? $user->phone,
+            ]);
 
-        if ($user->isDoctor()) {
-            $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $user->id)->first();
-            if ($doctor) {
-                $doctor->update([
-                    'bio_ar' => $data['bio'] ?? $doctor->bio_ar,
-                    'experience_years' => $data['experience_years'] ?? $doctor->experience_years,
-                ]);
+            if ($user->isDoctor()) {
+                $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $user->id)->first();
+                if ($doctor) {
+                    $doctor->update([
+                        'bio_ar' => $data['bio'] ?? $doctor->bio_ar,
+                        'experience_years' => $data['experience_years'] ?? $doctor->experience_years,
+                    ]);
+                }
             }
-        }
 
-        return $user->fresh();
+            return $user->fresh();
+        });
     }
 
     public function updatePassword(User $user, string $newPassword): User
@@ -205,17 +212,20 @@ class AuthService
 
     public function createGhostPatient(User $doctorUser, array $data): User
     {
-        $patient = User::create([
-            'name' => $data['name'],
-            'phone' => $data['phone'],
-            'email' => null,
-            'password' => null,
-            'role' => 'patient',
-            'status' => 'active',
-            'is_ghost' => true,
-            'created_by_doctor_id' => $doctorUser->id,
-        ]);
+        return DB::transaction(function () use ($doctorUser, $data) {
+            $patient = User::create([
+                'id' => (string) Str::uuid(),
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+                'email' => $data['email'] ?? null,
+                'password' => $data['password'] ?? Hash::make(Str::random(16)),
+                'role' => 'patient',
+                'status' => 'active',
+                'is_ghost' => true,
+                'created_by_doctor_id' => $doctorUser->id,
+            ]);
 
-        return $patient;
+            return $patient;
+        });
     }
 }

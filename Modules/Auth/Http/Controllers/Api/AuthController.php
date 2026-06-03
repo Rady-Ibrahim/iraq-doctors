@@ -14,9 +14,12 @@ use Modules\Auth\Http\Requests\Api\ForgotPasswordRequest;
 use Modules\Auth\Http\Requests\Api\ResetPasswordRequest;
 use Modules\Auth\Http\Requests\Api\CreateGhostPatientRequest;
 use Modules\Auth\Services\Api\AuthService;
+use App\Traits\ApiResponse;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private AuthService $authService)
     {
     }
@@ -27,50 +30,7 @@ class AuthController extends Controller
             $user = $this->authService->register($request->validated());
             $token = $this->authService->createToken($user);
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'phone' => $user->phone,
-                        'email' => $user->email,
-                        'role' => $user->role,
-                    ],
-                    'token' => $token,
-                ],
-                'message' => 'تم التسجيل بنجاح',
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'REGISTRATION_FAILED',
-                    'message' => 'فشل التسجيل',
-                ],
-            ], 500);
-        }
-    }
-
-    public function login(LoginRequest $request): JsonResponse
-    {
-        $user = $this->authService->login($request->phone, $request->password);
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'AUTH_INVALID_CREDENTIALS',
-                    'message' => 'بيانات الدخول غير صحيحة',
-                ],
-            ], 401);
-        }
-
-        $token = $this->authService->createToken($user);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
+            return $this->created([
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -79,9 +39,32 @@ class AuthController extends Controller
                     'role' => $user->role,
                 ],
                 'token' => $token,
+            ], 'تم التسجيل بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('فشل التسجيل');
+        }
+    }
+
+    public function login(LoginRequest $request): JsonResponse
+    {
+        $user = $this->authService->login($request->phone, $request->password);
+
+        if (!$user) {
+            return $this->error('بيانات الدخول غير صحيحة', 'AUTH_INVALID_CREDENTIALS', 401);
+        }
+
+        $token = $this->authService->createToken($user);
+
+        return $this->success([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'phone' => $user->phone,
+                'email' => $user->email,
+                'role' => $user->role,
             ],
-            'message' => 'تم الدخول بنجاح',
-        ], 200);
+            'token' => $token,
+        ], 'تم الدخول بنجاح');
     }
 
     public function sendOtp(SendOtpRequest $request): JsonResponse
@@ -89,22 +72,12 @@ class AuthController extends Controller
         try {
             $this->authService->sendOtp($request->phone, $request->type);
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'phone' => $request->phone,
-                    'type' => $request->type,
-                ],
-                'message' => 'تم إرسال الكود بنجاح',
-            ], 200);
+            return $this->success([
+                'phone' => $request->phone,
+                'type' => $request->type,
+            ], 'تم إرسال الكود بنجاح');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'OTP_SEND_FAILED',
-                    'message' => 'فشل إرسال الكود',
-                ],
-            ], 500);
+            return $this->serverError('فشل إرسال الكود');
         }
     }
 
@@ -113,34 +86,21 @@ class AuthController extends Controller
         $otp = $this->authService->verifyOtp($request->phone, $request->code, $request->type);
 
         if (!$otp) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'OTP_INVALID',
-                    'message' => 'الكود غير صحيح أو منتهي الصلاحية',
-                ],
-            ], 401);
+            return $this->error('الكود غير صحيح أو منتهي الصلاحية', 'OTP_INVALID', 401);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'phone' => $request->phone,
-                'type' => $request->type,
-                'verified' => true,
-            ],
-            'message' => 'تم التحقق بنجاح',
-        ], 200);
+        return $this->success([
+            'phone' => $request->phone,
+            'type' => $request->type,
+            'verified' => true,
+        ], 'تم التحقق بنجاح');
     }
 
     public function logout(): JsonResponse
     {
         auth('sanctum')->user()->tokens()->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تسجيل الخروج بنجاح',
-        ], 200);
+        return $this->success(null, 'تم تسجيل الخروج بنجاح');
     }
 
     public function me(): JsonResponse
@@ -160,10 +120,7 @@ class AuthController extends Controller
             $data['doctor_stats'] = $this->authService->getDoctorStats($user);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-        ], 200);
+        return $this->success($data);
     }
 
     public function updateProfile(UpdateProfileRequest $request): JsonResponse
@@ -187,11 +144,7 @@ class AuthController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $response,
-            'message' => 'تم تحديث البيانات الشخصية بنجاح',
-        ], 200);
+        return $this->success($response, 'تم تحديث البيانات الشخصية بنجاح');
     }
 
     public function updatePassword(UpdatePasswordRequest $request): JsonResponse
@@ -199,10 +152,7 @@ class AuthController extends Controller
         $user = auth('sanctum')->user();
         $this->authService->updatePassword($user, $request->new_password);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تغيير كلمة المرور بنجاح',
-        ], 200);
+        return $this->success(null, 'تم تغيير كلمة المرور بنجاح');
     }
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
@@ -210,20 +160,12 @@ class AuthController extends Controller
         $sent = $this->authService->forgotPassword($request->phone);
 
         if (!$sent) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'USER_NOT_FOUND',
-                    'message' => 'رقم الهاتف غير موجود',
-                ],
-            ], 404);
+            return $this->notFound('رقم الهاتف غير موجود');
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إرسال كود التحقق إلى رقم الهاتف',
+        return $this->success([
             'expires_in' => 600,
-        ], 200);
+        ], 'تم إرسال كود التحقق إلى رقم الهاتف');
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
@@ -235,19 +177,10 @@ class AuthController extends Controller
         );
 
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'RESET_FAILED',
-                    'message' => 'كود التحقق غير صحيح أو منتهي الصلاحية',
-                ],
-            ], 400);
+            return $this->error('كود التحقق غير صحيح أو منتهي الصلاحية', 'RESET_FAILED', 400);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إعادة تعيين كلمة المرور بنجاح',
-        ], 200);
+        return $this->success(null, 'تم إعادة تعيين كلمة المرور بنجاح');
     }
 
     public function createGhostPatient(CreateGhostPatientRequest $request): JsonResponse
@@ -255,26 +188,16 @@ class AuthController extends Controller
         $user = auth('sanctum')->user();
 
         if (!$user || !$user->isDoctor()) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'UNAUTHORIZED',
-                    'message' => 'غير مصرح (الأطباء فقط)',
-                ],
-            ], 403);
+            return $this->forbidden('غير مصرح (الأطباء فقط)');
         }
 
         $patient = $this->authService->createGhostPatient($user, $request->validated());
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $patient->id,
-                'name' => $patient->name,
-                'phone' => $patient->phone,
-                'is_ghost' => $patient->is_ghost,
-            ],
-            'message' => 'تم إضافة المريض بنجاح',
-        ], 201);
+        return $this->created([
+            'id' => $patient->id,
+            'name' => $patient->name,
+            'phone' => $patient->phone,
+            'is_ghost' => $patient->is_ghost,
+        ], 'تم إضافة المريض بنجاح');
     }
 }

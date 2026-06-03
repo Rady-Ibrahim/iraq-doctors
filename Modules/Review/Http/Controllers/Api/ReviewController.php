@@ -6,9 +6,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Modules\Review\Http\Requests\Api\CreateReviewRequest;
 use Modules\Review\Services\Api\ReviewService;
+use App\Traits\ApiResponse;
 
 class ReviewController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private ReviewService $reviewService)
     {
     }
@@ -18,13 +21,7 @@ class ReviewController extends Controller
         $user = auth('sanctum')->user();
 
         if (!$user->isPatient()) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'NOT_PATIENT',
-                    'message' => 'فقط المرضى يمكنهم إضافة تقييم',
-                ],
-            ], 403);
+            return $this->forbidden('فقط المرضى يمكنهم إضافة تقييم', 'NOT_PATIENT');
         }
 
         $data = $request->validated();
@@ -33,42 +30,29 @@ class ReviewController extends Controller
         $review = $this->reviewService->create($data);
 
         if (!$review) {
-            return response()->json([
-                'success' => false,
-                'error' => [
-                    'code' => 'REVIEW_NOT_ALLOWED',
-                    'message' => 'يمكنك التقييم فقط بعد اكتمال الموعد',
-                ],
-            ], 403);
+            return $this->forbidden('يمكنك التقييم فقط بعد اكتمال الموعد', 'REVIEW_NOT_ALLOWED');
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $review->id,
-                'rating' => $review->rating,
-                'comment' => $review->comment,
-            ],
-            'message' => 'تم إضافة التقييم بنجاح',
-        ], 201);
+        return $this->created([
+            'id' => $review->id,
+            'rating' => $review->rating,
+            'comment' => $review->comment,
+        ], 'تم إضافة التقييم بنجاح');
     }
 
     public function doctorReviews(string $doctorId): JsonResponse
     {
         $reviews = $this->reviewService->getDoctorReviews($doctorId);
 
-        return response()->json([
-            'success' => true,
-            'data' => $reviews->map(function ($review) {
-                return [
-                    'id' => $review->id,
-                    'patient_name' => $review->patient->name,
-                    'rating' => $review->rating,
-                    'comment' => $review->comment,
-                    'created_at' => $review->created_at,
-                ];
-            }),
-        ], 200);
+        return $this->success($reviews->map(function ($review) {
+            return [
+                'id' => $review->id,
+                'patient_name' => $review->patient->name,
+                'rating' => $review->rating,
+                'comment' => $review->comment,
+                'created_at' => $review->created_at,
+            ];
+        }));
     }
 
     public function myReviews(): JsonResponse
@@ -76,18 +60,15 @@ class ReviewController extends Controller
         $user = auth('sanctum')->user();
         $reviews = $this->reviewService->getPatientReviews($user->id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $reviews->map(function ($review) {
-                return [
-                    'id' => $review->id,
-                    'doctor_name' => $review->doctor->user->name,
-                    'speciality' => $review->doctor->speciality->name_ar,
-                    'rating' => $review->rating,
-                    'comment' => $review->comment,
-                    'created_at' => $review->created_at,
-                ];
-            }),
-        ], 200);
+        return $this->success($reviews->map(function ($review) {
+            return [
+                'id' => $review->id,
+                'doctor_name' => $review->doctor->user->name,
+                'speciality' => $review->doctor->speciality->name_ar,
+                'rating' => $review->rating,
+                'comment' => $review->comment,
+                'created_at' => $review->created_at,
+            ];
+        }));
     }
 }

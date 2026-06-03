@@ -32,45 +32,51 @@ class AppointmentService
 
     public function confirm(string $appointmentId): ?Appointment
     {
-        $appointment = Appointment::findOrFail($appointmentId);
+        return DB::transaction(function () use ($appointmentId) {
+            $appointment = Appointment::findOrFail($appointmentId);
 
-        if (!$appointment->canBeConfirmed()) {
-            return null;
-        }
+            if (!$appointment->canBeConfirmed()) {
+                return null;
+            }
 
-        $appointment->update(['status' => 'confirmed']);
+            $appointment->update(['status' => 'confirmed']);
 
-        return $appointment;
+            return $appointment;
+        });
     }
 
     public function cancel(string $appointmentId, string $userId): ?Appointment
     {
-        $appointment = Appointment::findOrFail($appointmentId);
+        return DB::transaction(function () use ($appointmentId, $userId) {
+            $appointment = Appointment::findOrFail($appointmentId);
 
-        if (!$appointment->canBeCancelled()) {
-            return null;
-        }
+            if (!$appointment->canBeCancelled()) {
+                return null;
+            }
 
-        if ($appointment->patient_id !== $userId) {
-            return null;
-        }
+            if ($appointment->patient_id !== $userId) {
+                return null;
+            }
 
-        $appointment->update(['status' => 'cancelled']);
+            $appointment->update(['status' => 'cancelled']);
 
-        return $appointment;
+            return $appointment;
+        });
     }
 
     public function complete(string $appointmentId): ?Appointment
     {
-        $appointment = Appointment::findOrFail($appointmentId);
+        return DB::transaction(function () use ($appointmentId) {
+            $appointment = Appointment::findOrFail($appointmentId);
 
-        if (!$appointment->canBeCompleted()) {
-            return null;
-        }
+            if (!$appointment->canBeCompleted()) {
+                return null;
+            }
 
-        $appointment->update(['status' => 'completed']);
+            $appointment->update(['status' => 'completed']);
 
-        return $appointment;
+            return $appointment;
+        });
     }
 
     public function getPatientAppointments(string $patientId, string $status = null)
