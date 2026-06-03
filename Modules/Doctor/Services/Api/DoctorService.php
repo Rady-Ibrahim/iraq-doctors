@@ -10,7 +10,7 @@ class DoctorService
 {
     public function search(array $filters): Builder
     {
-        $query = Doctor::with(['user', 'speciality'])
+        $query = Doctor::with(['user', 'speciality', 'primaryBranch'])
             ->where('status', 'approved');
 
         if (isset($filters['speciality_id'])) {
@@ -27,20 +27,72 @@ class DoctorService
             $query->where('rating', '>=', $filters['min_rating']);
         }
 
+        if (isset($filters['max_rating'])) {
+            $query->where('rating', '<=', $filters['max_rating']);
+        }
+
+        if (isset($filters['min_fee'])) {
+            $query->where('consultation_fee', '>=', $filters['min_fee']);
+        }
+
         if (isset($filters['max_fee'])) {
             $query->where('consultation_fee', '<=', $filters['max_fee']);
         }
 
-        if (isset($filters['latitude']) && isset($filters['longitude']) && isset($filters['radius'])) {
-            $query->whereRaw("
-                (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * 
-                cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) < ?
-            ", [
-                $filters['latitude'],
-                $filters['longitude'],
-                $filters['latitude'],
-                $filters['radius']
-            ]);
+        if (isset($filters['consultation_type'])) {
+            $query->where('consultation_type', $filters['consultation_type']);
+        }
+
+        if (isset($filters['experience_level'])) {
+            switch ($filters['experience_level']) {
+                case 'junior':
+                    $query->where('experience_years', '<', 1);
+                    break;
+                case 'intermediate':
+                    $query->whereBetween('experience_years', [1, 5]);
+                    break;
+                case 'senior':
+                    $query->where('experience_years', '>', 5);
+                    break;
+            }
+        }
+
+        if (isset($filters['governorate'])) {
+            $query->whereHas('branches', function ($q) use ($filters) {
+                $q->where('governorate', $filters['governorate']);
+            });
+        }
+
+        if (isset($filters['availability'])) {
+            $query = $this->filterByAvailability($query, $filters['availability']);
+        }
+
+        if (isset($filters['latitude']) && isset($filters['longitude'])) {
+            $distanceRange = $filters['distance_range'] ?? 50;
+            
+            if (isset($filters['governorate'])) {
+                $query->whereHas('branches', function ($q) use ($filters, $distanceRange) {
+                    $q->whereRaw("
+                        (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * 
+                        cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) < ?
+                    ", [
+                        $filters['latitude'],
+                        $filters['longitude'],
+                        $filters['latitude'],
+                        $distanceRange
+                    ]);
+                });
+            } else {
+                $query->whereRaw("
+                    (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * 
+                    cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) < ?
+                ", [
+                    $filters['latitude'],
+                    $filters['longitude'],
+                    $filters['latitude'],
+                    $distanceRange
+                ]);
+            }
         }
 
         if (isset($filters['sort_by'])) {
@@ -57,11 +109,55 @@ class DoctorService
                 case 'experience':
                     $query->orderBy('experience_years', 'desc');
                     break;
+                case 'distance':
+                    if (isset($filters['latitude']) && isset($filters['longitude'])) {
+                        $query->orderByRaw("
+                            (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * 
+                            cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))
+                        ", [
+                            $filters['latitude'],
+                            $filters['longitude'],
+                            $filters['latitude']
+                        ]);
+                    }
+                    break;
                 default:
-                    $query->orderBy('created_at', 'desc');
+                    $query->orderBy('rating', 'desc');
             }
         } else {
             $query->orderBy('rating', 'desc');
+        }
+
+        return $query;
+    }
+
+    private function filterByAvailability(Builder $query, string $availability): Builder
+    {
+        $targetDate = match($availability) {
+            'today' => now(),
+            'tomorrow' => now()->addDay(),
+            'this_week' => now(),
+            default => now(),
+        };
+
+        $dayOfWeek = $targetDate->format('l');
+        $dateStr = $targetDate->toDateString();
+
+        $query->whereHas('schedules', function ($q) use ($dayOfWeek) {
+            $q->where('day_of_week', $dayOfWeek)
+              ->where('is_active', true);
+        });
+
+        $query->whereDoesntHave('appointments', function ($q) use ($dateStr) {
+            $q->where('appointment_date', $dateStr)
+              ->whereIn('status', ['pending', 'confirmed']);
+        });
+
+        if ($availability === 'this_week') {
+            $endDate = now()->endOfWeek();
+            $query->whereHas('schedules', function ($q) {
+                $q->where('is_active', true);
+            });
         }
 
         return $query;

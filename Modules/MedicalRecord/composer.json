@@ -1,0 +1,16 @@
+{
+    "name": "modules/MedicalRecord",
+    "description": "MedicalRecord module",
+    "autoload": {
+        "psr-4": {
+            "Modules\\MedicalRecord\\": "./"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\MedicalRecord\\Providers\\MedicalRecordServiceProvider"
+            ]
+        }
+    }
+}

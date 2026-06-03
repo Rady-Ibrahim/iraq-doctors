@@ -103,7 +103,7 @@ class AuthService
 
     public function resetPassword(string $phone, string $code, string $newPassword): ?User
     {
-        $otp = $this->verifyOtp($phone, $code, 'reset_password');
+        $otp = $this->verifyOtp($phone, $code, 'password_reset');
 
         if (!$otp) {
             return null;
@@ -122,6 +122,46 @@ class AuthService
         return $user;
     }
 
+    public function updateProfile(User $user, array $data): User
+    {
+        $user->update([
+            'name' => $data['name'] ?? $user->name,
+            'email' => $data['email'] ?? $user->email,
+            'phone' => $data['phone'] ?? $user->phone,
+        ]);
+
+        if ($user->isDoctor()) {
+            $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $user->id)->first();
+            if ($doctor) {
+                $doctor->update([
+                    'bio_ar' => $data['bio'] ?? $doctor->bio_ar,
+                    'experience_years' => $data['experience_years'] ?? $doctor->experience_years,
+                ]);
+            }
+        }
+
+        return $user->fresh();
+    }
+
+    public function updatePassword(User $user, string $newPassword): User
+    {
+        $user->update(['password' => Hash::make($newPassword)]);
+        return $user->fresh();
+    }
+
+    public function forgotPassword(string $phone): bool
+    {
+        $user = User::where('phone', $phone)->first();
+
+        if (!$user) {
+            return false;
+        }
+
+        $this->sendOtp($phone, 'password_reset');
+
+        return true;
+    }
+
     public function createToken(User $user): string
     {
         return $user->createToken('auth_token')->plainTextToken;
@@ -130,5 +170,52 @@ class AuthService
     public function revokeAllTokens(User $user): void
     {
         $user->tokens()->delete();
+    }
+
+    public function getDoctorStats(User $user): array
+    {
+        if (!$user->isDoctor()) {
+            return [];
+        }
+
+        $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $user->id)->first();
+
+        if (!$doctor) {
+            return [];
+        }
+
+        $totalPatientsCount = \Modules\Appointment\Models\Appointment::where('doctor_id', $doctor->id)
+            ->distinct('patient_id')
+            ->count();
+
+        $sentPrescriptionsCount = \Modules\MedicalRecord\Models\MedicalRecord::whereHas('appointment', function ($query) use ($doctor) {
+            $query->where('doctor_id', $doctor->id);
+        })->where('record_type', 'prescription')->count();
+
+        $todayAppointmentsCount = \Modules\Appointment\Models\Appointment::where('doctor_id', $doctor->id)
+            ->where('appointment_date', now()->toDateString())
+            ->count();
+
+        return [
+            'total_patients_count' => $totalPatientsCount,
+            'sent_prescriptions_count' => $sentPrescriptionsCount,
+            'today_appointments_count' => $todayAppointmentsCount,
+        ];
+    }
+
+    public function createGhostPatient(User $doctorUser, array $data): User
+    {
+        $patient = User::create([
+            'name' => $data['name'],
+            'phone' => $data['phone'],
+            'email' => null,
+            'password' => null,
+            'role' => 'patient',
+            'status' => 'active',
+            'is_ghost' => true,
+            'created_by_doctor_id' => $doctorUser->id,
+        ]);
+
+        return $patient;
     }
 }

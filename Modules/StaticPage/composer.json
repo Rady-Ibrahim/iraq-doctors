@@ -1,0 +1,16 @@
+{
+    "name": "modules/StaticPage",
+    "description": "StaticPage module",
+    "autoload": {
+        "psr-4": {
+            "Modules\\StaticPage\\": "./"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\StaticPage\\Providers\\StaticPageServiceProvider"
+            ]
+        }
+    }
+}

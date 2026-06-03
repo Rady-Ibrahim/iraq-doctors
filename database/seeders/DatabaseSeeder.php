@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Modules\Auth\Models\User;
+use Modules\StaticPage\Database\Seeders\StaticPageSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,11 +15,20 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call(StaticPageSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        User::query()->firstOrCreate(
+            ['phone' => '07700000000'],
+            [
+                'id' => (string) Str::uuid(),
+                'name' => 'Test Patient',
+                'email' => 'test@example.com',
+                'password' => Hash::make('password123'),
+                'role' => 'patient',
+                'status' => 'active',
+                'email_verified_at' => now(),
+                'phone_verified_at' => now(),
+            ]
+        );
     }
 }

@@ -29,7 +29,6 @@ return new class extends Migration
 
             $table->index('speciality_id');
             $table->index('status');
-            $table->index('rating');
         });
     }
 

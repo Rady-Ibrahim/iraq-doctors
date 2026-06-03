@@ -13,13 +13,22 @@ class User extends Authenticatable
 
     protected $table = 'users';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
+        'id',
         'name',
         'phone',
         'email',
         'password',
         'role',
         'status',
+        'is_ghost',
+        'created_by_doctor_id',
+        'email_verified_at',
+        'phone_verified_at',
     ];
 
     protected $hidden = [

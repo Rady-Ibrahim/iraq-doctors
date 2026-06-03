@@ -19,6 +19,7 @@ class Doctor extends Model
         'bio_en',
         'experience_years',
         'consultation_fee',
+        'consultation_type',
         'rating',
         'rating_count',
         'latitude',
@@ -46,6 +47,16 @@ class Doctor extends Model
     public function schedules()
     {
         return $this->hasMany(DoctorSchedule::class);
+    }
+
+    public function branches()
+    {
+        return $this->hasMany(DoctorBranch::class);
+    }
+
+    public function primaryBranch()
+    {
+        return $this->hasOne(DoctorBranch::class)->where('is_primary', true);
     }
 
     public function appointments()

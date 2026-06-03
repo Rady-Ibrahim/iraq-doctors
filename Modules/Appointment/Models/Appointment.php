@@ -51,6 +51,11 @@ class Appointment extends Model
         return $this->hasOne(\Modules\Review\Models\Review::class);
     }
 
+    public function medicalRecord()
+    {
+        return $this->hasOne(\Modules\MedicalRecord\Models\MedicalRecord::class);
+    }
+
     public function canBeCancelled(): bool
     {
         return in_array($this->status, ['pending', 'confirmed']);
