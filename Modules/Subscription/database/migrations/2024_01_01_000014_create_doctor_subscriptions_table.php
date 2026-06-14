@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('doctor_subscriptions', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('doctor_id');
-            $table->uuid('subscription_id');
+            $table->id();
+            $table->foreignId('doctor_id')->constrained('doctors')->onDelete('cascade');
+            $table->foreignId('subscription_id')->constrained('subscriptions')->onDelete('cascade');
             $table->date('start_date');
             $table->date('end_date');
             $table->enum('status', ['active', 'expired', 'cancelled', 'pending_payment'])->default('active');
@@ -22,11 +22,6 @@ return new class extends Migration
             $table->timestamp('cancelled_at')->nullable();
             $table->timestamps();
 
-            $table->foreign('doctor_id')->references('id')->on('doctors')->onDelete('cascade');
-            $table->foreign('subscription_id')->references('id')->on('subscriptions')->onDelete('cascade');
-
-            $table->index('doctor_id');
-            $table->index('subscription_id');
             $table->index('status');
             $table->index('end_date');
         });

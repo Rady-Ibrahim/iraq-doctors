@@ -13,12 +13,7 @@ class Doctor extends Model
 
     protected $table = 'doctors';
 
-    public $incrementing = false;
-
-    protected $keyType = 'string';
-
     protected $fillable = [
-        'id',
         'user_id',
         'speciality_id',
         'bio_ar',

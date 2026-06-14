@@ -11,12 +11,7 @@ class Speciality extends Model
 
     protected $table = 'specialities';
 
-    public $incrementing = false;
-
-    protected $keyType = 'string';
-
     protected $fillable = [
-        'id',
         'name_ar',
         'name_en',
         'icon',

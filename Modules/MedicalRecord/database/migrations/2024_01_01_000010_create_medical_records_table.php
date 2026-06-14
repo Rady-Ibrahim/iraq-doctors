@@ -9,26 +9,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('medical_records', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('appointment_id')->unique();
-            $table->uuid('doctor_id');
-            $table->uuid('patient_id');
+            $table->id();
+            $table->foreignId('appointment_id')->unique()->constrained('appointments')->onDelete('cascade');
+            $table->foreignId('doctor_id')->constrained('doctors')->onDelete('cascade');
+            $table->foreignId('patient_id')->constrained('users')->onDelete('cascade');
             $table->enum('record_type', ['prescription', 'report', 'diagnosis'])->default('diagnosis');
             $table->text('diagnosis')->nullable();
             $table->json('prescription')->nullable();
             $table->text('notes')->nullable();
             $table->json('attachments')->nullable();
-            $table->uuid('created_by');
+            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->timestamps();
 
-            $table->foreign('appointment_id')->references('id')->on('appointments')->onDelete('cascade');
-            $table->foreign('doctor_id')->references('id')->on('doctors')->onDelete('cascade');
-            $table->foreign('patient_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
-
-            $table->index('doctor_id');
-            $table->index('patient_id');
-            $table->index('appointment_id');
             $table->index('record_type');
             $table->index('created_at');
         });

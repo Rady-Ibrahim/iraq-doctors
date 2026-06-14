@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('static_pages', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id();
             $table->string('slug')->unique();
             $table->string('title_ar');
             $table->string('title_en');

@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('doctor_branches', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('doctor_id');
+            $table->id();
+            $table->foreignId('doctor_id')->constrained('doctors')->onDelete('cascade');
             $table->string('branch_name');
             $table->string('governorate')->nullable();
             $table->string('district')->nullable();
@@ -22,9 +22,6 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->foreign('doctor_id')->references('id')->on('doctors')->onDelete('cascade');
-
-            $table->index('doctor_id');
             $table->index('district');
             $table->index('is_active');
         });

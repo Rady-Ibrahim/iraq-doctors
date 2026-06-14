@@ -9,10 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('appointments', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('doctor_id');
-            $table->uuid('patient_id');
-            $table->uuid('doctor_schedule_id');
+            $table->id();
+            $table->foreignId('doctor_id')->constrained('doctors')->onDelete('cascade');
+            $table->foreignId('patient_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('doctor_schedule_id')->constrained('doctor_schedules')->onDelete('cascade');
             $table->date('appointment_date');
             $table->time('appointment_time');
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'])->default('pending');
@@ -21,12 +21,6 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->foreign('doctor_id')->references('id')->on('doctors')->onDelete('cascade');
-            $table->foreign('patient_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('doctor_schedule_id')->references('id')->on('doctor_schedules')->onDelete('cascade');
-
-            $table->index('doctor_id');
-            $table->index('patient_id');
             $table->index('status');
             $table->index('appointment_date');
             $table->index(['doctor_id', 'appointment_date', 'appointment_time']);

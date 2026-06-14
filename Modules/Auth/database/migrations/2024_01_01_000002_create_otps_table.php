@@ -9,10 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('otps', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id();
             $table->string('phone');
             $table->string('code');
-            $table->enum('type', ['register', 'login', 'reset_password'])->default('login');
+            $table->enum('type', ['register', 'login', 'reset_password', 'password_reset'])->default('login');
             $table->integer('attempts')->default(0);
             $table->dateTime('expires_at');
             $table->timestamps();

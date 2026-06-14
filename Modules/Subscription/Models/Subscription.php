@@ -11,12 +11,7 @@ class Subscription extends Model
 
     protected $table = 'subscriptions';
 
-    public $incrementing = false;
-
-    protected $keyType = 'string';
-
     protected $fillable = [
-        'id',
         'name',
         'description_ar',
         'description_en',

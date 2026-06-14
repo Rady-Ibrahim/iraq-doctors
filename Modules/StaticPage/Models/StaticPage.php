@@ -11,12 +11,7 @@ class StaticPage extends Model
 
     protected $table = 'static_pages';
 
-    public $incrementing = false;
-
-    protected $keyType = 'string';
-
     protected $fillable = [
-        'id',
         'slug',
         'title_ar',
         'title_en',

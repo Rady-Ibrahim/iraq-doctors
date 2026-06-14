@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->boolean('is_ghost')->default(false)->after('status');
-            $table->uuid('created_by_doctor_id')->nullable()->after('is_ghost');
+            $table->unsignedBigInteger('created_by_doctor_id')->nullable()->after('is_ghost');
 
             $table->foreign('created_by_doctor_id')->references('id')->on('users')->onDelete('set null');
             $table->index('is_ghost');

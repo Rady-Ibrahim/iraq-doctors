@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('doctor_schedules', function (Blueprint $table) {
-            $table->uuid('doctor_branch_id')->nullable()->after('doctor_id');
+            $table->unsignedBigInteger('doctor_branch_id')->nullable()->after('doctor_id');
             $table->foreign('doctor_branch_id')->references('id')->on('doctor_branches')->onDelete('set null');
             $table->index('doctor_branch_id');
         });

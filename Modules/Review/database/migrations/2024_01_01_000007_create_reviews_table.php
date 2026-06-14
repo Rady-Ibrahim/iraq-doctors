@@ -9,21 +9,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('reviews', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('appointment_id')->unique();
-            $table->uuid('doctor_id');
-            $table->uuid('patient_id');
-            $table->integer('rating')->check('rating >= 1 AND rating <= 5');
+            $table->id();
+            $table->foreignId('appointment_id')->unique()->constrained('appointments')->onDelete('cascade');
+            $table->foreignId('doctor_id')->constrained('doctors')->onDelete('cascade');
+            $table->foreignId('patient_id')->constrained('users')->onDelete('cascade');
+            $table->integer('rating');
             $table->text('comment')->nullable();
             $table->boolean('is_flagged')->default(false);
             $table->timestamps();
 
-            $table->foreign('appointment_id')->references('id')->on('appointments')->onDelete('cascade');
-            $table->foreign('doctor_id')->references('id')->on('doctors')->onDelete('cascade');
-            $table->foreign('patient_id')->references('id')->on('users')->onDelete('cascade');
-
-            $table->index('doctor_id');
-            $table->index('patient_id');
             $table->index('rating');
         });
     }

@@ -11,12 +11,7 @@ class DoctorSubscription extends Model
 
     protected $table = 'doctor_subscriptions';
 
-    public $incrementing = false;
-
-    protected $keyType = 'string';
-
     protected $fillable = [
-        'id',
         'doctor_id',
         'subscription_id',
         'start_date',

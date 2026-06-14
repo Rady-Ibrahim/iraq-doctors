@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('doctors', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('user_id');
-            $table->uuid('speciality_id');
+            $table->id();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('speciality_id')->constrained('specialities')->onDelete('cascade');
             $table->text('bio_ar')->nullable();
             $table->text('bio_en')->nullable();
             $table->integer('experience_years')->default(0);
@@ -24,10 +24,6 @@ return new class extends Migration
             $table->enum('status', ['pending', 'approved', 'rejected', 'suspended'])->default('pending');
             $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('speciality_id')->references('id')->on('specialities')->onDelete('cascade');
-
-            $table->index('speciality_id');
             $table->index('status');
         });
     }
