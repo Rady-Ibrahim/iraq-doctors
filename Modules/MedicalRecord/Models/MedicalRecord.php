@@ -3,6 +3,7 @@
 namespace Modules\MedicalRecord\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Appointment\Models\Appointment;
 use Modules\Doctor\Models\Doctor;
@@ -10,7 +11,7 @@ use Modules\Auth\Models\User;
 
 class MedicalRecord extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'medical_records';
 

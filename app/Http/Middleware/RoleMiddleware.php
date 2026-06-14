@@ -10,14 +10,14 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, $role)
     {
-        if (!Auth::check()) {
+        if (!auth('sanctum')->check()) {
             return response()->json([
                 'success' => false,
                 'message' => 'يجب تسجيل الدخول أولاً'
             ], 401);
         }
 
-        $user = Auth::user();
+        $user = auth('sanctum')->user();
 
         // Check if user has the required role
         if ($user->role !== $role) {

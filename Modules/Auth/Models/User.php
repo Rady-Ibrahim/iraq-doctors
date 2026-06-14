@@ -3,22 +3,22 @@
 namespace Modules\Auth\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $table = 'users';
 
-    public $incrementing = false;
+    public $incrementing = true;
 
-    protected $keyType = 'string';
+    protected $keyType = 'int';
 
     protected $fillable = [
-        'id',
         'name',
         'phone',
         'email',

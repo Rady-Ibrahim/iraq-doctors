@@ -2,9 +2,9 @@
 
 namespace Modules\MedicalRecord\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 
-class CreateMedicalRecordRequest extends FormRequest
+class CreateMedicalRecordRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

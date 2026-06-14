@@ -4,6 +4,7 @@ namespace Modules\Auth\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Log;
 use Modules\Auth\Http\Requests\Api\RegisterRequest;
 use Modules\Auth\Http\Requests\Api\LoginRequest;
 use Modules\Auth\Http\Requests\Api\SendOtpRequest;
@@ -14,21 +15,19 @@ use Modules\Auth\Http\Requests\Api\ForgotPasswordRequest;
 use Modules\Auth\Http\Requests\Api\ResetPasswordRequest;
 use Modules\Auth\Http\Requests\Api\CreateGhostPatientRequest;
 use Modules\Auth\Services\Api\AuthService;
+use Modules\Auth\Models\User;
 use App\Traits\ApiResponse;
 
 class AuthController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private AuthService $authService)
-    {
-    }
+    public function __construct(private AuthService $authService) {}
 
     public function register(RegisterRequest $request): JsonResponse
     {
         try {
             $user = $this->authService->register($request->validated());
-            $token = $this->authService->createToken($user);
 
             return $this->created([
                 'user' => [
@@ -38,9 +37,12 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'role' => $user->role,
                 ],
-                'token' => $token,
             ], 'تم التسجيل بنجاح');
         } catch (\Exception $e) {
+            Log::error('Registration error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
             return $this->serverError('فشل التسجيل');
         }
     }
@@ -98,14 +100,23 @@ class AuthController extends Controller
 
     public function logout(): JsonResponse
     {
-        auth('sanctum')->user()->tokens()->delete();
+        /** @var User|null $user */
+        $user = auth('sanctum')->user();
+        if ($user) {
+            $user->tokens()->delete();
+        }
 
         return $this->success(null, 'تم تسجيل الخروج بنجاح');
     }
 
     public function me(): JsonResponse
     {
+        /** @var User|null $user */
         $user = auth('sanctum')->user();
+
+        if (!$user) {
+            return $this->error('المستخدم غير موجود', 'USER_NOT_FOUND', 404);
+        }
 
         $data = [
             'id' => $user->id,
@@ -125,7 +136,13 @@ class AuthController extends Controller
 
     public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
+        /** @var User|null $user */
         $user = auth('sanctum')->user();
+
+        if (!$user) {
+            return $this->error('المستخدم غير موجود', 'USER_NOT_FOUND', 404);
+        }
+
         $updatedUser = $this->authService->updateProfile($user, $request->validated());
 
         $response = [
@@ -185,6 +202,7 @@ class AuthController extends Controller
 
     public function createGhostPatient(CreateGhostPatientRequest $request): JsonResponse
     {
+        /** @var User|null $user */
         $user = auth('sanctum')->user();
 
         if (!$user || !$user->isDoctor()) {

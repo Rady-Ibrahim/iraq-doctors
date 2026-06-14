@@ -4,6 +4,7 @@ namespace Modules\Admin\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Controller;
 use Modules\Admin\Services\AdminDashboardService;
 use App\Traits\ApiResponse;
 

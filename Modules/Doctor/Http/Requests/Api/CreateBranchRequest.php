@@ -2,9 +2,9 @@
 
 namespace Modules\Doctor\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 
-class CreateBranchRequest extends FormRequest
+class CreateBranchRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

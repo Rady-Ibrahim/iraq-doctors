@@ -10,14 +10,14 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!Auth::check()) {
+        if (!auth('sanctum')->check()) {
             return response()->json([
                 'success' => false,
                 'message' => 'يجب تسجيل الدخول أولاً'
             ], 401);
         }
 
-        $user = Auth::user();
+        $user = auth('sanctum')->user();
 
         if ($user->role !== 'admin') {
             return response()->json([

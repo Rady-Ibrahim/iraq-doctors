@@ -119,6 +119,28 @@
         </div>
     </div>
 
+    <!-- Error Toast -->
+    <div id="errorToast" class="fixed top-4 left-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg hidden z-50">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="errorMessage">حدث خطأ</span>
+            <button onclick="hideError()" class="ml-4 hover:text-red-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div id="successToast" class="fixed top-4 left-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg hidden z-50">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-check-circle"></i>
+            <span id="successMessage">تم بنجاح</span>
+            <button onclick="hideSuccess()" class="ml-4 hover:text-green-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'http://127.0.0.1:8000';
 
@@ -179,7 +201,113 @@
                 return;
             }
 
-            return response.json();
+            const data = await response.json();
+
+            if (!data.success && data.error) {
+                showError(data.error.message || 'حدث خطأ');
+            }
+
+            return data;
+        }
+
+        // Error Handling
+        function showError(message) {
+            const errorToast = document.getElementById('errorToast');
+            document.getElementById('errorMessage').textContent = message;
+            errorToast.classList.remove('hidden');
+            setTimeout(() => {
+                errorToast.classList.add('hidden');
+            }, 5000);
+        }
+
+        function hideError() {
+            document.getElementById('errorToast').classList.add('hidden');
+        }
+
+        function showSuccess(message) {
+            const successToast = document.getElementById('successToast');
+            document.getElementById('successMessage').textContent = message;
+            successToast.classList.remove('hidden');
+            setTimeout(() => {
+                successToast.classList.add('hidden');
+            }, 3000);
+        }
+
+        function hideSuccess() {
+            document.getElementById('successToast').classList.add('hidden');
+        }
+
+        // Form Validation
+        function validateForm(formId, rules) {
+            const form = document.getElementById(formId);
+            if (!form) return false;
+
+            let isValid = true;
+            const errors = {};
+
+            for (const [field, rule] of Object.entries(rules)) {
+                const input = form.querySelector(`[name="${field}"]`);
+                if (!input) continue;
+
+                const value = input.value.trim();
+                const errorElement = document.getElementById(`${field}_error`);
+
+                if (rule.required && !value) {
+                    errors[field] = `${rule.label || field} مطلوب`;
+                    isValid = false;
+                } else if (rule.minLength && value.length < rule.minLength) {
+                    errors[field] = `${rule.label || field} يجب أن يكون ${rule.minLength} أحرف على الأقل`;
+                    isValid = false;
+                } else if (rule.email && !isValidEmail(value)) {
+                    errors[field] = `${rule.label || field} يجب أن يكون بريد إلكتروني صحيح`;
+                    isValid = false;
+                } else if (rule.phone && !isValidPhone(value)) {
+                    errors[field] = `${rule.label || field} يجب أن يكون رقم هاتف صحيح`;
+                    isValid = false;
+                } else {
+                    delete errors[field];
+                }
+
+                if (errorElement) {
+                    if (errors[field]) {
+                        errorElement.textContent = errors[field];
+                        errorElement.classList.remove('hidden');
+                        input.classList.add('border-red-500');
+                    } else {
+                        errorElement.classList.add('hidden');
+                        input.classList.remove('border-red-500');
+                    }
+                }
+            }
+
+            return isValid;
+        }
+
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function isValidPhone(phone) {
+            const re = /^[0-9]{10,15}$/;
+            return re.test(phone);
+        }
+
+        // Clear Form Errors
+        function clearFormErrors(formId) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+
+            const errorElements = form.querySelectorAll('[id$="_error"]');
+            errorElements.forEach(el => {
+                el.classList.add('hidden');
+                el.textContent = '';
+            });
+
+            const inputs = form.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                input.classList.remove('border-red-500');
+            });
         }
     </script>
 </body>

@@ -2,9 +2,9 @@
 
 namespace Modules\Doctor\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 
-class SearchDoctorsRequest extends FormRequest
+class SearchDoctorsRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

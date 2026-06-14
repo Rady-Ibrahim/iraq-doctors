@@ -3,13 +3,14 @@
 namespace Modules\Appointment\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Doctor\Models\Doctor;
 use Modules\Auth\Models\User;
 
 class Appointment extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'appointments';
 

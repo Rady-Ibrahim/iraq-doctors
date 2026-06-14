@@ -2,9 +2,9 @@
 
 namespace Modules\Auth\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 
-class ResetPasswordRequest extends FormRequest
+class ResetPasswordRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

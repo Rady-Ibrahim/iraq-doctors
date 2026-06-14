@@ -2,9 +2,9 @@
 
 namespace Modules\Review\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 
-class CreateReviewRequest extends FormRequest
+class CreateReviewRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

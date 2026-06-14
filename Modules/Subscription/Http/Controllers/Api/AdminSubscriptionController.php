@@ -4,6 +4,7 @@ namespace Modules\Subscription\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Controller;
 use Modules\Subscription\Services\SubscriptionService;
 use Modules\Subscription\Http\Requests\CreateSubscriptionRequest;
 use App\Traits\ApiResponse;
@@ -39,12 +40,12 @@ class AdminSubscriptionController extends Controller
     {
         try {
             $plans = $this->subscriptionService->getAllPlans();
-            
+
             $stats = [];
             foreach ($plans as $plan) {
                 $activeDoctors = $plan->doctorSubscriptions()->active()->count();
                 $totalRevenue = $plan->doctorSubscriptions()->sum('amount_paid');
-                
+
                 $stats[] = [
                     'plan_id' => $plan->id,
                     'plan_name' => $plan->name,

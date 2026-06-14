@@ -2,9 +2,9 @@
 
 namespace Modules\Subscription\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 
-class CreateSubscriptionRequest extends FormRequest
+class CreateSubscriptionRequest extends ApiFormRequest
 {
     public function authorize()
     {

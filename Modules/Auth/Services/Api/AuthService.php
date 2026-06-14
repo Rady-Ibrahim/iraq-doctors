@@ -18,7 +18,7 @@ class AuthService
                 'phone' => $data['phone'],
                 'email' => $data['email'] ?? null,
                 'password' => Hash::make($data['password']),
-                'role' => $data['role'] ?? 'patient',
+                'role' => 'patient',  // Mobile users are always patients
                 'status' => 'active',
             ]);
 
@@ -214,7 +214,6 @@ class AuthService
     {
         return DB::transaction(function () use ($doctorUser, $data) {
             $patient = User::create([
-                'id' => (string) Str::uuid(),
                 'name' => $data['name'],
                 'phone' => $data['phone'],
                 'email' => $data['email'] ?? null,
@@ -226,6 +225,57 @@ class AuthService
             ]);
 
             return $patient;
+        });
+    }
+
+    /**
+     * Create a new admin user (Dashboard only)
+     */
+    public function createAdmin(array $data): User
+    {
+        return DB::transaction(function () use ($data) {
+            $admin = User::create([
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'role' => 'admin',
+                'status' => 'active',
+            ]);
+
+            return $admin;
+        });
+    }
+
+    /**
+     * Create a new doctor user (Dashboard only)
+     */
+    public function createDoctor(array $data): User
+    {
+        return DB::transaction(function () use ($data) {
+            $doctor = User::create([
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'role' => 'doctor',
+                'status' => 'pending',  // Doctors need approval
+            ]);
+
+            // Create doctor profile
+            if (isset($data['speciality_id']) || isset($data['bio_ar']) || isset($data['experience_years'])) {
+                \Modules\Doctor\Models\Doctor::create([
+                    'user_id' => $doctor->id,
+                    'speciality_id' => $data['speciality_id'] ?? null,
+                    'bio_ar' => $data['bio_ar'] ?? null,
+                    'bio_en' => $data['bio_en'] ?? null,
+                    'experience_years' => $data['experience_years'] ?? null,
+                    'is_verified' => false,
+                    'verification_status' => 'pending',
+                ]);
+            }
+
+            return $doctor;
         });
     }
 }

@@ -3,12 +3,13 @@
 namespace Modules\Doctor\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Auth\Models\User;
 
 class Doctor extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'doctors';
 

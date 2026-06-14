@@ -4,6 +4,7 @@ namespace Modules\Subscription\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Controller;
 use Modules\Subscription\Services\SubscriptionService;
 use Modules\Subscription\Http\Requests\CreateSubscriptionRequest;
 use Modules\Subscription\Http\Requests\SubscribeDoctorRequest;
@@ -91,8 +92,8 @@ class SubscriptionController extends Controller
     public function subscribe(SubscribeDoctorRequest $request): JsonResponse
     {
         try {
-            $doctorId = auth()->id();
-            
+            $doctorId = auth('sanctum')->id();
+
             $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $doctorId)->first();
             if (!$doctor) {
                 return $this->notFound('الطبيب غير موجود');
@@ -116,15 +117,15 @@ class SubscriptionController extends Controller
     public function mySubscription(): JsonResponse
     {
         try {
-            $userId = auth()->id();
+            $userId = auth('sanctum')->id();
             $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->first();
-            
+
             if (!$doctor) {
                 return $this->notFound('الطبيب غير موجود');
             }
 
             $subscription = $this->subscriptionService->getDoctorSubscription($doctor->id);
-            
+
             if (!$subscription) {
                 return $this->success(null, 'لا يوجد اشتراك نشط');
             }
@@ -141,9 +142,9 @@ class SubscriptionController extends Controller
     public function renew(): JsonResponse
     {
         try {
-            $userId = auth()->id();
+            $userId = auth('sanctum')->id();
             $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->first();
-            
+
             if (!$doctor) {
                 return $this->notFound('الطبيب غير موجود');
             }
@@ -162,9 +163,9 @@ class SubscriptionController extends Controller
     public function cancel(): JsonResponse
     {
         try {
-            $userId = auth()->id();
+            $userId = auth('sanctum')->id();
             $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->first();
-            
+
             if (!$doctor) {
                 return $this->notFound('الطبيب غير موجود');
             }
@@ -183,9 +184,9 @@ class SubscriptionController extends Controller
     public function checkLimit(): JsonResponse
     {
         try {
-            $userId = auth()->id();
+            $userId = auth('sanctum')->id();
             $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->first();
-            
+
             if (!$doctor) {
                 return $this->notFound('الطبيب غير موجود');
             }

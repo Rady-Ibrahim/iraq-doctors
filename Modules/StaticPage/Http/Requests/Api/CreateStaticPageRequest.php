@@ -2,10 +2,10 @@
 
 namespace Modules\StaticPage\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 use Illuminate\Validation\Rule;
 
-class CreateStaticPageRequest extends FormRequest
+class CreateStaticPageRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

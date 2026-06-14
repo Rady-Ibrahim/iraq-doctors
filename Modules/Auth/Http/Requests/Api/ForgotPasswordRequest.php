@@ -2,10 +2,10 @@
 
 namespace Modules\Auth\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 use Illuminate\Support\Facades\Auth;
 
-class ForgotPasswordRequest extends FormRequest
+class ForgotPasswordRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

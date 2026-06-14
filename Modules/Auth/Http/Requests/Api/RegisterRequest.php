@@ -2,9 +2,9 @@
 
 namespace Modules\Auth\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 
-class RegisterRequest extends FormRequest
+class RegisterRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {
@@ -18,7 +18,6 @@ class RegisterRequest extends FormRequest
             'phone' => 'required|string|unique:users,phone|regex:/^[0-9]{10,15}$/',
             'email' => 'nullable|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:patient,doctor',
         ];
     }
 

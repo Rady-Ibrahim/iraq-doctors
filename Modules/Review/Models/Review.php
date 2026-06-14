@@ -3,6 +3,7 @@
 namespace Modules\Review\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Doctor\Models\Doctor;
 use Modules\Auth\Models\User;
@@ -10,7 +11,7 @@ use Modules\Appointment\Models\Appointment;
 
 class Review extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'reviews';
 

@@ -2,9 +2,9 @@
 
 namespace Modules\Appointment\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 
-class BookAppointmentRequest extends FormRequest
+class BookAppointmentRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

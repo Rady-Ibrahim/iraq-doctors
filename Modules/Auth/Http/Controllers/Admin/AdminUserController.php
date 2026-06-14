@@ -5,11 +5,22 @@ namespace Modules\Auth\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Modules\Auth\Models\User;
+use Modules\Auth\Http\Requests\Admin\CreateAdminRequest;
+use Modules\Auth\Http\Requests\Admin\CreateDoctorRequest;
+use Modules\Auth\Services\Api\AuthService;
 use App\Traits\ApiResponse;
+use App\Http\Controllers\Controller;
 
 class AdminUserController extends Controller
 {
     use ApiResponse;
+
+    private AuthService $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
 
     /**
      * Get all users with filters
@@ -30,8 +41,8 @@ class AdminUserController extends Controller
             if ($request->has('search')) {
                 $query->where(function ($q) use ($request) {
                     $q->where('name', 'like', '%' . $request->search . '%')
-                      ->orWhere('phone', 'like', '%' . $request->search . '%')
-                      ->orWhere('email', 'like', '%' . $request->search . '%');
+                        ->orWhere('phone', 'like', '%' . $request->search . '%')
+                        ->orWhere('email', 'like', '%' . $request->search . '%');
                 });
             }
 
@@ -97,6 +108,56 @@ class AdminUserController extends Controller
             return $this->success(null, 'تم حذف المستخدم بنجاح');
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء حذف المستخدم');
+        }
+    }
+
+    /**
+     * Create a new admin user (Dashboard only)
+     */
+    public function createAdmin(CreateAdminRequest $request): JsonResponse
+    {
+        try {
+            $admin = $this->authService->createAdmin($request->validated());
+            $token = $this->authService->createToken($admin);
+
+            return $this->created([
+                'user' => [
+                    'id' => $admin->id,
+                    'name' => $admin->name,
+                    'phone' => $admin->phone,
+                    'email' => $admin->email,
+                    'role' => $admin->role,
+                    'status' => $admin->status,
+                ],
+                'token' => $token,
+            ], 'تم إنشاء حساب الإدارة بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('فشل إنشاء حساب الإدارة: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create a new doctor user (Dashboard only)
+     */
+    public function createDoctor(CreateDoctorRequest $request): JsonResponse
+    {
+        try {
+            $doctor = $this->authService->createDoctor($request->validated());
+            $token = $this->authService->createToken($doctor);
+
+            return $this->created([
+                'user' => [
+                    'id' => $doctor->id,
+                    'name' => $doctor->name,
+                    'phone' => $doctor->phone,
+                    'email' => $doctor->email,
+                    'role' => $doctor->role,
+                    'status' => $doctor->status,
+                ],
+                'token' => $token,
+            ], 'تم إنشاء حساب الطبيب بنجاح - ينتظر الموافقة');
+        } catch (\Exception $e) {
+            return $this->serverError('فشل إنشاء حساب الطبيب: ' . $e->getMessage());
         }
     }
 }

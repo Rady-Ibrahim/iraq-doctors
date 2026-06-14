@@ -2,10 +2,10 @@
 
 namespace Modules\Auth\Http\Requests\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateProfileRequest extends FormRequest
+class UpdateProfileRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

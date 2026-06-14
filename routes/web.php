@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public Home
 Route::get('/', function () {
-    return view('welcome');
+    return view('admin.login');
 });
 
 // Admin Dashboard Routes
@@ -12,12 +12,12 @@ Route::prefix('admin')->group(function () {
     Route::get('/login', function () {
         return view('admin.login');
     })->name('admin.login');
-    
+
     Route::middleware('auth')->group(function () {
         Route::get('/dashboard', function () {
             return view('admin.dashboard');
         })->name('admin.dashboard');
-        
+
         // Doctors Management
         Route::get('/dashboard/doctors', function () {
             return view('admin.doctors.index');
@@ -25,7 +25,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/dashboard/doctors/{id}', function () {
             return view('admin.doctors.show');
         })->name('admin.doctors.show');
-        
+
         // Patients Management
         Route::get('/dashboard/patients', function () {
             return view('admin.patients.index');
@@ -33,7 +33,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/dashboard/patients/{id}', function () {
             return view('admin.patients.show');
         })->name('admin.patients.show');
-        
+
         // Appointments Management
         Route::get('/dashboard/appointments', function () {
             return view('admin.appointments.index');
@@ -41,7 +41,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/dashboard/appointments/{id}', function () {
             return view('admin.appointments.show');
         })->name('admin.appointments.show');
-        
+
         // Users Management
         Route::get('/users', function () {
             return view('admin.users.index');
@@ -65,22 +65,22 @@ Route::prefix('doctor')->group(function () {
     Route::get('/login', function () {
         return view('doctor.login');
     })->name('doctor.login');
-    
+
     Route::middleware('auth')->group(function () {
         Route::get('/dashboard', function () {
             return view('doctor.dashboard');
         })->name('doctor.dashboard');
-        
+
         // Calendar
         Route::get('/dashboard/calendar', function () {
             return view('doctor.calendar');
         })->name('doctor.calendar');
-        
+
         // Settings
         Route::get('/dashboard/settings', function () {
             return view('doctor.settings');
         })->name('doctor.settings');
-        
+
         // Patients Management
         Route::get('/dashboard/patients', function () {
             return view('doctor.patients.index');
@@ -91,7 +91,7 @@ Route::prefix('doctor')->group(function () {
         Route::get('/dashboard/patients/{id}/records', function () {
             return view('doctor.patients.records');
         })->name('doctor.patients.records');
-        
+
         // Prescriptions Management
         Route::get('/dashboard/prescriptions', function () {
             return view('doctor.prescriptions.index');
@@ -105,7 +105,7 @@ Route::prefix('doctor')->group(function () {
         Route::get('/dashboard/prescriptions/{id}/edit', function () {
             return view('doctor.prescriptions.edit');
         })->name('doctor.prescriptions.edit');
-        
+
         // Records Management
         Route::get('/dashboard/records', function () {
             return view('doctor.records.index');
