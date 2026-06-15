@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Iraq Doctors API - Frontend Collection",
-    "description": "Complete Postman collection for Iraq Doctors API Frontend endpoints",
+    "name": "Iraq Doctors — Mobile API",
+    "description": "كل endpoints التطبيق للموبايل — base_url يشير لـ http://127.0.0.1:8000\nبعد Login يتحفظ الـ token تلقائياً في المتغير {{token}}",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -13,168 +13,161 @@
     {
       "key": "token",
       "value": "",
-      "type": "string"
-    },
-    {
-      "key": "admin_token",
-      "value": "",
-      "type": "string"
+      "type": "string",
+      "description": "Patient/User token — يتحفظ تلقائياً بعد Login"
     },
     {
       "key": "doctor_token",
       "value": "",
+      "type": "string",
+      "description": "Doctor token — يتحفظ تلقائياً بعد Login بحساب دكتور"
+    },
+    {
+      "key": "doctor_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "appointment_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "record_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "branch_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "schedule_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "review_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "plan_id",
+      "value": "1",
       "type": "string"
     }
   ],
   "item": [
     {
-      "name": "Authentication",
+      "name": "🔐 Auth",
       "item": [
         {
           "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.data && json.data.token) pm.collectionVariables.set('token', json.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Test User\",\n  \"phone\": \"07700000001\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"role\": \"patient\"\n}"
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"name\": \"Test Patient\",\n  \"phone\": \"07701234567\",\n  \"email\": \"patient@test.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/register",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "register"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
             },
-            "description": "Register new user"
-          },
-          "response": []
+            "description": "تسجيل مستخدم جديد (role = patient تلقائياً)"
+          }
         },
         {
           "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('token', json.data.token);",
+                  "    pm.test('Token saved', function() { pm.expect(json.data.token).to.be.a('string'); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"phone\": \"07700000001\",\n  \"password\": \"password123\"\n}"
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"phone\": \"07701234567\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
             },
-            "description": "Login user"
-          },
-          "response": []
+            "description": "تسجيل الدخول — يحفظ token تلقائياً"
+          }
         },
         {
-          "name": "Send OTP",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"phone\": \"07700000001\",\n  \"type\": \"login\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/auth/send-otp",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "send-otp"]
-            },
-            "description": "Send OTP code"
-          },
-          "response": []
-        },
-        {
-          "name": "Verify OTP",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"phone\": \"07700000001\",\n  \"code\": \"123456\",\n  \"type\": \"login\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/auth/verify-otp",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "verify-otp"]
-            },
-            "description": "Verify OTP code"
-          },
-          "response": []
-        },
-        {
-          "name": "Forgot Password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"phone\": \"07700000001\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/auth/forgot-password",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "forgot-password"]
-            },
-            "description": "Send OTP for password reset"
-          },
-          "response": []
-        },
-        {
-          "name": "Reset Password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"phone\": \"07700000001\",\n  \"code\": \"123456\",\n  \"password\": \"newpassword123\",\n  \"password_confirmation\": \"newpassword123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/auth/reset-password",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "reset-password"]
-            },
-            "description": "Reset password with OTP"
-          },
-          "response": []
-        },
-        {
-          "name": "Get User Profile",
+          "name": "Get My Profile (me)",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -184,12 +177,18 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/auth/me",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "me"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
             },
-            "description": "Get current user profile"
-          },
-          "response": []
+            "description": "بيانات المستخدم الحالي — يحتاج token"
+          }
         },
         {
           "name": "Update Profile",
@@ -197,7 +196,7 @@
             "method": "PUT",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -207,16 +206,26 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@example.com\"\n}"
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"name\": \"اسم محدّث\",\n  \"email\": \"updated@test.com\",\n  \"birthdate\": \"1995-06-15\",\n  \"gender\": \"male\",\n  \"city\": \"Baghdad\",\n  \"district\": \"Karrada\",\n  \"address\": \"شارع الرشيد\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/profile",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "profile"]
-            },
-            "description": "Update user profile"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "profile"
+              ]
+            }
+          }
         },
         {
           "name": "Update Password",
@@ -224,7 +233,7 @@
             "method": "PUT",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -234,24 +243,206 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"current_password\": \"password123\",\n  \"password\": \"newpassword123\",\n  \"password_confirmation\": \"newpassword123\"\n}"
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"current_password\": \"password123\",\n  \"new_password\": \"newpassword456\",\n  \"new_password_confirmation\": \"newpassword456\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/password",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "password"]
-            },
-            "description": "Update user password"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "password"
+              ]
+            }
+          }
         },
         {
-          "name": "Create Ghost Patient",
+          "name": "Upload Avatar",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": "",
+                  "description": "صورة JPG/PNG"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/avatar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "avatar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"phone\": \"07701234567\",\n  \"type\": \"login\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/send-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "send-otp"
+              ]
+            },
+            "description": "type: login | password_reset"
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"phone\": \"07701234567\",\n  \"code\": \"123456\",\n  \"type\": \"login\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/verify-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-otp"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"phone\": \"07701234567\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/forgot-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "forgot-password"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"phone\": \"07701234567\",\n  \"code\": \"123456\",\n  \"new_password\": \"password123\",\n  \"new_password_confirmation\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/reset-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "reset-password"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Ghost Patient (Doctor only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -261,16 +452,26 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ghost Patient\",\n  \"phone\": \"07700000099\"\n}"
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"name\": \"مريض وهمي\",\n  \"phone\": \"07709999999\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/ghost-patient",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "ghost-patient"]
-            },
-            "description": "Create ghost patient (Doctor only)"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "ghost-patient"
+              ]
+            }
+          }
         },
         {
           "name": "Logout",
@@ -278,7 +479,7 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -288,17 +489,22 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/auth/logout",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "logout"]
-            },
-            "description": "Logout user"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            }
+          }
         }
       ]
     },
     {
-      "name": "Doctors",
+      "name": "👨‍⚕️ Doctors",
       "item": [
         {
           "name": "Search Doctors",
@@ -306,100 +512,80 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/doctors",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors"],
+              "raw": "{{base_url}}/api/v1/doctors?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors"
+              ],
               "query": [
                 {
                   "key": "speciality_id",
-                  "value": "{{speciality_id}}",
-                  "description": "Filter by speciality ID"
+                  "value": "",
+                  "disabled": true
                 },
                 {
                   "key": "name",
-                  "value": "{{name}}",
-                  "description": "Filter by doctor name"
+                  "value": "",
+                  "disabled": true
                 },
                 {
                   "key": "min_rating",
-                  "value": "{{min_rating}}",
-                  "description": "Minimum rating (0-5)"
-                },
-                {
-                  "key": "max_rating",
-                  "value": "{{max_rating}}",
-                  "description": "Maximum rating (0-5)"
-                },
-                {
-                  "key": "min_fee",
-                  "value": "{{min_fee}}",
-                  "description": "Minimum consultation fee"
+                  "value": "",
+                  "disabled": true
                 },
                 {
                   "key": "max_fee",
-                  "value": "{{max_fee}}",
-                  "description": "Maximum consultation fee"
+                  "value": "",
+                  "disabled": true
                 },
                 {
                   "key": "consultation_type",
-                  "value": "{{consultation_type}}",
-                  "description": "Consultation type: clinic, home, online"
-                },
-                {
-                  "key": "experience_level",
-                  "value": "{{experience_level}}",
-                  "description": "Experience level: junior, intermediate, senior"
+                  "value": "clinic",
+                  "disabled": true,
+                  "description": "clinic | online | both"
                 },
                 {
                   "key": "governorate",
-                  "value": "{{governorate}}",
-                  "description": "Filter by governorate"
-                },
-                {
-                  "key": "availability",
-                  "value": "{{availability}}",
-                  "description": "Availability: today, tomorrow, this_week"
+                  "value": "",
+                  "disabled": true
                 },
                 {
                   "key": "latitude",
-                  "value": "{{latitude}}",
-                  "description": "Latitude for location-based search"
+                  "value": "",
+                  "disabled": true
                 },
                 {
                   "key": "longitude",
-                  "value": "{{longitude}}",
-                  "description": "Longitude for location-based search"
-                },
-                {
-                  "key": "distance_range",
-                  "value": "{{distance_range}}",
-                  "description": "Distance range: 5, 10, 20, 50 km"
+                  "value": "",
+                  "disabled": true
                 },
                 {
                   "key": "sort_by",
-                  "value": "{{sort_by}}",
-                  "description": "Sort by: rating, fee_asc, fee_desc, experience, distance"
+                  "value": "rating",
+                  "disabled": true,
+                  "description": "rating | fee_asc | fee_desc | experience | distance"
                 },
                 {
                   "key": "page",
-                  "value": "{{page}}",
-                  "description": "Page number"
+                  "value": "1"
                 },
                 {
                   "key": "limit",
-                  "value": "{{limit}}",
-                  "description": "Results per page (1-100)"
+                  "value": "10"
                 }
               ]
             },
-            "description": "Search doctors with advanced filters"
-          },
-          "response": []
+            "description": "بحث الأطباء مع فلاتر — كل query params اختيارية"
+          }
         },
         {
           "name": "Get Specialities",
@@ -407,18 +593,23 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/doctors/specialities",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "specialities"]
-            },
-            "description": "Get all doctor specialities"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                "specialities"
+              ]
+            }
+          }
         },
         {
           "name": "Get Doctor Details",
@@ -426,18 +617,23 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/doctors/{{doctor_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "{{doctor_id}}"]
-            },
-            "description": "Get doctor details by ID"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                "{{doctor_id}}"
+              ]
+            }
+          }
         },
         {
           "name": "Get Doctor Schedule",
@@ -445,146 +641,53 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/doctors/{{doctor_id}}/schedule",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "{{doctor_id}}", "schedule"]
-            },
-            "description": "Get doctor's schedule"
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Doctor Branches",
-      "item": [
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                "{{doctor_id}}",
+                "schedule"
+              ]
+            }
+          }
+        },
         {
           "name": "Get Doctor Branches",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
+                "value": "Bearer {{token}}"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/doctors/{{doctor_id}}/branches",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "{{doctor_id}}", "branches"]
-            },
-            "description": "Get doctor's branches"
-          },
-          "response": []
-        },
-        {
-          "name": "Create Branch",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"branch_name\": \"Baghdad Branch\",\n  \"governorate\": \"Baghdad\",\n  \"district\": \"Karrada\",\n  \"address\": \"Main Street\",\n  \"latitude\": \"33.3152\",\n  \"longitude\": \"44.3661\",\n  \"phone\": \"07700000001\",\n  \"is_primary\": true\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/doctors/{{doctor_id}}/branches",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "{{doctor_id}}", "branches"]
-            },
-            "description": "Create new branch (Doctor only)"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Branch Details",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/doctors/branches/{{branch_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "branches", "{{branch_id}}"]
-            },
-            "description": "Get branch details"
-          },
-          "response": []
-        },
-        {
-          "name": "Update Branch",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"branch_name\": \"Updated Branch Name\",\n  \"phone\": \"07700000002\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/doctors/branches/{{branch_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "branches", "{{branch_id}}"]
-            },
-            "description": "Update branch details"
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Branch",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/doctors/branches/{{branch_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "branches", "{{branch_id}}"]
-            },
-            "description": "Delete branch"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                "{{doctor_id}}",
+                "branches"
+              ]
+            }
+          }
         },
         {
           "name": "Find Nearby Branches",
@@ -592,7 +695,7 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -601,48 +704,199 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/doctors/branches/nearby",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "branches", "nearby"],
+              "raw": "{{base_url}}/api/v1/doctors/branches/nearby?latitude=33.3152&longitude=44.3661&radius=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                "branches",
+                "nearby"
+              ],
               "query": [
                 {
                   "key": "latitude",
-                  "value": "{{latitude}}",
-                  "description": "Latitude"
+                  "value": "33.3152"
                 },
                 {
                   "key": "longitude",
-                  "value": "{{longitude}}",
-                  "description": "Longitude"
+                  "value": "44.3661"
                 },
                 {
                   "key": "radius",
-                  "value": "{{radius}}",
-                  "description": "Radius in km"
+                  "value": "10"
                 },
                 {
                   "key": "governorate",
-                  "value": "{{governorate}}",
-                  "description": "Filter by governorate"
+                  "value": "",
+                  "disabled": true
                 }
               ]
-            },
-            "description": "Find nearby branches"
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Appointments",
-      "item": [
+            }
+          }
+        },
         {
-          "name": "Book Appointment",
+          "name": "Create Branch (Doctor only)",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"branch_name\": \"عيادة بغداد\",\n  \"governorate\": \"Baghdad\",\n  \"district\": \"الكرادة\",\n  \"address\": \"شارع الرشيد\",\n  \"latitude\": \"33.3152\",\n  \"longitude\": \"44.3661\",\n  \"phone\": \"07700000001\",\n  \"is_primary\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/doctors/{{doctor_id}}/branches",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                "{{doctor_id}}",
+                "branches"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Branch Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/doctors/branches/{{branch_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                "branches",
+                "{{branch_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Branch (Doctor only)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"branch_name\": \"اسم محدّث\",\n  \"phone\": \"07700000002\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/doctors/branches/{{branch_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                "branches",
+                "{{branch_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Branch (Doctor only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/doctors/branches/{{branch_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "doctors",
+                "branches",
+                "{{branch_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Appointments",
+      "item": [
+        {
+          "name": "Book Appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.data && json.data.id) pm.collectionVariables.set('appointment_id', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -652,24 +906,33 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"doctor_id\": \"{{doctor_id}}\",\n  \"doctor_schedule_id\": \"{{schedule_id}}\",\n  \"appointment_date\": \"2026-06-10\",\n  \"appointment_time\": \"10:00\",\n  \"notes\": \"First visit\"\n}"
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"doctor_id\": {{doctor_id}},\n  \"doctor_schedule_id\": {{schedule_id}},\n  \"appointment_date\": \"2026-07-01\",\n  \"appointment_time\": \"10:00\",\n  \"notes\": \"زيارة أولى\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/appointments",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "appointments"]
-            },
-            "description": "Book new appointment"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "appointments"
+              ]
+            }
+          }
         },
         {
-          "name": "Get My Appointments",
+          "name": "My Appointments",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -679,29 +942,35 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/appointments/my",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "appointments", "my"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "appointments",
+                "my"
+              ],
               "query": [
                 {
                   "key": "status",
-                  "value": "{{status}}",
-                  "description": "Filter by status: pending, confirmed, completed, cancelled"
+                  "value": "",
+                  "disabled": true,
+                  "description": "pending | confirmed | completed | cancelled"
                 },
                 {
                   "key": "date_from",
-                  "value": "{{date_from}}",
-                  "description": "Filter from date"
+                  "value": "2026-01-01",
+                  "disabled": true
                 },
                 {
                   "key": "date_to",
-                  "value": "{{date_to}}",
-                  "description": "Filter to date"
+                  "value": "2026-12-31",
+                  "disabled": true
                 }
               ]
-            },
-            "description": "Get user's appointments"
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Get Appointment Details",
@@ -709,7 +978,7 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -719,12 +988,17 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/appointments/{{appointment_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "appointments", "{{appointment_id}}"]
-            },
-            "description": "Get appointment details"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "appointments",
+                "{{appointment_id}}"
+              ]
+            }
+          }
         },
         {
           "name": "Cancel Appointment",
@@ -732,7 +1006,7 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -742,20 +1016,26 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/appointments/{{appointment_id}}/cancel",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "appointments", "{{appointment_id}}", "cancel"]
-            },
-            "description": "Cancel appointment"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "appointments",
+                "{{appointment_id}}",
+                "cancel"
+              ]
+            }
+          }
         },
         {
-          "name": "Confirm Appointment",
+          "name": "Confirm Appointment (Doctor only)",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -765,20 +1045,26 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/appointments/{{appointment_id}}/confirm",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "appointments", "{{appointment_id}}", "confirm"]
-            },
-            "description": "Confirm appointment (Doctor only)"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "appointments",
+                "{{appointment_id}}",
+                "confirm"
+              ]
+            }
+          }
         },
         {
-          "name": "Complete Appointment",
+          "name": "Complete Appointment (Doctor only)",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -788,25 +1074,83 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/appointments/{{appointment_id}}/complete",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "appointments", "{{appointment_id}}", "complete"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "appointments",
+                "{{appointment_id}}",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reschedule Appointment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"appointment_date\": \"2026-07-10\",\n  \"appointment_time\": \"14:00\",\n  \"doctor_schedule_id\": {{schedule_id}}\n}"
             },
-            "description": "Complete appointment (Doctor only)"
-          },
-          "response": []
+            "url": {
+              "raw": "{{base_url}}/api/v1/appointments/{{appointment_id}}/reschedule",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "appointments",
+                "{{appointment_id}}",
+                "reschedule"
+              ]
+            }
+          }
         }
       ]
     },
     {
-      "name": "Medical Records",
+      "name": "🏥 Medical Records",
       "item": [
         {
-          "name": "Create Medical Record",
+          "name": "Create Medical Record (Doctor only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.data && json.data.id) pm.collectionVariables.set('record_id', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -816,24 +1160,33 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"appointment_id\": \"{{appointment_id}}\",\n  \"record_type\": \"prescription\",\n  \"diagnosis\": \"Diagnosis text\",\n  \"prescription\": [{\"medicine\": \"Medicine Name\", \"dosage\": \"500mg\", \"frequency\": \"Twice daily\"}],\n  \"notes\": \"Additional notes\",\n  \"weight\": 70,\n  \"height\": 175,\n  \"blood_pressure\": \"120/80\",\n  \"allergies\": \"None\"\n}"
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"appointment_id\": {{appointment_id}},\n  \"record_type\": \"prescription\",\n  \"diagnosis\": \"التشخيص هنا\",\n  \"prescription\": [\n    { \"medicine\": \"Paracetamol\", \"dosage\": \"500mg\", \"frequency\": \"مرتين يومياً\" }\n  ],\n  \"notes\": \"ملاحظات إضافية\",\n  \"weight\": 70,\n  \"height\": 175,\n  \"blood_pressure\": \"120/80\",\n  \"allergies\": \"لا يوجد\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/medical-records",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "medical-records"]
-            },
-            "description": "Create medical record (Doctor only)"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "medical-records"
+              ]
+            }
+          }
         },
         {
-          "name": "Get Medical Record",
+          "name": "Get Record by Appointment",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -843,12 +1196,18 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/medical-records/appointment/{{appointment_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "medical-records", "appointment", "{{appointment_id}}"]
-            },
-            "description": "Get medical record by appointment"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "medical-records",
+                "appointment",
+                "{{appointment_id}}"
+              ]
+            }
+          }
         },
         {
           "name": "Get Patient History",
@@ -856,7 +1215,7 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -866,19 +1225,18 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/medical-records/patient/history",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "medical-records", "patient", "history"],
-              "query": [
-                {
-                  "key": "patient_id",
-                  "value": "{{patient_id}}",
-                  "description": "Patient ID"
-                }
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "medical-records",
+                "patient",
+                "history"
               ]
-            },
-            "description": "Get patient medical history"
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Upload Attachment",
@@ -886,7 +1244,7 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -895,22 +1253,35 @@
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"file\": \"base64_encoded_file\",\n  \"file_name\": \"report.pdf\",\n  \"file_type\": \"application/pdf\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "PDF / Image"
+                }
+              ]
             },
             "url": {
               "raw": "{{base_url}}/api/v1/medical-records/{{record_id}}/attachments",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "medical-records", "{{record_id}}", "attachments"]
-            },
-            "description": "Upload attachment to medical record"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "medical-records",
+                "{{record_id}}",
+                "attachments"
+              ]
+            }
+          }
         }
       ]
     },
     {
-      "name": "Reviews",
+      "name": "⭐ Reviews",
       "item": [
         {
           "name": "Create Review",
@@ -918,7 +1289,7 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -928,24 +1299,33 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"appointment_id\": \"{{appointment_id}}\",\n  \"doctor_id\": \"{{doctor_id}}\",\n  \"rating\": 5,\n  \"comment\": \"Excellent doctor!\"\n}"
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"appointment_id\": {{appointment_id}},\n  \"doctor_id\": {{doctor_id}},\n  \"rating\": 5,\n  \"comment\": \"دكتور ممتاز!\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/reviews",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "reviews"]
-            },
-            "description": "Create review"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews"
+              ]
+            }
+          }
         },
         {
-          "name": "Get My Reviews",
+          "name": "My Reviews",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -955,40 +1335,47 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/reviews/my",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "reviews", "my"]
-            },
-            "description": "Get user's reviews"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews",
+                "my"
+              ]
+            }
+          }
         },
         {
-          "name": "Get Doctor Reviews",
+          "name": "Doctor Reviews",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/reviews/doctor/{{doctor_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "reviews", "doctor", "{{doctor_id}}"]
-            },
-            "description": "Get doctor's reviews"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews",
+                "doctor",
+                "{{doctor_id}}"
+              ]
+            }
+          }
         }
       ]
     },
     {
-      "name": "Subscriptions",
+      "name": "💳 Subscriptions",
       "item": [
         {
           "name": "Get All Plans",
@@ -996,18 +1383,23 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/subscriptions/plans",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "subscriptions", "plans"]
-            },
-            "description": "Get all subscription plans (Public)"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "plans"
+              ]
+            }
+          }
         },
         {
           "name": "Get Plan Details",
@@ -1015,26 +1407,32 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/subscriptions/plans/{{plan_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "subscriptions", "plans", "{{plan_id}}"]
-            },
-            "description": "Get plan details (Public)"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "plans",
+                "{{plan_id}}"
+              ]
+            }
+          }
         },
         {
-          "name": "Subscribe to Plan",
+          "name": "Subscribe to Plan (Doctor only)",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -1044,24 +1442,34 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"subscription_id\": \"{{subscription_id}}\",\n  \"amount\": 50000,\n  \"payment_method\": \"card\",\n  \"transaction_id\": \"txn_12345\",\n  \"auto_renew\": false\n}"
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"plan_id\": {{plan_id}}\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/subscriptions/subscribe",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "subscriptions", "subscribe"]
-            },
-            "description": "Subscribe to plan (Doctor only)"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "subscribe"
+              ]
+            }
+          }
         },
         {
-          "name": "Get My Subscription",
+          "name": "My Subscription",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -1071,12 +1479,17 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/subscriptions/my",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "subscriptions", "my"]
-            },
-            "description": "Get doctor's subscription"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "my"
+              ]
+            }
+          }
         },
         {
           "name": "Renew Subscription",
@@ -1084,7 +1497,7 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -1094,12 +1507,17 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/subscriptions/renew",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "subscriptions", "renew"]
-            },
-            "description": "Renew subscription (Doctor only)"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "renew"
+              ]
+            }
+          }
         },
         {
           "name": "Cancel Subscription",
@@ -1107,7 +1525,7 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -1117,12 +1535,17 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/subscriptions/cancel",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "subscriptions", "cancel"]
-            },
-            "description": "Cancel subscription (Doctor only)"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "cancel"
+              ]
+            }
+          }
         },
         {
           "name": "Check Subscription Limit",
@@ -1130,7 +1553,7 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               },
               {
@@ -1140,17 +1563,22 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/subscriptions/check-limit",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "subscriptions", "check-limit"]
-            },
-            "description": "Check if doctor can book more appointments (Doctor only)"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "check-limit"
+              ]
+            }
+          }
         }
       ]
     },
     {
-      "name": "Static Pages",
+      "name": "📄 Static Pages",
       "item": [
         {
           "name": "Get All Pages",
@@ -1158,18 +1586,22 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/pages",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "pages"]
-            },
-            "description": "Get all active pages (Public)"
-          },
-          "response": []
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pages"
+              ]
+            }
+          }
         },
         {
           "name": "Get Page by Slug",
@@ -1177,946 +1609,24 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
+                "key": "Accept",
                 "value": "application/json"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/pages/{{slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "pages", "{{slug}}"]
-            },
-            "description": "Get page by slug (Public)"
-          },
-          "response": []
-        },
-        {
-          "name": "Create Page",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title_ar\": \"شروط الاستخدام\",\n  \"title_en\": \"Terms of Use\",\n  \"content_ar\": \"محتوى الشروط بالعربية\",\n  \"content_en\": \"Terms content in English\",\n  \"slug\": \"terms\",\n  \"is_active\": true,\n  \"order\": 1\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/pages",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "admin", "pages"]
-            },
-            "description": "Create static page (Admin only)"
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Pages (Admin)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/pages",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "admin", "pages"]
-            },
-            "description": "Get all pages (Admin only)"
-          },
-          "response": []
-        },
-        {
-          "name": "Update Page",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title_ar\": \"Updated Title\",\n  \"content_ar\": \"Updated content\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/pages/{{page_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "admin", "pages", "{{page_id}}"]
-            },
-            "description": "Update static page (Admin only)"
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Page",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/pages/{{page_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "admin", "pages", "{{page_id}}"]
-            },
-            "description": "Delete static page (Admin only)"
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Admin Dashboard",
-      "item": [
-        {
-          "name": "Get System Metrics",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/metrics",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "metrics"]
-            },
-            "description": "Get system-wide metrics"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Doctors Stats",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/doctors",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "doctors"],
-              "query": [
-                {
-                  "key": "status",
-                  "value": "{{status}}",
-                  "description": "Filter by status"
-                },
-                {
-                  "key": "search",
-                  "value": "{{search}}",
-                  "description": "Search by name"
-                },
-                {
-                  "key": "limit",
-                  "value": "{{limit}}",
-                  "description": "Results limit"
-                }
+              "raw": "{{base_url}}/api/v1/pages/about-us",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pages",
+                "about-us"
               ]
             },
-            "description": "Get doctors statistics"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Patients Stats",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/patients",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "patients"],
-              "query": [
-                {
-                  "key": "status",
-                  "value": "{{status}}",
-                  "description": "Filter by status"
-                },
-                {
-                  "key": "is_ghost",
-                  "value": "{{is_ghost}}",
-                  "description": "Filter ghost patients"
-                },
-                {
-                  "key": "limit",
-                  "value": "{{limit}}",
-                  "description": "Results limit"
-                }
-              ]
-            },
-            "description": "Get patients statistics"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Appointments Stats",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/appointments",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "appointments"],
-              "query": [
-                {
-                  "key": "status",
-                  "value": "{{status}}",
-                  "description": "Filter by status"
-                },
-                {
-                  "key": "date_from",
-                  "value": "{{date_from}}",
-                  "description": "Filter from date"
-                },
-                {
-                  "key": "date_to",
-                  "value": "{{date_to}}",
-                  "description": "Filter to date"
-                },
-                {
-                  "key": "limit",
-                  "value": "{{limit}}",
-                  "description": "Results limit"
-                }
-              ]
-            },
-            "description": "Get appointments statistics"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Revenue Stats",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/revenue",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "revenue"],
-              "query": [
-                {
-                  "key": "date_from",
-                  "value": "{{date_from}}",
-                  "description": "Filter from date"
-                },
-                {
-                  "key": "date_to",
-                  "value": "{{date_to}}",
-                  "description": "Filter to date"
-                }
-              ]
-            },
-            "description": "Get revenue statistics"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Analytics Data",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/analytics",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "analytics"],
-              "query": [
-                {
-                  "key": "period",
-                  "value": "{{period}}",
-                  "description": "Period: 7days, 30days, 90days, 1year"
-                }
-              ]
-            },
-            "description": "Get analytics data"
-          },
-          "response": []
-        },
-        {
-          "name": "Approve Doctor",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/doctors/{{doctor_id}}/approve",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "doctors", "{{doctor_id}}", "approve"]
-            },
-            "description": "Approve doctor account"
-          },
-          "response": []
-        },
-        {
-          "name": "Reject Doctor",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/doctors/{{doctor_id}}/reject",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "doctors", "{{doctor_id}}", "reject"]
-            },
-            "description": "Reject doctor account"
-          },
-          "response": []
-        },
-        {
-          "name": "Suspend Doctor",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/doctors/{{doctor_id}}/suspend",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "doctors", "{{doctor_id}}", "suspend"]
-            },
-            "description": "Suspend doctor account"
-          },
-          "response": []
-        },
-        {
-          "name": "Activate Doctor",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/doctors/{{doctor_id}}/activate",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "doctors", "{{doctor_id}}", "activate"]
-            },
-            "description": "Activate doctor account"
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Doctor Dashboard",
-      "item": [
-        {
-          "name": "Get Dashboard Metrics",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/doctor/dashboard/metrics",
-              "host": ["{{base_url}}"],
-              "path": ["doctor", "dashboard", "metrics"]
-            },
-            "description": "Get doctor dashboard metrics"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Patients List",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/doctor/dashboard/patients",
-              "host": ["{{base_url}}"],
-              "path": ["doctor", "dashboard", "patients"],
-              "query": [
-                {
-                  "key": "search",
-                  "value": "{{search}}",
-                  "description": "Search by patient name"
-                },
-                {
-                  "key": "limit",
-                  "value": "{{limit}}",
-                  "description": "Results limit"
-                }
-              ]
-            },
-            "description": "Get doctor's patients list"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Patient Details",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/doctor/dashboard/patients/{{patient_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["doctor", "dashboard", "patients", "{{patient_id}}"]
-            },
-            "description": "Get patient details"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Patient Records",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/doctor/dashboard/patients/{{patient_id}}/records",
-              "host": ["{{base_url}}"],
-              "path": ["doctor", "dashboard", "patients", "{{patient_id}}", "records"]
-            },
-            "description": "Get patient's medical records"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Patient Prescriptions",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/doctor/dashboard/patients/{{patient_id}}/prescriptions",
-              "host": ["{{base_url}}"],
-              "path": ["doctor", "dashboard", "patients", "{{patient_id}}", "prescriptions"]
-            },
-            "description": "Get patient's prescriptions"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Today's Activity",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/doctor/dashboard/today-activity",
-              "host": ["{{base_url}}"],
-              "path": ["doctor", "dashboard", "today-activity"]
-            },
-            "description": "Get today's appointments"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Upcoming Tasks",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/doctor/dashboard/upcoming-tasks",
-              "host": ["{{base_url}}"],
-              "path": ["doctor", "dashboard", "upcoming-tasks"]
-            },
-            "description": "Get upcoming tasks"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Prescriptions",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/doctor/dashboard/prescriptions",
-              "host": ["{{base_url}}"],
-              "path": ["doctor", "dashboard", "prescriptions"],
-              "query": [
-                {
-                  "key": "patient_id",
-                  "value": "{{patient_id}}",
-                  "description": "Filter by patient"
-                },
-                {
-                  "key": "date_from",
-                  "value": "{{date_from}}",
-                  "description": "Filter from date"
-                },
-                {
-                  "key": "date_to",
-                  "value": "{{date_to}}",
-                  "description": "Filter to date"
-                }
-              ]
-            },
-            "description": "Get prescriptions"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Medical Records",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{doctor_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/doctor/dashboard/records",
-              "host": ["{{base_url}}"],
-              "path": ["doctor", "dashboard", "records"],
-              "query": [
-                {
-                  "key": "type",
-                  "value": "{{type}}",
-                  "description": "Filter by type"
-                },
-                {
-                  "key": "patient_id",
-                  "value": "{{patient_id}}",
-                  "description": "Filter by patient"
-                }
-              ]
-            },
-            "description": "Get medical records"
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "User Management (Admin)",
-      "item": [
-        {
-          "name": "Get All Users",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/users",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users"],
-              "query": [
-                {
-                  "key": "role",
-                  "value": "{{role}}",
-                  "description": "Filter by role"
-                },
-                {
-                  "key": "status",
-                  "value": "{{status}}",
-                  "description": "Filter by status"
-                },
-                {
-                  "key": "search",
-                  "value": "{{search}}",
-                  "description": "Search by name or phone"
-                }
-              ]
-            },
-            "description": "Get all users"
-          },
-          "response": []
-        },
-        {
-          "name": "Get User Details",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/users/{{user_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users", "{{user_id}}"]
-            },
-            "description": "Get user details"
-          },
-          "response": []
-        },
-        {
-          "name": "Block User",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/users/{{user_id}}/block",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users", "{{user_id}}", "block"]
-            },
-            "description": "Block user account"
-          },
-          "response": []
-        },
-        {
-          "name": "Unblock User",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/users/{{user_id}}/unblock",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users", "{{user_id}}", "unblock"]
-            },
-            "description": "Unblock user account"
-          },
-          "response": []
-        },
-        {
-          "name": "Delete User",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/users/{{user_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users", "{{user_id}}"]
-            },
-            "description": "Delete user account"
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Subscription Management (Admin)",
-      "item": [
-        {
-          "name": "Get All Plans",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/subscriptions/plans",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "subscriptions", "plans"]
-            },
-            "description": "Get all subscription plans"
-          },
-          "response": []
-        },
-        {
-          "name": "Create Plan",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Premium Plan\",\n  \"name_ar\": \"الباقة المميزة\",\n  \"description\": \"Premium features\",\n  \"description_ar\": \"مميزات الباقة المميزة\",\n  \"price\": 50000,\n  \"duration_days\": 30,\n  \"max_appointments\": 100,\n  \"features\": [\"Feature 1\", \"Feature 2\"],\n  \"is_active\": true\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/subscriptions/plans",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "subscriptions", "plans"]
-            },
-            "description": "Create subscription plan"
-          },
-          "response": []
-        },
-        {
-          "name": "Update Plan",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"price\": 60000,\n  \"is_active\": false\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/subscriptions/plans/{{plan_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "subscriptions", "plans", "{{plan_id}}"]
-            },
-            "description": "Update subscription plan"
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Plan",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/subscriptions/plans/{{plan_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "subscriptions", "plans", "{{plan_id}}"]
-            },
-            "description": "Delete subscription plan"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Subscription Stats",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/subscriptions/stats",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "subscriptions", "stats"]
-            },
-            "description": "Get subscription statistics"
-          },
-          "response": []
+            "description": "غيّر about-us لأي slug موجود"
+          }
         }
       ]
     }

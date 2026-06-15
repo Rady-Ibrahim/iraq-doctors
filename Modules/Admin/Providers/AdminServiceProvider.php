@@ -2,26 +2,18 @@
 
 namespace Modules\Admin\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
 
 class AdminServiceProvider extends ServiceProvider
 {
-    public function register()
+    public function register(): void
     {
         //
     }
 
-    public function boot()
+    public function boot(): void
     {
-        $this->registerRoutes();
-    }
-
-    protected function registerRoutes()
-    {
-        Route::middleware('api')
-            ->group(function () {
-                require base_path('Modules/Admin/Routes/admin.php');
-            });
+        // Routes are registered via routes/dashboard.php
     }
 }

@@ -107,6 +107,44 @@ class AppointmentService
             ->get();
     }
 
+    public function reschedule(string $appointmentId, int $patientId, array $data): ?Appointment
+    {
+        return DB::transaction(function () use ($appointmentId, $patientId, $data) {
+            $appointment = Appointment::where('id', $appointmentId)
+                ->where('patient_id', $patientId)
+                ->first();
+
+            if (!$appointment) {
+                return null;
+            }
+
+            // Only pending appointments can be rescheduled
+            if ($appointment->status !== 'pending') {
+                return null;
+            }
+
+            // Check new slot availability (exclude current appointment)
+            $conflict = Appointment::where('doctor_id', $appointment->doctor_id)
+                ->where('appointment_date', $data['appointment_date'])
+                ->where('appointment_time', $data['appointment_time'])
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->where('id', '!=', $appointmentId)
+                ->exists();
+
+            if ($conflict) {
+                return null;
+            }
+
+            $appointment->update([
+                'appointment_date'   => $data['appointment_date'],
+                'appointment_time'   => $data['appointment_time'],
+                'doctor_schedule_id' => $data['schedule_id'],
+            ]);
+
+            return $appointment->fresh();
+        });
+    }
+
     public function checkAvailability(string $doctorId, string $date, string $time): bool
     {
         $existing = Appointment::where('doctor_id', $doctorId)

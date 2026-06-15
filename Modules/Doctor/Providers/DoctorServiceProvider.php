@@ -2,20 +2,16 @@
 
 namespace Modules\Doctor\Providers;
 
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class DoctorServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-        //
-    }
+    public function register(): void {}
 
     public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__.'/../Routes/api.php');
-        $this->loadRoutesFrom(__DIR__.'/../Routes/doctor.php');
-        $this->loadRoutesFrom(__DIR__.'/../Routes/web.php');
+        // Routes are registered via routes/api.php and routes/dashboard.php
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 }

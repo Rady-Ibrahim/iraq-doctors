@@ -131,16 +131,21 @@ class AuthService
     {
         return DB::transaction(function () use ($user, $data) {
             $user->update([
-                'name' => $data['name'] ?? $user->name,
-                'email' => $data['email'] ?? $user->email,
-                'phone' => $data['phone'] ?? $user->phone,
+                'name'      => $data['name']     ?? $user->name,
+                'email'     => $data['email']    ?? $user->email,
+                'phone'     => $data['phone']    ?? $user->phone,
+                'birthdate' => $data['birthdate'] ?? $user->birthdate,
+                'gender'    => $data['gender']   ?? $user->gender,
+                'city'      => $data['city']     ?? $user->city,
+                'district'  => $data['district'] ?? $user->district,
+                'address'   => $data['address']  ?? $user->address,
             ]);
 
             if ($user->isDoctor()) {
                 $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $user->id)->first();
                 if ($doctor) {
                     $doctor->update([
-                        'bio_ar' => $data['bio'] ?? $doctor->bio_ar,
+                        'bio_ar'           => $data['bio']              ?? $doctor->bio_ar,
                         'experience_years' => $data['experience_years'] ?? $doctor->experience_years,
                     ]);
                 }

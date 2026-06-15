@@ -11,20 +11,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         api: __DIR__.'/../routes/api.php',
         then: function () {
-            Route::middleware(['web', 'auth:sanctum'])
+            // Dashboard API routes — use 'api' middleware (stateless JSON, no session/CSRF)
+            // Auth is handled per-group inside dashboard.php
+            Route::middleware('api')
                 ->group(base_path('routes/dashboard.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        ]);
+        // Note: EnsureFrontendRequestsAreStateful removed — this is a pure token API,
+        // not a SPA/cookie-based app. Sanctum token auth works without it.
 
         $middleware->alias([
-            'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            'doctor' => \App\Http\Middleware\DoctorMiddleware::class,
+            'role'             => \App\Http\Middleware\RoleMiddleware::class,
+            'admin'            => \App\Http\Middleware\AdminMiddleware::class,
+            'doctor'           => \App\Http\Middleware\DoctorMiddleware::class,
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
@@ -33,32 +33,22 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // Always return JSON for API and dashboard routes
         $exceptions->render(function (Throwable $e, $request) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || $request->is('api/*') || $request->is('*/dashboard/*') || $request->is('admin/*') || $request->is('doctor/*')) {
                 $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
-                
+
                 return response()->json([
                     'success' => false,
                     'error' => [
-                        'code' => class_basename($e),
-                        'message' => config('app.debug') ? $e->getMessage() : 'حدث خطأ في الخادم',
+                        'code'    => class_basename($e),
+                        'message' => config('app.debug')
+                            ? $e->getMessage()
+                            : 'حدث خطأ في الخادم',
                     ],
                 ], $statusCode);
             }
 
             return null;
-        });
-
-        $exceptions->report(function (Throwable $e) {
-            if (app()->environment('production')) {
-                \Log::error('Exception occurred', [
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString(),
-                    'url' => request()->fullUrl(),
-                    'user_id' => auth('sanctum')->id(),
-                ]);
-            }
         });
     })->create();

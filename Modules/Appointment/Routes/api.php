@@ -10,4 +10,5 @@ Route::middleware('auth:sanctum')->prefix('appointments')->group(function () {
     Route::post('/{id}/cancel', [AppointmentController::class, 'cancel']);
     Route::post('/{id}/confirm', [AppointmentController::class, 'confirm']);
     Route::post('/{id}/complete', [AppointmentController::class, 'complete']);
+    Route::put('/{id}/reschedule', [AppointmentController::class, 'reschedule']);
 });

@@ -5,6 +5,7 @@ namespace Modules\Appointment\Http\Controllers\Api;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Modules\Appointment\Http\Requests\Api\BookAppointmentRequest;
+use Modules\Appointment\Http\Requests\Api\RescheduleAppointmentRequest;
 use Modules\Appointment\Services\Api\AppointmentService;
 use App\Traits\ApiResponse;
 
@@ -184,5 +185,31 @@ class AppointmentController extends Controller
         }
 
         return $this->success(null, 'تم إكمال الموعد بنجاح');
+    }
+
+    public function reschedule(string $id, RescheduleAppointmentRequest $request): JsonResponse
+    {
+        $user = auth('sanctum')->user();
+
+        if (!$user->isPatient()) {
+            return $this->forbidden('فقط المرضى يمكنهم تعديل المواعيد', 'NOT_PATIENT');
+        }
+
+        $appointment = $this->appointmentService->reschedule($id, $user->id, $request->validated());
+
+        if (!$appointment) {
+            return $this->error(
+                'فشل تعديل الموعد. تأكد أن الموعد قيد الانتظار والوقت الجديد متاح',
+                'RESCHEDULE_FAILED',
+                400
+            );
+        }
+
+        return $this->success([
+            'id'               => $appointment->id,
+            'appointment_date' => $appointment->appointment_date,
+            'appointment_time' => $appointment->appointment_time,
+            'status'           => $appointment->status,
+        ], 'تم تعديل الموعد بنجاح');
     }
 }

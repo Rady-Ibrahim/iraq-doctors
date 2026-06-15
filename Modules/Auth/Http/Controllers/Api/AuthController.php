@@ -14,9 +14,11 @@ use Modules\Auth\Http\Requests\Api\UpdatePasswordRequest;
 use Modules\Auth\Http\Requests\Api\ForgotPasswordRequest;
 use Modules\Auth\Http\Requests\Api\ResetPasswordRequest;
 use Modules\Auth\Http\Requests\Api\CreateGhostPatientRequest;
+use Modules\Auth\Http\Requests\Api\UploadAvatarRequest;
 use Modules\Auth\Services\Api\AuthService;
 use Modules\Auth\Models\User;
 use App\Traits\ApiResponse;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -119,12 +121,18 @@ class AuthController extends Controller
         }
 
         $data = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'phone' => $user->phone,
-            'email' => $user->email,
-            'role' => $user->role,
-            'status' => $user->status,
+            'id'        => $user->id,
+            'name'      => $user->name,
+            'avatar'    => $user->avatar ? asset('storage/' . $user->avatar) : null,
+            'phone'     => $user->phone,
+            'email'     => $user->email,
+            'role'      => $user->role,
+            'status'    => $user->status,
+            'birthdate' => $user->birthdate,
+            'gender'    => $user->gender,
+            'city'      => $user->city,
+            'district'  => $user->district,
+            'address'   => $user->address,
         ];
 
         if ($user->isDoctor()) {
@@ -146,11 +154,17 @@ class AuthController extends Controller
         $updatedUser = $this->authService->updateProfile($user, $request->validated());
 
         $response = [
-            'id' => $updatedUser->id,
-            'name' => $updatedUser->name,
-            'phone' => $updatedUser->phone,
-            'email' => $updatedUser->email,
-            'role' => $updatedUser->role,
+            'id'        => $updatedUser->id,
+            'name'      => $updatedUser->name,
+            'avatar'    => $updatedUser->avatar ? asset('storage/' . $updatedUser->avatar) : null,
+            'phone'     => $updatedUser->phone,
+            'email'     => $updatedUser->email,
+            'role'      => $updatedUser->role,
+            'birthdate' => $updatedUser->birthdate,
+            'gender'    => $updatedUser->gender,
+            'city'      => $updatedUser->city,
+            'district'  => $updatedUser->district,
+            'address'   => $updatedUser->address,
         ];
 
         if ($updatedUser->isDoctor()) {
@@ -162,6 +176,28 @@ class AuthController extends Controller
         }
 
         return $this->success($response, 'تم تحديث البيانات الشخصية بنجاح');
+    }
+
+    public function uploadAvatar(UploadAvatarRequest $request): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = auth('sanctum')->user();
+
+        if (!$user) {
+            return $this->error('المستخدم غير موجود', 'USER_NOT_FOUND', 404);
+        }
+
+        // Delete old avatar
+        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $user->update(['avatar' => $path]);
+
+        return $this->success([
+            'avatar' => asset('storage/' . $path),
+        ], 'تم تحديث الصورة الشخصية بنجاح');
     }
 
     public function updatePassword(UpdatePasswordRequest $request): JsonResponse

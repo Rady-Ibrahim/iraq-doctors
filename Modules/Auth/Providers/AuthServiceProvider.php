@@ -2,6 +2,7 @@
 
 namespace Modules\Auth\Providers;
 
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -15,9 +16,7 @@ class AuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__.'/../Routes/api.php');
-        $this->loadRoutesFrom(__DIR__.'/../Routes/admin.php');
-        $this->loadRoutesFrom(__DIR__.'/../Routes/web.php');
+        // Routes are registered via routes/api.php and routes/dashboard.php
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 }

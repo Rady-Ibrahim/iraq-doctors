@@ -2,122 +2,51 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Public Home
-Route::get('/', function () {
-    return view('admin.login');
-});
+/*
+|--------------------------------------------------------------------------
+| Web Routes — Blade views only (no API logic here)
+|--------------------------------------------------------------------------
+| These routes serve HTML pages. Auth checking is done on the frontend
+| via JS — the actual API auth is Sanctum token-based via /admin/auth/me
+| and /doctor/dashboard/* routes.
+|
+| No 'auth' middleware here to avoid "Route [login] not defined" error.
+*/
 
-// Admin Dashboard Routes
+// ── Public ────────────────────────────────────────────────────────────────
+Route::get('/', fn() => view('admin.login'));
+
+// ── Admin SPA pages (served publicly — JS handles auth redirect) ──────────
 Route::prefix('admin')->group(function () {
-    Route::get('/login', function () {
-        return view('admin.login');
-    })->name('admin.login');
-
-    Route::middleware('auth')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard');
-        })->name('admin.dashboard');
-
-        // Doctors Management
-        Route::get('/dashboard/doctors', function () {
-            return view('admin.doctors.index');
-        })->name('admin.doctors.index');
-        Route::get('/dashboard/doctors/{id}', function () {
-            return view('admin.doctors.show');
-        })->name('admin.doctors.show');
-
-        // Patients Management
-        Route::get('/dashboard/patients', function () {
-            return view('admin.patients.index');
-        })->name('admin.patients.index');
-        Route::get('/dashboard/patients/{id}', function () {
-            return view('admin.patients.show');
-        })->name('admin.patients.show');
-
-        // Appointments Management
-        Route::get('/dashboard/appointments', function () {
-            return view('admin.appointments.index');
-        })->name('admin.appointments.index');
-        Route::get('/dashboard/appointments/{id}', function () {
-            return view('admin.appointments.show');
-        })->name('admin.appointments.show');
-
-        // Users Management
-        Route::get('/users', function () {
-            return view('admin.users.index');
-        })->name('admin.users.index');
-        Route::get('/users/{id}', function () {
-            return view('admin.users.show');
-        })->name('admin.users.show');
-
-        // Revenue & Analytics
-        Route::get('/dashboard/revenue', function () {
-            return view('admin.revenue');
-        })->name('admin.revenue');
-        Route::get('/dashboard/analytics', function () {
-            return view('admin.analytics');
-        })->name('admin.analytics');
-    });
+    Route::get('/login',                   fn() => view('admin.login'))->name('admin.login');
+    Route::get('/dashboard',               fn() => view('admin.dashboard'));
+    Route::get('/dashboard/doctors',       fn() => view('admin.doctors.index'));
+    Route::get('/dashboard/doctors/{id}',  fn() => view('admin.doctors.show'));
+    Route::get('/dashboard/patients',      fn() => view('admin.patients.index'));
+    Route::get('/dashboard/patients/{id}', fn() => view('admin.patients.show'));
+    Route::get('/dashboard/appointments',      fn() => view('admin.appointments.index'));
+    Route::get('/dashboard/appointments/{id}', fn() => view('admin.appointments.show'));
+    Route::get('/users',      fn() => view('admin.users.index'));
+    Route::get('/users/{id}', fn() => view('admin.users.show'));
+    Route::get('/dashboard/revenue',   fn() => view('admin.revenue'));
+    Route::get('/dashboard/analytics', fn() => view('admin.analytics'));
 });
 
-// Doctor Dashboard Routes
+// ── Doctor SPA pages (served publicly — JS handles auth redirect) ─────────
 Route::prefix('doctor')->group(function () {
-    Route::get('/login', function () {
-        return view('doctor.login');
-    })->name('doctor.login');
-
-    Route::middleware('auth')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('doctor.dashboard');
-        })->name('doctor.dashboard');
-
-        // Calendar
-        Route::get('/dashboard/calendar', function () {
-            return view('doctor.calendar');
-        })->name('doctor.calendar');
-
-        // Settings
-        Route::get('/dashboard/settings', function () {
-            return view('doctor.settings');
-        })->name('doctor.settings');
-
-        // Patients Management
-        Route::get('/dashboard/patients', function () {
-            return view('doctor.patients.index');
-        })->name('doctor.patients.index');
-        Route::get('/dashboard/patients/{id}', function () {
-            return view('doctor.patients.show');
-        })->name('doctor.patients.show');
-        Route::get('/dashboard/patients/{id}/records', function () {
-            return view('doctor.patients.records');
-        })->name('doctor.patients.records');
-
-        // Prescriptions Management
-        Route::get('/dashboard/prescriptions', function () {
-            return view('doctor.prescriptions.index');
-        })->name('doctor.prescriptions.index');
-        Route::get('/dashboard/prescriptions/create', function () {
-            return view('doctor.prescriptions.create');
-        })->name('doctor.prescriptions.create');
-        Route::get('/dashboard/prescriptions/{id}', function () {
-            return view('doctor.prescriptions.show');
-        })->name('doctor.prescriptions.show');
-        Route::get('/dashboard/prescriptions/{id}/edit', function () {
-            return view('doctor.prescriptions.edit');
-        })->name('doctor.prescriptions.edit');
-
-        // Records Management
-        Route::get('/dashboard/records', function () {
-            return view('doctor.records.index');
-        })->name('doctor.records.index');
-        Route::get('/dashboard/records/create', function () {
-            return view('doctor.records.create');
-        })->name('doctor.records.create');
-        Route::get('/dashboard/records/{id}', function () {
-            return view('doctor.records.show');
-        })->name('doctor.records.show');
-        Route::get('/dashboard/records/{id}/edit', function () {
-            return view('doctor.records.edit');
-        })->name('doctor.records.edit');
-    });
+    Route::get('/login',     fn() => view('doctor.login'))->name('doctor.login');
+    Route::get('/dashboard', fn() => view('doctor.dashboard'));
+    Route::get('/dashboard/calendar',  fn() => view('doctor.calendar'));
+    Route::get('/dashboard/settings',  fn() => view('doctor.settings'));
+    Route::get('/dashboard/patients',       fn() => view('doctor.patients.index'));
+    Route::get('/dashboard/patients/{id}',          fn() => view('doctor.patients.show'));
+    Route::get('/dashboard/patients/{id}/records',  fn() => view('doctor.patients.records'));
+    Route::get('/dashboard/prescriptions',           fn() => view('doctor.prescriptions.index'));
+    Route::get('/dashboard/prescriptions/create',    fn() => view('doctor.prescriptions.create'));
+    Route::get('/dashboard/prescriptions/{id}',      fn() => view('doctor.prescriptions.show'));
+    Route::get('/dashboard/prescriptions/{id}/edit', fn() => view('doctor.prescriptions.edit'));
+    Route::get('/dashboard/records',           fn() => view('doctor.records.index'));
+    Route::get('/dashboard/records/create',    fn() => view('doctor.records.create'));
+    Route::get('/dashboard/records/{id}',      fn() => view('doctor.records.show'));
+    Route::get('/dashboard/records/{id}/edit', fn() => view('doctor.records.edit'));
 });

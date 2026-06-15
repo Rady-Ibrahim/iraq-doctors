@@ -2,32 +2,16 @@
 
 namespace Modules\Subscription\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
 
 class SubscriptionServiceProvider extends ServiceProvider
 {
-    public function register()
-    {
-        //
-    }
+    public function register(): void {}
 
-    public function boot()
+    public function boot(): void
     {
-        $this->registerRoutes();
-        $this->registerMigrations();
-    }
-
-    protected function registerRoutes()
-    {
-        Route::middleware('api')
-            ->group(function () {
-                require base_path('Modules/Subscription/Routes/api.php');
-            });
-    }
-
-    protected function registerMigrations()
-    {
+        // Routes are registered via routes/api.php and routes/dashboard.php
         $this->loadMigrationsFrom(
             base_path('Modules/Subscription/database/migrations')
         );
