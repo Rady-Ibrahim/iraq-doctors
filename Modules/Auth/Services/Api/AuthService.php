@@ -6,6 +6,7 @@ use Modules\Auth\Models\User;
 use Modules\Auth\Models\Otp;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class AuthService
@@ -26,9 +27,14 @@ class AuthService
         });
     }
 
-    public function login(string $phone, string $password): ?User
+    /**
+     * Login with phone or email + password.
+     */
+    public function login(string $identifier, string $password): ?User
     {
-        $user = User::where('phone', $phone)->first();
+        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+        $user = User::where($field, $identifier)->first();
 
         if (!$user || !Hash::check($password, $user->password)) {
             return null;
@@ -41,39 +47,64 @@ class AuthService
         return $user;
     }
 
-    public function sendOtp(string $phone, string $type = 'login'): Otp
+    /**
+     * Send OTP via email (if provided) or SMS.
+     */
+    public function sendOtp(?string $phone, string $type = 'login', ?string $email = null): Otp
     {
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        Otp::where('phone', $phone)->where('type', $type)->delete();
+        if ($email) {
+            Otp::where('email', $email)->where('type', $type)->delete();
+        } else {
+            Otp::where('phone', $phone)->where('type', $type)->delete();
+        }
 
         $otp = Otp::create([
-            'phone' => $phone,
-            'code' => $code,
-            'type' => $type,
-            'attempts' => 0,
+            'phone'      => $phone,
+            'email'      => $email,
+            'code'       => $code,
+            'type'       => $type,
+            'attempts'   => 0,
             'expires_at' => now()->addMinutes(10),
         ]);
+
+        if ($email) {
+            $this->sendOtpByEmail($email, $code, $type);
+        }
 
         return $otp;
     }
 
-    public function verifyOtp(string $phone, string $code, string $type = 'login'): ?Otp
+    protected function sendOtpByEmail(string $email, string $code, string $type): void
     {
-        $otp = Otp::where('phone', $phone)
-            ->where('type', $type)
-            ->latest()
-            ->first();
+        $subject = match($type) {
+            'password_reset' => 'كود إعادة تعيين كلمة المرور',
+            'register'       => 'كود تفعيل الحساب',
+            default          => 'كود التحقق',
+        };
 
-        if (!$otp) {
-            return null;
+        Mail::raw(
+            "كود التحقق الخاص بك هو: {$code}\nصالح لمدة 10 دقائق.",
+            function ($message) use ($email, $subject) {
+                $message->to($email)->subject($subject);
+            }
+        );
+    }
+
+    public function verifyOtp(?string $phone, string $code, string $type = 'login', ?string $email = null): ?Otp
+    {
+        $query = Otp::where('type', $type)->where('code', $code)->latest();
+
+        if ($email) {
+            $query->where('email', $email);
+        } else {
+            $query->where('phone', $phone);
         }
 
-        if ($otp->isExpired()) {
-            return null;
-        }
+        $otp = $query->first();
 
-        if ($otp->isMaxAttemptsExceeded()) {
+        if (!$otp || $otp->isExpired() || $otp->isMaxAttemptsExceeded()) {
             return null;
         }
 

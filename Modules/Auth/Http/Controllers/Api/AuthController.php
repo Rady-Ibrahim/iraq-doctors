@@ -51,11 +51,20 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = $this->authService->login($request->phone, $request->password);
+            $identifier = $request->email ?: $request->phone;
 
-        if (!$user) {
-            return $this->error('بيانات الدخول غير صحيحة', 'AUTH_INVALID_CREDENTIALS', 401);
-        }
+            $user = $this->authService->login(
+                $identifier,
+                $request->password
+            );
+
+            if (!$user) {
+                return $this->error(
+                    'بيانات الدخول غير صحيحة',
+                    'AUTH_INVALID_CREDENTIALS',
+                    401
+                );
+            }
 
         $token = $this->authService->createToken($user);
 

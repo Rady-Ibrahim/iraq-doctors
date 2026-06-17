@@ -13,6 +13,7 @@ class Otp extends Model
 
     protected $fillable = [
         'phone',
+        'email',
         'code',
         'type',
         'attempts',
@@ -31,5 +32,11 @@ class Otp extends Model
     public function isMaxAttemptsExceeded(): bool
     {
         return $this->attempts >= 3;
+    }
+
+    /** Identifier used for lookup — email takes priority over phone */
+    public function getIdentifier(): string
+    {
+        return $this->email ?? $this->phone;
     }
 }
