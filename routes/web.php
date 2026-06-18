@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Admin\Http\Controllers\Api\AdminDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,23 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // ── Public ────────────────────────────────────────────────────────────────
-Route::get('/', fn() => view('admin.login'));
 
-// ── Admin SPA pages (served publicly — JS handles auth redirect) ──────────
-Route::prefix('admin')->group(function () {
-    Route::get('/login',                   fn() => view('admin.login'))->name('admin.login');
-    Route::get('/dashboard',               fn() => view('admin.dashboard'));
-    Route::get('/dashboard/doctors',       fn() => view('admin.doctors.index'));
-    Route::get('/dashboard/doctors/{id}',  fn() => view('admin.doctors.show'));
-    Route::get('/dashboard/patients',      fn() => view('admin.patients.index'));
-    Route::get('/dashboard/patients/{id}', fn() => view('admin.patients.show'));
-    Route::get('/dashboard/appointments',      fn() => view('admin.appointments.index'));
-    Route::get('/dashboard/appointments/{id}', fn() => view('admin.appointments.show'));
-    Route::get('/users',      fn() => view('admin.users.index'));
-    Route::get('/users/{id}', fn() => view('admin.users.show'));
-    Route::get('/dashboard/revenue',   fn() => view('admin.revenue'));
-    Route::get('/dashboard/analytics', fn() => view('admin.analytics'));
-});
 
 // ── Doctor SPA pages (served publicly — JS handles auth redirect) ─────────
 Route::prefix('doctor')->group(function () {

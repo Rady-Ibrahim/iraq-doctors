@@ -14,6 +14,6 @@ class AdminServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Routes are registered via routes/dashboard.php
+        $this->loadRoutesFrom(base_path('Modules/Admin/Routes/admin.php'));
     }
 }

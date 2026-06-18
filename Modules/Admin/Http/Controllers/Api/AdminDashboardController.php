@@ -3,15 +3,11 @@
 namespace Modules\Admin\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Modules\Admin\Services\AdminDashboardService;
-use App\Traits\ApiResponse;
 
 class AdminDashboardController extends Controller
 {
-    use ApiResponse;
-
     protected $adminDashboardService;
 
     public function __construct(AdminDashboardService $adminDashboardService)
@@ -20,137 +16,127 @@ class AdminDashboardController extends Controller
     }
 
     /**
-     * Get system-wide metrics
+     * Get system-wide metrics and display dashboard
      */
-    public function metrics(): JsonResponse
+    public function metrics()
     {
         try {
             $metrics = $this->adminDashboardService->getSystemMetrics();
-            return $this->success($metrics, 'تم جلب المقاييس بنجاح');
+            return view('admin.dashboard', compact('metrics'));
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء جلب المقاييس');
+            abort(500, 'حدث خطأ أثناء جلب المقاييس');
         }
     }
 
     /**
-     * Get doctors statistics
+     * Get doctors statistics and display table
      */
-    public function doctorsStats(Request $request): JsonResponse
+    public function doctorsStats(Request $request)
     {
         try {
             $filters = $request->only(['status', 'speciality_id', 'search']);
             $doctors = $this->adminDashboardService->getDoctorsStats($filters);
-            return $this->success($doctors, 'تم جلب إحصائيات الأطباء بنجاح');
+            return view('admin.doctors.index', compact('doctors', 'filters'));
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء جلب إحصائيات الأطباء');
+            abort(500, 'حدث خطأ أثناء جلب إحصائيات الأطباء');
         }
     }
 
     /**
      * Get patients statistics
      */
-    public function patientsStats(Request $request): JsonResponse
+    public function patientsStats(Request $request)
     {
         try {
             $filters = $request->only(['status', 'is_ghost', 'search']);
             $patients = $this->adminDashboardService->getPatientsStats($filters);
-            return $this->success($patients, 'تم جلب إحصائيات المرضى بنجاح');
+            return view('admin.patients.index', compact('patients', 'filters'));
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء جلب إحصائيات المرضى');
+            abort(500, 'حدث خطأ أثناء جلب إحصائيات المرضى');
         }
     }
 
     /**
      * Get appointments statistics
      */
-    public function appointmentsStats(Request $request): JsonResponse
+    public function appointmentsStats(Request $request)
     {
         try {
             $filters = $request->only(['status', 'date_from', 'date_to']);
             $appointments = $this->adminDashboardService->getAppointmentsStats($filters);
-            return $this->success($appointments, 'تم جلب إحصائيات المواعيد بنجاح');
+            return view('admin.appointments.index', compact('appointments', 'filters'));
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء جلب إحصائيات المواعيد');
+            abort(500, 'حدث خطأ أثناء جلب إحصائيات Mواعيد');
         }
     }
 
     /**
      * Get revenue statistics
      */
-    public function revenueStats(Request $request): JsonResponse
+    public function revenueStats(Request $request)
     {
         try {
             $filters = $request->only(['date_from', 'date_to', 'status']);
             $revenue = $this->adminDashboardService->getRevenueStats($filters);
-            return $this->success($revenue, 'تم جلب إحصائيات الإيرادات بنجاح');
+            return view('admin.revenue', compact('revenue', 'filters'));
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء جلب إحصائيات الإيرادات');
+            abort(500, 'حدث خطأ أثناء جلب إحصائيات الإيرادات');
         }
     }
 
     /**
      * Get analytics data for charts
      */
-    public function analytics(Request $request): JsonResponse
+    public function analytics(Request $request)
     {
         try {
             $period = $request->get('period', '30days');
             $analytics = $this->adminDashboardService->getAnalyticsData($period);
-            return $this->success($analytics, 'تم جلب البيانات التحليلية بنجاح');
+            return view('admin.analytics', compact('analytics', 'period'));
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء جلب البيانات التحليلية');
+            abort(500, 'حدث خطأ أثناء جلب البيانات التحليلية');
         }
     }
 
-    /**
-     * Approve doctor
-     */
-    public function approveDoctor($id): JsonResponse
+    /* ── Actions (إجراءات الأطباء مع عمل توجيه للخلف بالـ Sessions لرسائل النجاح) ── */
+
+    public function approveDoctor($id)
     {
         try {
-            $doctor = $this->adminDashboardService->approveDoctor($id);
-            return $this->success($doctor, 'تم تفعيل حساب الطبيب بنجاح');
+            $this->adminDashboardService->approveDoctor($id);
+            return redirect()->back()->with('success', 'تم تفعيل حساب الطبيب بنجاح');
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء تفعيل حساب الطبيب');
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تفعيل حساب الطبيب');
         }
     }
 
-    /**
-     * Reject doctor
-     */
-    public function rejectDoctor($id): JsonResponse
+    public function rejectDoctor($id)
     {
         try {
-            $doctor = $this->adminDashboardService->rejectDoctor($id);
-            return $this->success($doctor, 'تم رفض حساب الطبيب بنجاح');
+            $this->adminDashboardService->rejectDoctor($id);
+            return redirect()->back()->with('success', 'تم رفض حساب الطبيب بنجاح');
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء رفض حساب الطبيب');
+            return redirect()->back()->with('error', 'حدث خطأ أثناء رفض حساب الطبيب');
         }
     }
 
-    /**
-     * Suspend doctor
-     */
-    public function suspendDoctor($id): JsonResponse
+    public function suspendDoctor($id)
     {
         try {
-            $doctor = $this->adminDashboardService->suspendDoctor($id);
-            return $this->success($doctor, 'تم تعليق حساب الطبيب بنجاح');
+            $this->adminDashboardService->suspendDoctor($id);
+            return redirect()->back()->with('success', 'تم تعليق حساب الطبيب بنجاح');
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء تعليق حساب الطبيب');
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تعليق حساب الطبيب');
         }
     }
 
-    /**
-     * Activate doctor
-     */
-    public function activateDoctor($id): JsonResponse
+    public function activateDoctor($id)
     {
         try {
-            $doctor = $this->adminDashboardService->activateDoctor($id);
-            return $this->success($doctor, 'تم تفعيل حساب الطبيب بنجاح');
+            $this->adminDashboardService->activateDoctor($id);
+            return redirect()->back()->with('success', 'تم تفعيل حساب الطبيب بنجاح');
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء تفعيل حساب الطبيب');
+            return redirect()->back()->with('error', 'حدث خطأ أثناء تفعيل حساب الطبيب');
         }
     }
 }

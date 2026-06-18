@@ -10,12 +10,7 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         api: __DIR__.'/../routes/api.php',
-        then: function () {
-            // Dashboard API routes — use 'api' middleware (stateless JSON, no session/CSRF)
-            // Auth is handled per-group inside dashboard.php
-            Route::middleware('api')
-                ->group(base_path('routes/dashboard.php'));
-        },
+
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Note: EnsureFrontendRequestsAreStateful removed — this is a pure token API,

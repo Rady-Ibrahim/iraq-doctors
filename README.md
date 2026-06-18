@@ -16,9 +16,9 @@
 ```
 أطباء العراق
 ├── apps/
-│   ├── mobile/          → React Native (Patient App)
-│   ├── doctor-web/      → Next.js (Doctor Dashboard)
-│   └── admin-web/       → Next.js (Admin Dashboard)
+│   ├── mobile/          
+│   ├── doctor-web/     
+│   └── admin-web/       
 ├── services/
 │   ├── auth-service/
 │   ├── doctor-service/
