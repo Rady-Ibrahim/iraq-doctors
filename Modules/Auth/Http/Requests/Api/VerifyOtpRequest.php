@@ -14,8 +14,7 @@ class VerifyOtpRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'phone' => 'required|string|regex:/^[0-9]{10,15}$/',
-            'code' => 'required|string|size:6|regex:/^[0-9]{6}$/',
+            'code'  => ['required', 'digits:6'],
             'type' => 'required|in:register,login,reset_password',
         ];
     }

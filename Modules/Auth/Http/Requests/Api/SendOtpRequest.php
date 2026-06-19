@@ -14,7 +14,6 @@ class SendOtpRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'phone' => 'nullable|string|regex:/^[0-9]{10,15}$/',
             'email' => 'nullable|email',
             'type'  => 'required|in:register,login,password_reset',
         ];

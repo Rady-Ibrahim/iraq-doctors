@@ -61,7 +61,6 @@ class AuthService
         }
 
         $otp = Otp::create([
-            'phone'      => $phone,
             'email'      => $email,
             'code'       => $code,
             'type'       => $type,
@@ -85,7 +84,7 @@ class AuthService
         };
 
         Mail::raw(
-            "كود التحقق الخاص بك هو: {$code}\nصالح لمدة 10 دقائق.",
+            "كود التحقق الخاص بك هو: {$code}",
             function ($message) use ($email, $subject) {
                 $message->to($email)->subject($subject);
             }
@@ -94,7 +93,7 @@ class AuthService
 
     public function verifyOtp(?string $phone, string $code, string $type = 'login', ?string $email = null): ?Otp
     {
-        $query = Otp::where('type', $type)->where('code', $code)->latest();
+        $query = Otp::where('type', $type)->latest();
 
         if ($email) {
             $query->where('email', $email);

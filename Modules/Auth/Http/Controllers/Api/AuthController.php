@@ -83,28 +83,48 @@ class AuthController extends Controller
     public function sendOtp(SendOtpRequest $request): JsonResponse
     {
         try {
-            $this->authService->sendOtp($request->phone, $request->type);
-
+            $this->authService->sendOtp(
+                null,
+                $request->type,
+                $request->email
+            );
+    
             return $this->success([
-                'phone' => $request->phone,
+                'email' => $request->email,
                 'type' => $request->type,
             ], 'تم إرسال الكود بنجاح');
+    
         } catch (\Exception $e) {
-            return $this->serverError('فشل إرسال الكود');
+            return $this->serverError($e->getMessage());
         }
     }
 
     public function verifyOtp(VerifyOtpRequest $request): JsonResponse
     {
-        $otp = $this->authService->verifyOtp($request->phone, $request->code, $request->type);
-
+        $otp = $this->authService->verifyOtp(
+            null,
+            $request->code,
+            $request->type,
+            $request->email
+        );
+        
         if (!$otp) {
-            return $this->error('الكود غير صحيح أو منتهي الصلاحية', 'OTP_INVALID', 401);
+            return $this->error(
+                'الكود غير صحيح أو منتهي الصلاحية',
+                'OTP_INVALID',
+                401
+            );
         }
-
+        
+        $user = User::where('email', $request->email)->first();
+        
+        if ($user) {
+            $user->update([
+                'email_verified_at' => now(),
+            ]);
+        }
+        
         return $this->success([
-            'phone' => $request->phone,
-            'type' => $request->type,
             'verified' => true,
         ], 'تم التحقق بنجاح');
     }
