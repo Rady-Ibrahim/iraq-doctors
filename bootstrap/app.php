@@ -3,6 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -10,40 +12,46 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         api: __DIR__.'/../routes/api.php',
-
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Note: EnsureFrontendRequestsAreStateful removed — this is a pure token API,
-        // not a SPA/cookie-based app. Sanctum token auth works without it.
-
+        // تسجيل الـ Middleware الـ Aliases الخاصة بالسيستم
         $middleware->alias([
-            'role'             => \App\Http\Middleware\RoleMiddleware::class,
             'admin'            => \App\Http\Middleware\AdminMiddleware::class,
             'doctor'           => \App\Http\Middleware\DoctorMiddleware::class,
+            'role'             => \App\Http\Middleware\RoleMiddleware::class, // 🌟 تم إضافة الرول ميدل وير هنا
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
+        // تطبيق حماية الـ Security Headers على كل مسارات الـ API أوتوماتيك
         $middleware->api(append: [
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Always return JSON for API and dashboard routes
-        $exceptions->render(function (Throwable $e, $request) {
-            if ($request->expectsJson() || $request->is('api/*') || $request->is('*/dashboard/*') || $request->is('admin/*') || $request->is('doctor/*')) {
-                $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+        
+        // 🎯 الفصل الذكي والمستقر في معالجة الأخطاء
+        $exceptions->render(function (Throwable $e, Request $request) {
+            
+            // 1️⃣ لو الطلب جاي من الـ API (بوست مان / الموبايل) -> رجع JSON دايماً بنظافة
+            if ($request->expectsJson() || $request->is('api/*')) {
+                $statusCode = 500;
+                
+                if (method_exists($e, 'getStatusCode')) {
+                    $statusCode = $e->getStatusCode();
+                } elseif ($e instanceof AuthenticationException) {
+                    $statusCode = 401;
+                }
 
                 return response()->json([
                     'success' => false,
                     'error' => [
                         'code'    => class_basename($e),
-                        'message' => config('app.debug')
-                            ? $e->getMessage()
-                            : 'حدث خطأ في الخادم',
+                        'message' => config('app.debug') ? $e->getMessage() : 'حدث خطأ في الخادممم',
                     ],
                 ], $statusCode);
             }
 
+            // 2️⃣ لو طلب ويب عادي (المتصفح) -> اترك لارافيل يكمل الـ Redirects وصفحات الـ HTML العادية
             return null;
         });
     })->create();

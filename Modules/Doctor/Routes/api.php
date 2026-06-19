@@ -6,7 +6,7 @@ use Modules\Doctor\Http\Controllers\Api\DoctorBranchController;
 
 Route::prefix('doctors')->group(function () {
     // Public routes
-    Route::get('/', [DoctorController::class, 'index']);
+    Route::get('/fff', [DoctorController::class, 'index']);
     Route::get('/specialities', [DoctorController::class, 'specialities']);
 
     Route::middleware('auth:sanctum')->group(function () {

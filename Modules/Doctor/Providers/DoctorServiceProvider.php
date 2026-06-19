@@ -13,5 +13,7 @@ class DoctorServiceProvider extends ServiceProvider
     {
         // Routes are registered via routes/api.php and routes/dashboard.php
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadRoutesFrom(base_path('Modules/doctor/Routes/doctor.php'));
+
     }
 }
