@@ -141,7 +141,7 @@ async function loadPatientDetails() {
     try {
         showLoading();
         
-        const data = await apiCall(`/doctor/dashboard/patients/${patientId}`);
+        const data = await apiCall(`/doctor/api/patients/${patientId}`);
         
         if (data.success) {
             renderPatientDetails(data.data);

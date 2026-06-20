@@ -161,7 +161,7 @@ async function loadAnalyticsData() {
             type,
         });
 
-        const data = await apiCall(`/admin/dashboard/analytics?${params}`);
+        const data = await apiCall(`/admin/api/analytics?${params}`);
         
         if (data.success) {
             renderAnalyticsData(data.data);

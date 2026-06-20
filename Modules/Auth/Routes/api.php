@@ -16,7 +16,6 @@ Route::prefix('auth')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::put('profile', [AuthController::class, 'updateProfile']);
         Route::put('password', [AuthController::class, 'updatePassword']);
-        Route::post('ghost-patient', [AuthController::class, 'createGhostPatient']);
         Route::post('avatar', [AuthController::class, 'uploadAvatar']);
     });
 });

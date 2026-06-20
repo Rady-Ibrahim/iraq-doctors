@@ -104,7 +104,7 @@ async function loadRecords(page = 1) {
             ...currentFilters
         });
 
-        const data = await apiCall(`/doctor/dashboard/records?${params}`);
+        const data = await apiCall(`/doctor/api/records?${params}`);
         
         if (data.success) {
             renderRecordsTable(data.data);
@@ -220,7 +220,7 @@ async function deleteRecord(recordId) {
     if (!confirm('هل أنت متأكد من حذف هذا السجل؟')) return;
 
     try {
-        const data = await apiCall(`/doctor/dashboard/records/${recordId}`, {
+        const data = await apiCall(`/doctor/api/records/${recordId}`, {
             method: 'DELETE'
         });
 

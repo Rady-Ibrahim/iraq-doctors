@@ -109,7 +109,7 @@ window.addEventListener('load', async function() {
 
 async function loadPatients() {
     try {
-        const data = await apiCall('/doctor/dashboard/patients?limit=100');
+        const data = await apiCall('/doctor/api/patients?limit=100');
         
         if (data.success) {
             const select = document.getElementById('patientId');
@@ -134,7 +134,7 @@ async function loadPatients() {
 
 async function loadRecentPrescriptions() {
     try {
-        const data = await apiCall('/doctor/dashboard/prescriptions?limit=5');
+        const data = await apiCall('/doctor/api/prescriptions?limit=5');
         
         if (data.success) {
             renderRecentPrescriptions(data.data);
@@ -238,7 +238,7 @@ async function createPrescription(event) {
             return;
         }
 
-        const data = await apiCall('/doctor/dashboard/prescriptions', {
+        const data = await apiCall('/doctor/api/prescriptions', {
             method: 'POST',
             body: JSON.stringify({
                 patient_id: document.getElementById('patientId').value,

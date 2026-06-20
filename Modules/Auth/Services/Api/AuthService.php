@@ -4,6 +4,7 @@ namespace Modules\Auth\Services\Api;
 
 use Modules\Auth\Models\User;
 use Modules\Auth\Models\Otp;
+use Modules\Doctor\Models\Doctor;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -32,18 +33,24 @@ class AuthService
      */
     public function login(string $identifier, string $password): ?User
     {
-        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
-
+        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL)
+            ? 'email'
+            : 'phone';
+    
         $user = User::where($field, $identifier)->first();
-
-        if (!$user || !Hash::check($password, $user->password)) {
+    
+        if (!$user) {
             return null;
         }
-
+    
+        if (!Hash::check($password, $user->password)) {
+            return null;
+        }
+    
         if (!$user->isActive()) {
             return null;
         }
-
+    
         return $user;
     }
 
@@ -245,24 +252,6 @@ class AuthService
         ];
     }
 
-    public function createGhostPatient(User $doctorUser, array $data): User
-    {
-        return DB::transaction(function () use ($doctorUser, $data) {
-            $patient = User::create([
-                'name' => $data['name'],
-                'phone' => $data['phone'],
-                'email' => $data['email'] ?? null,
-                'password' => $data['password'] ?? Hash::make(Str::random(16)),
-                'role' => 'patient',
-                'status' => 'active',
-                'is_ghost' => true,
-                'created_by_doctor_id' => $doctorUser->id,
-            ]);
-
-            return $patient;
-        });
-    }
-
     /**
      * Create a new admin user (Dashboard only)
      */
@@ -288,29 +277,25 @@ class AuthService
     public function createDoctor(array $data): User
     {
         return DB::transaction(function () use ($data) {
-            $doctor = User::create([
+            $user = User::create([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
                 'role' => 'doctor',
-                'status' => 'pending',  // Doctors need approval
+                'status' => 'active',
             ]);
 
-            // Create doctor profile
-            if (isset($data['speciality_id']) || isset($data['bio_ar']) || isset($data['experience_years'])) {
-                \Modules\Doctor\Models\Doctor::create([
-                    'user_id' => $doctor->id,
-                    'speciality_id' => $data['speciality_id'] ?? null,
-                    'bio_ar' => $data['bio_ar'] ?? null,
-                    'bio_en' => $data['bio_en'] ?? null,
-                    'experience_years' => $data['experience_years'] ?? null,
-                    'is_verified' => false,
-                    'verification_status' => 'pending',
-                ]);
-            }
+            Doctor::create([
+                'user_id' => $user->id,
+                'speciality_id' => $data['speciality_id'] ?? null,
+                'bio_ar' => $data['bio_ar'] ?? null,
+                'bio_en' => $data['bio_en'] ?? null,
+                'experience_years' => $data['experience_years'] ?? 0,
+                'status' => 'pending',
+            ]);
 
-            return $doctor;
+            return $user;
         });
     }
 }

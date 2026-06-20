@@ -99,7 +99,7 @@ async function loadAppointments(page = 1) {
             ...currentFilters
         });
 
-        const data = await apiCall(`/admin/dashboard/appointments?${params}`);
+        const data = await apiCall(`/admin/api/appointments?${params}`);
         
         if (data.success) {
             renderAppointmentsTable(data.data);
@@ -232,7 +232,7 @@ async function confirmAppointment(appointmentId) {
     if (!confirm('هل أنت متأكد من تأكيد هذا الموعد؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/appointments/${appointmentId}/confirm`, {
+        const data = await apiCall(`/admin/api/appointments/${appointmentId}/confirm`, {
             method: 'POST'
         });
 
@@ -251,7 +251,7 @@ async function cancelAppointment(appointmentId) {
     if (!confirm('هل أنت متأكد من إلغاء هذا الموعد؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/appointments/${appointmentId}/cancel`, {
+        const data = await apiCall(`/admin/api/appointments/${appointmentId}/cancel`, {
             method: 'POST'
         });
 

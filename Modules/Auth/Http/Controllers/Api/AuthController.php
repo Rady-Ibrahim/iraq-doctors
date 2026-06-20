@@ -13,7 +13,6 @@ use Modules\Auth\Http\Requests\Api\UpdateProfileRequest;
 use Modules\Auth\Http\Requests\Api\UpdatePasswordRequest;
 use Modules\Auth\Http\Requests\Api\ForgotPasswordRequest;
 use Modules\Auth\Http\Requests\Api\ResetPasswordRequest;
-use Modules\Auth\Http\Requests\Api\CreateGhostPatientRequest;
 use Modules\Auth\Http\Requests\Api\UploadAvatarRequest;
 use Modules\Auth\Services\Api\AuthService;
 use Modules\Auth\Models\User;
@@ -51,23 +50,45 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-            $identifier = $request->email ?: $request->phone;
-
-            $user = $this->authService->login(
-                $identifier,
-                $request->password
+        $identifier = $request->email ?: $request->phone;
+    
+        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL)
+            ? 'email'
+            : 'phone';
+    
+        $user = User::where($field, $identifier)->first();
+    
+        if (!$user) {
+            return $this->error(
+                'بيانات الدخول غير صحيحة',
+                'AUTH_INVALID_CREDENTIALS',
+                401
             );
-
-            if (!$user) {
-                return $this->error(
-                    'بيانات الدخول غير صحيحة',
-                    'AUTH_INVALID_CREDENTIALS',
-                    401
-                );
-            }
-
+        }
+    
+        if (!$user->email_verified_at) {
+            return $this->error(
+                'يرجى تفعيل البريد الإلكتروني أولاً',
+                'EMAIL_NOT_VERIFIED',
+                403
+            );
+        }
+    
+        $user = $this->authService->login(
+            $identifier,
+            $request->password
+        );
+    
+        if (!$user) {
+            return $this->error(
+                'بيانات الدخول غير صحيحة',
+                'AUTH_INVALID_CREDENTIALS',
+                401
+            );
+        }
+    
         $token = $this->authService->createToken($user);
-
+    
         return $this->success([
             'user' => [
                 'id' => $user->id,
@@ -263,24 +284,5 @@ class AuthController extends Controller
         }
 
         return $this->success(null, 'تم إعادة تعيين كلمة المرور بنجاح');
-    }
-
-    public function createGhostPatient(CreateGhostPatientRequest $request): JsonResponse
-    {
-        /** @var User|null $user */
-        $user = auth('sanctum')->user();
-
-        if (!$user || !$user->isDoctor()) {
-            return $this->forbidden('غير مصرح (الأطباء فقط)');
-        }
-
-        $patient = $this->authService->createGhostPatient($user, $request->validated());
-
-        return $this->created([
-            'id' => $patient->id,
-            'name' => $patient->name,
-            'phone' => $patient->phone,
-            'is_ghost' => $patient->is_ghost,
-        ], 'تم إضافة المريض بنجاح');
     }
 }

@@ -28,6 +28,9 @@ class Doctor extends Model
         'address',
         'status',
         'subscription_id',
+        'license_document',
+        'clinic_image',
+        'reject_reason',
     ];
 
     protected $casts = [

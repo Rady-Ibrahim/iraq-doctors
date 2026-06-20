@@ -204,7 +204,7 @@ function showTab(tabName) {
 
 async function loadProfile() {
     try {
-        const data = await apiCall('/doctor/dashboard/profile');
+        const data = await apiCall('/doctor/api/profile');
         
         if (data.success) {
             const profile = data.data;
@@ -226,7 +226,7 @@ async function updateProfile(event) {
     event.preventDefault();
     
     try {
-        const data = await apiCall('/doctor/dashboard/profile', {
+        const data = await apiCall('/doctor/api/profile', {
             method: 'PUT',
             body: JSON.stringify({
                 name: document.getElementById('profileName').value,
@@ -250,7 +250,7 @@ async function updateProfessional(event) {
     event.preventDefault();
     
     try {
-        const data = await apiCall('/doctor/dashboard/professional', {
+        const data = await apiCall('/doctor/api/professional', {
             method: 'PUT',
             body: JSON.stringify({
                 bio_ar: document.getElementById('bioAr').value,
@@ -272,7 +272,7 @@ async function updateProfessional(event) {
 
 async function loadSchedules() {
     try {
-        const data = await apiCall('/doctor/dashboard/schedules');
+        const data = await apiCall('/doctor/api/schedules');
         
         if (data.success) {
             renderSchedules(data.data);
@@ -323,7 +323,7 @@ async function deleteSchedule(scheduleId) {
     if (!confirm('هل أنت متأكد من حذف هذا الجدول؟')) return;
 
     try {
-        const data = await apiCall(`/doctor/dashboard/schedules/${scheduleId}`, {
+        const data = await apiCall(`/doctor/api/schedules/${scheduleId}`, {
             method: 'DELETE'
         });
 
@@ -340,7 +340,7 @@ async function deleteSchedule(scheduleId) {
 
 async function loadSubscription() {
     try {
-        const data = await apiCall('/doctor/dashboard/subscription');
+        const data = await apiCall('/doctor/api/subscription');
         
         if (data.success) {
             renderSubscription(data.data);
@@ -400,7 +400,7 @@ async function changePassword(event) {
     }
 
     try {
-        const data = await apiCall('/doctor/dashboard/change-password', {
+        const data = await apiCall('/doctor/api/change-password', {
             method: 'POST',
             body: JSON.stringify({
                 current_password: document.getElementById('currentPassword').value,
@@ -421,7 +421,7 @@ async function changePassword(event) {
 
 async function toggleTwoFactor() {
     try {
-        const data = await apiCall('/doctor/dashboard/two-factor', {
+        const data = await apiCall('/doctor/api/two-factor', {
             method: 'POST'
         });
 
@@ -438,7 +438,7 @@ async function toggleTwoFactor() {
 
 async function loadTwoFactorStatus() {
     try {
-        const data = await apiCall('/doctor/dashboard/two-factor-status');
+        const data = await apiCall('/doctor/api/two-factor-status');
         
         if (data.success) {
             const isEnabled = data.data.enabled;

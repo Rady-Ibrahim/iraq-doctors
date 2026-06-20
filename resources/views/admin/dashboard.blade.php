@@ -124,7 +124,7 @@
 
     async function loadDashboardMetrics() {
         try {
-            const data = await apiCall('/admin/dashboard/metrics');
+            const data = await apiCall('/admin/api/metrics');
             
             if (data.success) {
                 const metrics = data.data;
@@ -149,7 +149,7 @@
 
     async function loadPendingDoctors() {
         try {
-            const data = await apiCall('/admin/dashboard/doctors?status=pending&limit=5');
+            const data = await apiCall('/admin/api/doctors?status=pending&limit=5');
             
             if (data.success) {
                 const container = document.getElementById('pendingDoctors');
@@ -193,7 +193,7 @@
 
     async function loadRecentAppointments() {
         try {
-            const data = await apiCall('/admin/dashboard/appointments?limit=5');
+            const data = await apiCall('/admin/api/appointments?limit=5');
             
             if (data.success) {
                 const container = document.getElementById('recentAppointments');
@@ -236,7 +236,7 @@
         if (!confirm('هل أنت متأكد من الموافقة على هذا الطبيب؟')) return;
 
         try {
-            const data = await apiCall(`/admin/dashboard/doctors/${doctorId}/approve`, {
+            const data = await apiCall(`/admin/api/doctors/${doctorId}/approve`, {
                 method: 'POST'
             });
 
@@ -255,7 +255,7 @@
         if (!confirm('هل أنت متأكد من رفض هذا الطبيب؟')) return;
 
         try {
-            const data = await apiCall(`/admin/dashboard/doctors/${doctorId}/reject`, {
+            const data = await apiCall(`/admin/api/doctors/${doctorId}/reject`, {
                 method: 'POST'
             });
 

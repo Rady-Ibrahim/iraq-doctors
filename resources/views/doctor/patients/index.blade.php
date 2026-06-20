@@ -69,7 +69,7 @@ async function loadPatients(page = 1) {
             ...currentFilters
         });
 
-        const data = await apiCall(`/doctor/dashboard/patients?${params}`);
+        const data = await apiCall(`/doctor/api/patients?${params}`);
         
         if (data.success) {
             renderPatientsGrid(data.data);

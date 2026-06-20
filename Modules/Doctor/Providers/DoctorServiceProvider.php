@@ -7,7 +7,10 @@ use Illuminate\Support\ServiceProvider;
 
 class DoctorServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->singleton(\Modules\Doctor\Services\Web\DoctorAuthService::class);
+    }
 
     public function boot(): void
     {

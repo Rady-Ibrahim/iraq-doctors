@@ -2,9 +2,11 @@
 
 namespace Modules\Doctor\Http\Controllers\Doctor;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\Doctor\Http\Requests\Web\CreateGhostPatientRequest;
+use Modules\Doctor\Models\Doctor;
 use Modules\Doctor\Services\DoctorDashboardService;
 use App\Traits\ApiResponse;
 
@@ -12,149 +14,417 @@ class DoctorDashboardController extends Controller
 {
     use ApiResponse;
 
-    protected $doctorDashboardService;
+    public function __construct(private DoctorDashboardService $doctorDashboardService) {}
 
-    public function __construct(DoctorDashboardService $doctorDashboardService)
+    protected function resolveDoctor(): Doctor
     {
-        $this->doctorDashboardService = $doctorDashboardService;
+        return Doctor::where('user_id', auth('web')->id())->firstOrFail();
     }
 
-    /**
-     * Get doctor dashboard metrics
-     */
     public function metrics(): JsonResponse
     {
         try {
-            $userId = auth('sanctum')->id();
-            $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->firstOrFail();
-
-            $metrics = $this->doctorDashboardService->getMetrics($doctor->id);
-
-            return $this->success($metrics, 'تم جلب المقاييس بنجاح');
+            $doctor = $this->resolveDoctor();
+            return $this->success($this->doctorDashboardService->getMetrics($doctor->id));
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب المقاييس');
         }
     }
 
-    /**
-     * Get doctor's patients list
-     */
     public function patients(Request $request): JsonResponse
     {
         try {
-            $userId = auth('sanctum')->id();
-            $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->firstOrFail();
+            $doctor = $this->resolveDoctor();
+            $filters = $request->only(['search', 'sort_by', 'limit']);
+            $paginator = $this->doctorDashboardService->getPatientsList($doctor->id, $filters);
 
-            $filters = $request->only(['search']);
-            $patients = $this->doctorDashboardService->getPatientsList($doctor->id, $filters);
+            if ($request->has('limit') && !$request->has('page')) {
+                return $this->success($paginator->items());
+            }
 
-            return $this->success($patients, 'تم جلب قائمة المرضى بنجاح');
+            return $this->paginated(
+                $paginator->items(),
+                $paginator->total(),
+                $paginator->currentPage(),
+                $paginator->perPage()
+            );
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب قائمة المرضى');
         }
     }
 
-    /**
-     * Get patient details with medical history
-     */
     public function patientDetails($patientId): JsonResponse
     {
         try {
-            $userId = auth('sanctum')->id();
-            $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->firstOrFail();
-
-            $details = $this->doctorDashboardService->getPatientDetails($doctor->id, $patientId);
-
-            return $this->success($details, 'تم جلب تفاصيل المريض بنجاح');
+            $doctor = $this->resolveDoctor();
+            return $this->success($this->doctorDashboardService->getPatientDetails($doctor->id, (int) $patientId));
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب تفاصيل المريض');
         }
     }
 
-    /**
-     * Get today's activity
-     */
     public function todayActivity(): JsonResponse
     {
         try {
-            $userId = auth('sanctum')->id();
-            $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->firstOrFail();
-
-            $activity = $this->doctorDashboardService->getTodayActivity($doctor->id);
-
-            return $this->success($activity, 'تم جلب نشاط اليوم بنجاح');
+            $doctor = $this->resolveDoctor();
+            return $this->success($this->doctorDashboardService->getTodayActivity($doctor->id));
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب نشاط اليوم');
         }
     }
 
-    /**
-     * Get upcoming tasks and appointments
-     */
     public function upcomingTasks(): JsonResponse
     {
         try {
-            $userId = auth('sanctum')->id();
-            $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->firstOrFail();
-
-            $tasks = $this->doctorDashboardService->getUpcomingTasks($doctor->id);
-
-            return $this->success($tasks, 'تم جلب المهام القادمة بنجاح');
+            $doctor = $this->resolveDoctor();
+            return $this->success($this->doctorDashboardService->getUpcomingTasks($doctor->id));
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب المهام القادمة');
         }
     }
 
-    /**
-     * Get prescriptions list
-     */
     public function prescriptions(Request $request): JsonResponse
     {
         try {
-            $userId = auth('sanctum')->id();
-            $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->firstOrFail();
-
-            $filters = $request->only(['patient_id', 'date_from', 'date_to']);
-            $prescriptions = $this->doctorDashboardService->getPrescriptions($doctor->id, $filters);
-
-            return $this->success($prescriptions, 'تم جلب الوصفات الطبية بنجاح');
+            $doctor = $this->resolveDoctor();
+            $prescriptions = $this->doctorDashboardService->getPrescriptions($doctor->id, $request->all());
+            return $this->paginated(
+                $prescriptions->items(),
+                $prescriptions->total(),
+                $prescriptions->currentPage(),
+                $prescriptions->perPage()
+            );
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب الوصفات الطبية');
         }
     }
 
-    /**
-     * Get medical records
-     */
     public function records(Request $request): JsonResponse
     {
         try {
-            $userId = auth('sanctum')->id();
-            $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->firstOrFail();
-
-            $filters = $request->only(['type', 'patient_id']);
-            $records = $this->doctorDashboardService->getRecords($doctor->id, $filters);
-
-            return $this->success($records, 'تم جلب السجلات الطبية بنجاح');
+            $doctor = $this->resolveDoctor();
+            $records = $this->doctorDashboardService->getRecords($doctor->id, $request->all());
+            return $this->paginated(
+                $records->items(),
+                $records->total(),
+                $records->currentPage(),
+                $records->perPage()
+            );
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب السجلات الطبية');
         }
     }
 
-    /**
-     * Get patient prescriptions
-     */
     public function patientPrescriptions($patientId): JsonResponse
     {
         try {
-            $userId = auth('sanctum')->id();
-            $doctor = \Modules\Doctor\Models\Doctor::where('user_id', $userId)->firstOrFail();
-
-            $prescriptions = $this->doctorDashboardService->getPatientPrescriptions($doctor->id, $patientId);
-
-            return $this->success($prescriptions, 'تم جلب وصفات المريض بنجاح');
+            $doctor = $this->resolveDoctor();
+            return $this->success($this->doctorDashboardService->getPatientPrescriptions($doctor->id, (int) $patientId));
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب وصفات المريض');
+        }
+    }
+
+    public function profile(): JsonResponse
+    {
+        try {
+            return $this->success($this->doctorDashboardService->getProfile(auth('web')->id()));
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب الملف الشخصي');
+        }
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'phone' => 'sometimes|string|regex:/^[0-9]{10,15}$/',
+            'email' => 'sometimes|email',
+            'address' => 'nullable|string',
+        ]);
+
+        try {
+            $user = $this->doctorDashboardService->updateProfile(auth('web')->id(), $request->all());
+            return $this->success($user, 'تم تحديث الملف الشخصي بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث الملف الشخصي');
+        }
+    }
+
+    public function updateProfessional(Request $request): JsonResponse
+    {
+        $request->validate([
+            'bio_ar' => 'nullable|string',
+            'bio_en' => 'nullable|string',
+            'experience_years' => 'nullable|integer|min:0|max:60',
+            'consultation_fee' => 'nullable|numeric|min:0',
+        ]);
+
+        try {
+            $doctor = $this->doctorDashboardService->updateProfessional(auth('web')->id(), $request->all());
+            return $this->success($doctor, 'تم تحديث المعلومات المهنية بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث المعلومات المهنية');
+        }
+    }
+
+    public function schedules(): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            return $this->success($this->doctorDashboardService->getSchedules($doctor->id));
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب الجداول');
+        }
+    }
+
+    public function deleteSchedule($scheduleId): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            $this->doctorDashboardService->deleteSchedule($doctor->id, (int) $scheduleId);
+            return $this->success(null, 'تم حذف الجدول بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء حذف الجدول');
+        }
+    }
+
+    public function calendar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'year' => 'required|integer',
+            'month' => 'required|integer|min:1|max:12',
+        ]);
+
+        try {
+            $doctor = $this->resolveDoctor();
+            $data = $this->doctorDashboardService->getCalendar(
+                $doctor->id,
+                (int) $request->year,
+                (int) $request->month
+            );
+            return $this->success($data);
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب التقويم');
+        }
+    }
+
+    public function appointments(Request $request): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            $appointments = $this->doctorDashboardService->getAppointments($doctor->id, $request->all());
+            return $this->success($appointments);
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب المواعيد');
+        }
+    }
+
+    public function appointmentDetails($appointmentId): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            return $this->success($this->doctorDashboardService->getAppointmentDetails($doctor->id, (int) $appointmentId));
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب تفاصيل الموعد');
+        }
+    }
+
+    public function subscription(): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            return $this->success($this->doctorDashboardService->getSubscription($doctor->id));
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب الاشتراك');
+        }
+    }
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8',
+        ]);
+
+        $updated = $this->doctorDashboardService->changePassword(
+            auth('web')->id(),
+            $request->current_password,
+            $request->new_password
+        );
+
+        if (!$updated) {
+            return $this->error('كلمة المرور الحالية غير صحيحة', 'INVALID_PASSWORD', 400);
+        }
+
+        return $this->success(null, 'تم تغيير كلمة المرور بنجاح');
+    }
+
+    public function twoFactorStatus(): JsonResponse
+    {
+        return $this->success(['enabled' => false]);
+    }
+
+    public function toggleTwoFactor(): JsonResponse
+    {
+        return $this->success(['enabled' => false], 'المصادقة الثنائية غير متاحة حالياً');
+    }
+
+    public function createGhostPatient(CreateGhostPatientRequest $request): JsonResponse
+    {
+        try {
+            $patient = $this->doctorDashboardService->createGhostPatient(
+                auth('web')->id(),
+                $request->validated()
+            );
+
+            return $this->created([
+                'id' => $patient->id,
+                'name' => $patient->name,
+                'phone' => $patient->phone,
+                'is_ghost' => $patient->is_ghost,
+            ], 'تم إضافة المريض بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء إضافة المريض');
+        }
+    }
+
+    public function storePrescription(Request $request): JsonResponse
+    {
+        $request->validate([
+            'patient_id' => 'required|integer|exists:users,id',
+            'diagnosis' => 'nullable|string',
+            'medicines' => 'required|array|min:1',
+            'medicines.*.name' => 'required|string',
+            'medicines.*.dosage' => 'required|string',
+            'medicines.*.frequency' => 'required',
+            'medicines.*.duration' => 'required|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            $doctor = $this->resolveDoctor();
+            $record = $this->doctorDashboardService->createPrescription(
+                $doctor->id,
+                auth('web')->id(),
+                $request->all()
+            );
+
+            return $this->created($this->doctorDashboardService->getPrescription($doctor->id, $record->id), 'تم إنشاء الوصفة بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء إنشاء الوصفة');
+        }
+    }
+
+    public function showPrescription($id): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            return $this->success($this->doctorDashboardService->getPrescription($doctor->id, (int) $id));
+        } catch (\Exception $e) {
+            return $this->notFound('الوصفة غير موجودة');
+        }
+    }
+
+    public function updatePrescription(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'diagnosis' => 'nullable|string',
+            'medicines' => 'required|array|min:1',
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            $doctor = $this->resolveDoctor();
+            $this->doctorDashboardService->updatePrescription($doctor->id, (int) $id, $request->all());
+            return $this->success($this->doctorDashboardService->getPrescription($doctor->id, (int) $id), 'تم تحديث الوصفة بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث الوصفة');
+        }
+    }
+
+    public function destroyPrescription($id): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            $this->doctorDashboardService->deletePrescription($doctor->id, (int) $id);
+            return $this->success(null, 'تم حذف الوصفة بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء حذف الوصفة');
+        }
+    }
+
+    public function storeRecord(Request $request): JsonResponse
+    {
+        $request->validate([
+            'patient_id' => 'required|integer|exists:users,id',
+            'type' => 'required|string',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'files' => 'nullable|array',
+            'files.*' => 'file|max:10240',
+        ]);
+
+        try {
+            $doctor = $this->resolveDoctor();
+            $record = $this->doctorDashboardService->createRecord(
+                $doctor->id,
+                auth('web')->id(),
+                $request->only(['patient_id', 'type', 'title', 'description', 'notes']),
+                $request->file('files', [])
+            );
+
+            return $this->created($this->doctorDashboardService->getRecord($doctor->id, $record->id), 'تم إنشاء السجل بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء إنشاء السجل');
+        }
+    }
+
+    public function showRecord($id): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            return $this->success($this->doctorDashboardService->getRecord($doctor->id, (int) $id));
+        } catch (\Exception $e) {
+            return $this->notFound('السجل غير موجود');
+        }
+    }
+
+    public function updateRecord(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'type' => 'sometimes|string',
+            'title' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'files' => 'nullable|array',
+            'files.*' => 'file|max:10240',
+        ]);
+
+        try {
+            $doctor = $this->resolveDoctor();
+            $this->doctorDashboardService->updateRecord(
+                $doctor->id,
+                (int) $id,
+                $request->only(['type', 'title', 'description', 'notes']),
+                $request->file('files', [])
+            );
+
+            return $this->success($this->doctorDashboardService->getRecord($doctor->id, (int) $id), 'تم تحديث السجل بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث السجل');
+        }
+    }
+
+    public function destroyRecord($id): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            $this->doctorDashboardService->deleteRecord($doctor->id, (int) $id);
+            return $this->success(null, 'تم حذف السجل بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء حذف السجل');
         }
     }
 }

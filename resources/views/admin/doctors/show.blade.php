@@ -150,7 +150,7 @@ async function loadDoctorDetails() {
     try {
         showLoading();
         
-        const data = await apiCall(`/admin/dashboard/doctors/${doctorId}`);
+        const data = await apiCall(`/admin/api/doctors/${doctorId}`);
         
         if (data.success) {
             renderDoctorDetails(data.data);
@@ -296,7 +296,7 @@ async function approveDoctor() {
     if (!confirm('هل أنت متأكد من الموافقة على هذا الطبيب؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/doctors/${doctorId}/approve`, {
+        const data = await apiCall(`/admin/api/doctors/${doctorId}/approve`, {
             method: 'POST'
         });
 
@@ -315,7 +315,7 @@ async function rejectDoctor() {
     if (!confirm('هل أنت متأكد من رفض هذا الطبيب؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/doctors/${doctorId}/reject`, {
+        const data = await apiCall(`/admin/api/doctors/${doctorId}/reject`, {
             method: 'POST'
         });
 
@@ -334,7 +334,7 @@ async function deleteDoctor() {
     if (!confirm('هل أنت متأكد من حذف هذا الطبيب؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/doctors/${doctorId}`, {
+        const data = await apiCall(`/admin/api/doctors/${doctorId}`, {
             method: 'DELETE'
         });
 

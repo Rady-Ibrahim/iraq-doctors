@@ -1,31 +1,60 @@
 <?php
 
-// use Illuminate\Support\Facades\Route;
-// use Modules\Admin\Http\Controllers\Api\AdminDashboardController;
+use Illuminate\Support\Facades\Route;
+use Modules\Auth\Http\Controllers\Web\AdminAuthController;
+use Modules\Admin\Http\Controllers\Api\AdminDashboardController;
+use Modules\Admin\Http\Controllers\Api\AdminDashboardApiController;
+use Modules\Auth\Http\Controllers\Admin\AdminUserController;
 
-// // Admin Dashboard Routes
-// Route::prefix('admin')->group(function () {
-//     // صفحة اللوجين
-//     Route::get('/login',  fn() => view('admin.login'))->name('admin.login');
-    
-//     // صفحات لوحة التحكم المربوطة بالكنترولر لشحن البيانات
-//     Route::get('/dashboard',             [AdminDashboardController::class, 'metrics'])->name('admin.dashboard');
-//     Route::get('/dashboard/doctors',       [AdminDashboardController::class, 'doctorsStats'])->name('admin.doctors.index');
-//     Route::get('/dashboard/patients',      [AdminDashboardController::class, 'patientsStats'])->name('admin.patients.index');
-//     Route::get('/dashboard/appointments',  [AdminDashboardController::class, 'appointmentsStats'])->name('admin.appointments.index');
-//     Route::get('/dashboard/revenue',       [AdminDashboardController::class, 'revenueStats'])->name('admin.revenue');
-//     Route::get('/dashboard/analytics',     [AdminDashboardController::class, 'analytics'])->name('admin.analytics');
+Route::middleware('web')->group(function () {
+    Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('guest:web')->group(function () {
+        Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [AdminAuthController::class, 'login']);
+    });
 
-//     // صفحات الـ Views الشاغرة حالياً (لحين ربطها بالبيانات لاحقاً)
-//     Route::get('/dashboard/doctors/{id}',  fn() => view('admin.doctors.show'))->name('admin.doctors.show');
-//     Route::get('/dashboard/patients/{id}', fn() => view('admin.patients.show'))->name('admin.patients.show');
-//     Route::get('/dashboard/appointments/{id}', fn() => view('admin.appointments.show'))->name('admin.appointments.show');
-//     Route::get('/users',                   fn() => view('admin.users.index'))->name('admin.users.index');
-//     Route::get('/users/{id}',              fn() => view('admin.users.show'))->name('admin.users.show');
+    Route::middleware(['auth:web', 'admin'])->group(function () {
+        Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
-//     // الإجراءات (Actions)
-//     Route::post('/doctors/{id}/approve',   [AdminDashboardController::class, 'approveDoctor'])->name('admin.doctors.approve');
-//     Route::post('/doctors/{id}/reject',    [AdminDashboardController::class, 'rejectDoctor'])->name('admin.doctors.reject');
-//     Route::post('/doctors/{id}/suspend',   [AdminDashboardController::class, 'suspendDoctor'])->name('admin.doctors.suspend');
-//     Route::post('/doctors/{id}/activate',  [AdminDashboardController::class, 'activateDoctor'])->name('admin.doctors.activate');
-// });
+        Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
+        Route::get('/dashboard/doctors', fn () => view('admin.doctors.index'))->name('doctors.index');
+        Route::get('/dashboard/doctors/{id}', fn () => view('admin.doctors.show'))->name('doctors.show');
+        Route::get('/dashboard/patients', fn () => view('admin.patients.index'))->name('patients.index');
+        Route::get('/dashboard/patients/{id}', fn () => view('admin.patients.show'))->name('patients.show');
+        Route::get('/dashboard/appointments', fn () => view('admin.appointments.index'))->name('appointments.index');
+        Route::get('/dashboard/revenue', fn () => view('admin.revenue'))->name('revenue');
+        Route::get('/dashboard/analytics', fn () => view('admin.analytics'))->name('analytics');
+        Route::get('/users', fn () => view('admin.users.index'))->name('users.index');
+
+        Route::post('/doctors/{id}/approve', [AdminDashboardController::class, 'approveDoctor'])->name('doctors.approve');
+        Route::post('/doctors/{id}/reject', [AdminDashboardController::class, 'rejectDoctor'])->name('doctors.reject');
+        Route::post('/doctors/{id}/suspend', [AdminDashboardController::class, 'suspendDoctor'])->name('doctors.suspend');
+        Route::post('/doctors/{id}/activate', [AdminDashboardController::class, 'activateDoctor'])->name('doctors.activate');
+
+        Route::prefix('api')->group(function () {
+            Route::get('/metrics', [AdminDashboardApiController::class, 'metrics']);
+            Route::get('/doctors', [AdminDashboardApiController::class, 'doctors']);
+            Route::get('/doctors/{id}', [AdminDashboardApiController::class, 'doctorDetails']);
+            Route::post('/doctors/{id}/approve', [AdminDashboardApiController::class, 'approveDoctor']);
+            Route::post('/doctors/{id}/reject', [AdminDashboardApiController::class, 'rejectDoctor']);
+            Route::post('/doctors/{id}/suspend', [AdminDashboardApiController::class, 'suspendDoctor']);
+            Route::post('/doctors/{id}/activate', [AdminDashboardApiController::class, 'activateDoctor']);
+            Route::get('/patients', [AdminDashboardApiController::class, 'patients']);
+            Route::get('/patients/{id}', [AdminDashboardApiController::class, 'patientDetails']);
+            Route::get('/appointments', [AdminDashboardApiController::class, 'appointments']);
+            Route::get('/revenue', [AdminDashboardApiController::class, 'revenue']);
+            Route::get('/analytics', [AdminDashboardApiController::class, 'analytics']);
+            Route::post('/patients/{id}/block', [AdminDashboardApiController::class, 'blockPatient']);
+            Route::post('/patients/{id}/unblock', [AdminDashboardApiController::class, 'unblockPatient']);
+            Route::delete('/patients/{id}', [AdminDashboardApiController::class, 'deletePatient']);
+            Route::post('/patients/{id}/reset-password', [AdminDashboardApiController::class, 'resetPatientPassword']);
+            Route::post('/appointments/{id}/confirm', [AdminDashboardApiController::class, 'confirmAppointment']);
+            Route::post('/appointments/{id}/cancel', [AdminDashboardApiController::class, 'cancelAppointment']);
+            Route::get('/users', [AdminUserController::class, 'index']);
+            Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+            Route::post('/users/{id}/block', [AdminUserController::class, 'block']);
+            Route::post('/users/{id}/unblock', [AdminUserController::class, 'unblock']);
+        });
+    });
+});
+});

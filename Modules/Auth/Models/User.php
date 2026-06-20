@@ -66,4 +66,14 @@ class User extends Authenticatable
     {
         return $this->status === 'active';
     }
+
+    public function doctor()
+    {
+        return $this->hasOne(\Modules\Doctor\Models\Doctor::class);
+    }
+
+    public function appointments()
+    {
+        return $this->hasMany(\Modules\Appointment\Models\Appointment::class, 'patient_id');
+    }
 }

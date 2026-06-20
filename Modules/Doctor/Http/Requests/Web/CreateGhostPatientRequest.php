@@ -1,10 +1,10 @@
 <?php
 
-namespace Modules\Auth\Http\Requests\Api;
+namespace Modules\Doctor\Http\Requests\Web;
 
-use App\Http\Requests\ApiFormRequest;
+use Illuminate\Foundation\Http\FormRequest;
 
-class CreateGhostPatientRequest extends ApiFormRequest
+class CreateGhostPatientRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,10 +16,8 @@ class CreateGhostPatientRequest extends ApiFormRequest
         return [
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'age' => 'nullable|integer|min:0|max:150',
+            'email' => 'nullable|email',
             'gender' => 'nullable|in:male,female',
-            'visit_date' => 'nullable|date',
-            'initial_notes' => 'nullable|string',
         ];
     }
 
@@ -28,9 +26,7 @@ class CreateGhostPatientRequest extends ApiFormRequest
         return [
             'name.required' => 'الاسم مطلوب',
             'phone.required' => 'رقم الهاتف مطلوب',
-            'age.integer' => 'العمر يجب أن يكون رقماً',
             'gender.in' => 'الجنس يجب أن يكون ذكر أو أنثى',
-            'visit_date.date' => 'تاريخ الزيارة غير صحيح',
         ];
     }
 }

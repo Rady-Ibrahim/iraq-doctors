@@ -99,7 +99,7 @@ async function loadCalendar() {
         
         document.getElementById('currentMonth').textContent = getMonthName(month) + ' ' + year;
         
-        const data = await apiCall(`/doctor/dashboard/calendar?year=${year}&month=${month}`);
+        const data = await apiCall(`/doctor/api/calendar?year=${year}&month=${month}`);
         
         if (data.success) {
             renderCalendar(data.data);
@@ -154,7 +154,7 @@ function renderCalendar(appointmentsByDate) {
 async function loadTodaySchedule() {
     try {
         const today = new Date().toISOString().split('T')[0];
-        const data = await apiCall(`/doctor/dashboard/appointments?date=${today}`);
+        const data = await apiCall(`/doctor/api/appointments?date=${today}`);
         
         if (data.success) {
             renderTodaySchedule(data.data);
@@ -189,7 +189,7 @@ function renderTodaySchedule(appointments) {
 
 async function loadUpcomingAppointments() {
     try {
-        const data = await apiCall(`/doctor/dashboard/appointments?status=confirmed&limit=5`);
+        const data = await apiCall(`/doctor/api/appointments?status=confirmed&limit=5`);
         
         if (data.success) {
             renderUpcomingAppointments(data.data);
@@ -237,7 +237,7 @@ function goToToday() {
 async function selectDate(dateStr) {
     selectedDate = dateStr;
     try {
-        const data = await apiCall(`/doctor/dashboard/appointments?date=${dateStr}`);
+        const data = await apiCall(`/doctor/api/appointments?date=${dateStr}`);
         
         if (data.success) {
             showDateAppointments(data.data, dateStr);
@@ -281,7 +281,7 @@ function showDateAppointments(appointments, dateStr) {
 
 async function showAppointmentDetails(appointmentId) {
     try {
-        const data = await apiCall(`/doctor/dashboard/appointments/${appointmentId}`);
+        const data = await apiCall(`/doctor/api/appointments/${appointmentId}`);
         
         if (data.success) {
             const appointment = data.data;

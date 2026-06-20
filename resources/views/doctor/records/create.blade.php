@@ -150,7 +150,7 @@ window.addEventListener('load', async function() {
 
 async function loadPatients() {
     try {
-        const data = await apiCall('/doctor/dashboard/patients?limit=100');
+        const data = await apiCall('/doctor/api/patients?limit=100');
         
         if (data.success) {
             const select = document.getElementById('patientId');
@@ -254,18 +254,9 @@ async function createRecord(event) {
             formData.append('files[]', selectedFiles[i]);
         }
 
-        const token = getDoctorToken();
-        const response = await fetch(`${API_URL}/doctor/dashboard/records`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-            body: formData
-        });
+        const data = await apiUpload('/doctor/api/records', formData);
 
-        const data = await response.json();
-
-        if (data.success) {
+        if (data && data.success) {
             alert('تم إنشاء السجل بنجاح');
             window.location.href = '/doctor/dashboard/records';
         } else {

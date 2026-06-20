@@ -14,6 +14,18 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->redirectGuestsTo(function (Request $request) {
+            if ($request->is('doctor/*')) {
+                return route('doctor.login');
+            }
+
+            if ($request->is('admin/*')) {
+                return route('admin.login');
+            }
+
+            return '/login';
+        });
+
         // تسجيل الـ Middleware الـ Aliases الخاصة بالسيستم
         $middleware->alias([
             'admin'            => \App\Http\Middleware\AdminMiddleware::class,

@@ -130,7 +130,7 @@ async function loadPatientDetails() {
     try {
         showLoading();
         
-        const data = await apiCall(`/admin/dashboard/patients/${patientId}`);
+        const data = await apiCall(`/admin/api/patients/${patientId}`);
         
         if (data.success) {
             renderPatientDetails(data.data);
@@ -222,7 +222,7 @@ async function blockPatient() {
     if (!confirm('هل أنت متأكد من حظر هذا المريض؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/patients/${patientId}/block`, {
+        const data = await apiCall(`/admin/api/patients/${patientId}/block`, {
             method: 'POST'
         });
 
@@ -241,7 +241,7 @@ async function unblockPatient() {
     if (!confirm('هل أنت متأكد من إلغاء الحظر عن هذا المريض؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/patients/${patientId}/unblock`, {
+        const data = await apiCall(`/admin/api/patients/${patientId}/unblock`, {
             method: 'POST'
         });
 
@@ -260,7 +260,7 @@ async function deletePatient() {
     if (!confirm('هل أنت متأكد من حذف هذا المريض؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/patients/${patientId}`, {
+        const data = await apiCall(`/admin/api/patients/${patientId}`, {
             method: 'DELETE'
         });
 
@@ -279,7 +279,7 @@ async function resetPassword() {
     if (!confirm('هل أنت متأكد من إعادة تعيين كلمة المرور؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/patients/${patientId}/reset-password`, {
+        const data = await apiCall(`/admin/api/patients/${patientId}/reset-password`, {
             method: 'POST'
         });
 

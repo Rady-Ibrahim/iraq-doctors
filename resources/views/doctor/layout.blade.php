@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'لوحة تحكم الطبيب')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -72,14 +73,17 @@
                         <i class="fas fa-user text-teal-600"></i>
                     </div>
                     <div class="flex-1">
-                        <p class="font-semibold text-gray-800 text-sm" id="doctorName">د. الاسم</p>
+                        <p class="font-semibold text-gray-800 text-sm" id="doctorName">د. {{ auth()->user()->name ?? 'الاسم' }}</p>
                         <p class="text-xs text-gray-500">طبيب</p>
                     </div>
                 </div>
-                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>تسجيل الخروج</span>
-                </button>
+                <form id="logoutForm" method="POST" action="{{ route('doctor.logout') }}" class="w-full">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>تسجيل الخروج</span>
+                    </button>
+                </form>
             </div>
         </aside>
 
@@ -142,20 +146,8 @@
     </div>
 
     <script>
-        const API_URL = 'http://127.0.0.1:8000';
-
-        function getDoctorToken() {
-            return localStorage.getItem('doctor_token');
-        }
-
-        function getDoctorUser() {
-            return JSON.parse(localStorage.getItem('doctor_user') || '{}');
-        }
-
-        function logout() {
-            localStorage.removeItem('doctor_token');
-            localStorage.removeItem('doctor_user');
-            window.location.href = '/doctor/login';
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.content || '';
         }
 
         function showLoading() {
@@ -167,37 +159,56 @@
         }
 
         async function refreshData() {
-            // Override in pages
             location.reload();
         }
 
-        // Set doctor name
-        window.addEventListener('load', function() {
-            const doctorUser = getDoctorUser();
-            if (doctorUser.name) {
-                document.getElementById('doctorName').textContent = `د. ${doctorUser.name}`;
-            }
-        });
+        @if (session('success'))
+            window.addEventListener('load', function() {
+                showSuccess(@json(session('success')));
+            });
+        @endif
 
-        // API Helper
         async function apiCall(endpoint, options = {}) {
-            const token = getDoctorToken();
-            if (!token) {
-                logout();
-                return;
-            }
-
-            const response = await fetch(`${API_URL}${endpoint}`, {
+            const response = await fetch(endpoint, {
                 ...options,
+                credentials: 'same-origin',
                 headers: {
+                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
                     ...options.headers
                 }
             });
 
-            if (response.status === 401) {
-                logout();
+            if (response.status === 401 || response.status === 419) {
+                window.location.href = '{{ route('doctor.login') }}';
+                return;
+            }
+
+            const data = await response.json();
+
+            if (!data.success && data.error) {
+                showError(data.error.message || 'حدث خطأ');
+            }
+
+            return data;
+        }
+
+        async function apiUpload(endpoint, formData, method = 'POST') {
+            const response = await fetch(endpoint, {
+                method,
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: formData,
+            });
+
+            if (response.status === 401 || response.status === 419) {
+                window.location.href = '{{ route('doctor.login') }}';
                 return;
             }
 

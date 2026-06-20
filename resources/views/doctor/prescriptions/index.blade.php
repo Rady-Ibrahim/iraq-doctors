@@ -99,7 +99,7 @@ async function loadPrescriptions(page = 1) {
             ...currentFilters
         });
 
-        const data = await apiCall(`/doctor/dashboard/prescriptions?${params}`);
+        const data = await apiCall(`/doctor/api/prescriptions?${params}`);
         
         if (data.success) {
             renderPrescriptionsTable(data.data);
@@ -211,7 +211,7 @@ async function deletePrescription(prescriptionId) {
     if (!confirm('هل أنت متأكد من حذف هذه الوصفة؟')) return;
 
     try {
-        const data = await apiCall(`/doctor/dashboard/prescriptions/${prescriptionId}`, {
+        const data = await apiCall(`/doctor/api/prescriptions/${prescriptionId}`, {
             method: 'DELETE'
         });
 

@@ -46,9 +46,15 @@ class AdminUserController extends Controller
                 });
             }
 
-            $users = $query->orderBy('created_at', 'desc')->paginate(20);
+            $users = $query->orderBy('created_at', 'desc')->paginate((int) ($request->get('limit', 20)));
 
-            return $this->success($users, 'تم جلب المستخدمين بنجاح');
+            return $this->paginated(
+                $users->items(),
+                $users->total(),
+                $users->currentPage(),
+                $users->perPage(),
+                'تم جلب المستخدمين بنجاح'
+            );
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب المستخدمين');
         }
@@ -118,7 +124,6 @@ class AdminUserController extends Controller
     {
         try {
             $admin = $this->authService->createAdmin($request->validated());
-            $token = $this->authService->createToken($admin);
 
             return $this->created([
                 'user' => [
@@ -129,7 +134,6 @@ class AdminUserController extends Controller
                     'role' => $admin->role,
                     'status' => $admin->status,
                 ],
-                'token' => $token,
             ], 'تم إنشاء حساب الإدارة بنجاح');
         } catch (\Exception $e) {
             return $this->serverError('فشل إنشاء حساب الإدارة: ' . $e->getMessage());
@@ -143,7 +147,6 @@ class AdminUserController extends Controller
     {
         try {
             $doctor = $this->authService->createDoctor($request->validated());
-            $token = $this->authService->createToken($doctor);
 
             return $this->created([
                 'user' => [
@@ -154,7 +157,6 @@ class AdminUserController extends Controller
                     'role' => $doctor->role,
                     'status' => $doctor->status,
                 ],
-                'token' => $token,
             ], 'تم إنشاء حساب الطبيب بنجاح - ينتظر الموافقة');
         } catch (\Exception $e) {
             return $this->serverError('فشل إنشاء حساب الطبيب: ' . $e->getMessage());

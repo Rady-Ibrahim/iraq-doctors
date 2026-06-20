@@ -163,7 +163,7 @@ async function loadRevenueData() {
             date_to: dateTo,
         });
 
-        const data = await apiCall(`/admin/dashboard/revenue?${params}`);
+        const data = await apiCall(`/admin/api/revenue?${params}`);
         
         if (data.success) {
             renderRevenueData(data.data);

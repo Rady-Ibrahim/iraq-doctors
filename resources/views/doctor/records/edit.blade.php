@@ -151,7 +151,7 @@ async function loadRecord() {
     try {
         showLoading();
         
-        const data = await apiCall(`/doctor/dashboard/records/${recordId}`);
+        const data = await apiCall(`/doctor/api/records/${recordId}`);
         
         if (data.success) {
             renderRecord(data.data);
@@ -279,18 +279,9 @@ async function updateRecord(event) {
             formData.append('files[]', selectedFiles[i]);
         }
 
-        const token = getDoctorToken();
-        const response = await fetch(`${API_URL}/doctor/dashboard/records/${recordId}`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-            body: formData
-        });
+        const data = await apiUpload(`/doctor/api/records/${recordId}`, formData, 'PUT');
 
-        const data = await response.json();
-
-        if (data.success) {
+        if (data && data.success) {
             alert('تم تحديث السجل بنجاح');
             window.location.href = '/doctor/dashboard/records';
         } else {
@@ -316,7 +307,7 @@ async function deleteRecord() {
     if (!confirm('هل أنت متأكد من حذف هذا السجل؟')) return;
 
     try {
-        const data = await apiCall(`/doctor/dashboard/records/${recordId}`, {
+        const data = await apiCall(`/doctor/api/records/${recordId}`, {
             method: 'DELETE'
         });
 

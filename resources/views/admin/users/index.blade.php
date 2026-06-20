@@ -96,7 +96,7 @@ async function loadUsers(page = 1) {
             ...currentFilters
         });
 
-        const data = await apiCall(`/admin/users?${params}`);
+        const data = await apiCall(`/admin/api/users?${params}`);
         
         if (data.success) {
             renderUsersTable(data.data);
@@ -221,7 +221,7 @@ async function blockUser(userId) {
     if (!confirm('هل أنت متأكد من حظر هذا المستخدم؟')) return;
 
     try {
-        const data = await apiCall(`/admin/users/${userId}/block`, {
+        const data = await apiCall(`/admin/api/users/${userId}/block`, {
             method: 'POST'
         });
 
@@ -240,7 +240,7 @@ async function unblockUser(userId) {
     if (!confirm('هل أنت متأكد من إلغاء الحظر عن هذا المستخدم؟')) return;
 
     try {
-        const data = await apiCall(`/admin/users/${userId}/unblock`, {
+        const data = await apiCall(`/admin/api/users/${userId}/unblock`, {
             method: 'POST'
         });
 
@@ -259,7 +259,7 @@ async function deleteUser(userId) {
     if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
 
     try {
-        const data = await apiCall(`/admin/users/${userId}`, {
+        const data = await apiCall(`/admin/api/users/${userId}`, {
             method: 'DELETE'
         });
 

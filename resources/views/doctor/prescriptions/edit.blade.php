@@ -119,7 +119,7 @@ async function loadPrescription() {
     try {
         showLoading();
         
-        const data = await apiCall(`/doctor/dashboard/prescriptions/${prescriptionId}`);
+        const data = await apiCall(`/doctor/api/prescriptions/${prescriptionId}`);
         
         if (data.success) {
             renderPrescription(data.data);
@@ -230,7 +230,7 @@ async function updatePrescription(event) {
             return;
         }
 
-        const data = await apiCall(`/doctor/dashboard/prescriptions/${prescriptionId}`, {
+        const data = await apiCall(`/doctor/api/prescriptions/${prescriptionId}`, {
             method: 'PUT',
             body: JSON.stringify({
                 diagnosis: document.getElementById('diagnosis').value,
@@ -265,7 +265,7 @@ async function deletePrescription() {
     if (!confirm('هل أنت متأكد من حذف هذه الوصفة؟')) return;
 
     try {
-        const data = await apiCall(`/doctor/dashboard/prescriptions/${prescriptionId}`, {
+        const data = await apiCall(`/doctor/api/prescriptions/${prescriptionId}`, {
             method: 'DELETE'
         });
 

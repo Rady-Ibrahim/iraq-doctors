@@ -125,7 +125,7 @@
 
     async function loadDashboardMetrics() {
         try {
-            const data = await apiCall('/doctor/dashboard/metrics');
+            const data = await apiCall('/doctor/api/metrics');
             
             if (data.success) {
                 const metrics = data.data;
@@ -150,7 +150,7 @@
 
     async function loadTodayActivity() {
         try {
-            const data = await apiCall('/doctor/dashboard/today-activity');
+            const data = await apiCall('/doctor/api/today-activity');
             
             if (data.success) {
                 const container = document.getElementById('todayActivity');
@@ -192,7 +192,7 @@
 
     async function loadUpcomingTasks() {
         try {
-            const data = await apiCall('/doctor/dashboard/upcoming-tasks');
+            const data = await apiCall('/doctor/api/upcoming-tasks');
             
             if (data.success) {
                 const container = document.getElementById('upcomingTasks');
@@ -230,7 +230,7 @@
 
     async function loadRecentPatients() {
         try {
-            const data = await apiCall('/doctor/dashboard/patients?limit=5');
+            const data = await apiCall('/doctor/api/patients?limit=5');
             
             if (data.success) {
                 const container = document.getElementById('recentPatients');

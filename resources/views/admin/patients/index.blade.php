@@ -96,7 +96,7 @@ async function loadPatients(page = 1) {
             ...currentFilters
         });
 
-        const data = await apiCall(`/admin/dashboard/patients?${params}`);
+        const data = await apiCall(`/admin/api/patients?${params}`);
         
         if (data.success) {
             renderPatientsTable(data.data);
@@ -222,7 +222,7 @@ async function blockPatient(patientId) {
     if (!confirm('هل أنت متأكد من حظر هذا المريض؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/patients/${patientId}/block`, {
+        const data = await apiCall(`/admin/api/patients/${patientId}/block`, {
             method: 'POST'
         });
 
@@ -241,7 +241,7 @@ async function unblockPatient(patientId) {
     if (!confirm('هل أنت متأكد من إلغاء الحظر عن هذا المريض؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/patients/${patientId}/unblock`, {
+        const data = await apiCall(`/admin/api/patients/${patientId}/unblock`, {
             method: 'POST'
         });
 
@@ -260,7 +260,7 @@ async function deletePatient(patientId) {
     if (!confirm('هل أنت متأكد من حذف هذا المريض؟')) return;
 
     try {
-        const data = await apiCall(`/admin/dashboard/patients/${patientId}`, {
+        const data = await apiCall(`/admin/api/patients/${patientId}`, {
             method: 'DELETE'
         });
 
