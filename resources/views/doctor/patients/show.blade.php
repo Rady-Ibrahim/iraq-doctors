@@ -120,7 +120,7 @@
             <div id="medicalRecords" class="space-y-3">
                 <p class="text-gray-500">جاري التحميل...</p>
             </div>
-            <a href="/doctor/dashboard/patients/${patientId}/records" class="block mt-4 text-center text-teal-600 hover:text-teal-700">
+            <a href="/doctor/dashboard/patients/{{ $patientId }}/records" class="block mt-4 text-center text-teal-600 hover:text-teal-700">
                 عرض جميع السجلات <i class="fas fa-arrow-left mr-1"></i>
             </a>
         </div>
@@ -131,7 +131,7 @@
 
 @section('scripts')
 <script>
-const patientId = window.location.pathname.split('/').pop();
+const patientId = {{ (int) $patientId }};
 
 window.addEventListener('load', async function() {
     await loadPatientDetails();

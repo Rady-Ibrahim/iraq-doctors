@@ -47,10 +47,19 @@ class AdminDashboardApiController extends Controller
     public function doctorDetails($id): JsonResponse
     {
         try {
-            $doctor = \Modules\Doctor\Models\Doctor::with(['user', 'speciality'])->findOrFail($id);
-            return $this->success($doctor);
+            return $this->success($this->adminDashboardService->getDoctorDetails((int) $id));
         } catch (\Exception $e) {
             return $this->notFound('الطبيب غير موجود');
+        }
+    }
+
+    public function destroyDoctor($id): JsonResponse
+    {
+        try {
+            $this->adminDashboardService->deleteDoctor((int) $id);
+            return $this->success(null, 'تم حذف الطبيب بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء حذف الطبيب');
         }
     }
 
@@ -102,22 +111,30 @@ class AdminDashboardApiController extends Controller
     public function revenue(Request $request): JsonResponse
     {
         try {
-            $paginator = $this->adminDashboardService->getRevenueStats($request->all());
-            return $this->paginated(
-                $paginator->items(),
-                $paginator->total(),
-                $paginator->currentPage(),
-                $paginator->perPage()
-            );
+            $data = $this->adminDashboardService->getRevenueDashboardData($request->all());
+            return $this->success($data);
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب الإيرادات');
+        }
+    }
+
+    public function subscriptions(Request $request): JsonResponse
+    {
+        try {
+            $data = $this->adminDashboardService->getSubscriptionsDashboardData($request->all());
+            return $this->success($data);
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب الاشتراكات');
         }
     }
 
     public function analytics(Request $request): JsonResponse
     {
         try {
-            $data = $this->adminDashboardService->getAnalyticsData($request->get('period', '30days'));
+            $data = $this->adminDashboardService->getAnalyticsData(
+                $request->get('period', 'month'),
+                $request->get('type')
+            );
             return $this->success($data);
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب التحليلات');
@@ -134,10 +151,10 @@ class AdminDashboardApiController extends Controller
         }
     }
 
-    public function rejectDoctor($id): JsonResponse
+    public function rejectDoctor(Request $request, $id): JsonResponse
     {
         try {
-            $doctor = $this->adminDashboardService->rejectDoctor($id);
+            $doctor = $this->adminDashboardService->rejectDoctor($id, $request->input('reject_reason'));
             return $this->success($doctor, 'تم رفض حساب الطبيب بنجاح');
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء رفض حساب الطبيب');
@@ -238,7 +255,9 @@ class AdminDashboardApiController extends Controller
             'phone' => $doctor->user?->phone,
             'email' => $doctor->user?->email,
             'speciality' => $doctor->speciality?->name_ar,
+            'speciality_id' => $doctor->speciality_id,
             'status' => $doctor->status,
+            'rating' => $doctor->rating,
             'experience_years' => $doctor->experience_years,
             'created_at' => $doctor->created_at,
         ];

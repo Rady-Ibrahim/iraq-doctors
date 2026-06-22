@@ -73,9 +73,13 @@ class DoctorDashboardService
     public function getPatientsList(int $doctorId, array $filters = [])
     {
         $limit = (int) ($filters['limit'] ?? 20);
+        $doctor = Doctor::findOrFail($doctorId);
 
         $query = User::where('role', 'patient')
-            ->whereHas('appointments', fn ($q) => $q->where('doctor_id', $doctorId))
+            ->where(function ($q) use ($doctorId, $doctor) {
+                $q->whereHas('appointments', fn ($sub) => $sub->where('doctor_id', $doctorId))
+                    ->orWhere('created_by_doctor_id', $doctor->user_id);
+            })
             ->withCount(['appointments as total_appointments' => fn ($q) => $q->where('doctor_id', $doctorId)])
             ->with(['appointments' => fn ($q) => $q->where('doctor_id', $doctorId)->orderByDesc('appointment_date')->limit(1)]);
 
@@ -103,6 +107,7 @@ class DoctorDashboardService
                 'name' => $patient->name,
                 'phone' => $patient->phone,
                 'email' => $patient->email,
+                'is_ghost' => (bool) $patient->is_ghost,
                 'total_appointments' => $patient->total_appointments,
                 'last_appointment_date' => $lastAppointment?->appointment_date?->format('Y-m-d'),
                 'last_visit' => $lastAppointment?->appointment_date?->format('Y-m-d'),
@@ -114,11 +119,20 @@ class DoctorDashboardService
 
     public function getPatientDetails(int $doctorId, int $patientId): array
     {
+        $doctor = Doctor::findOrFail($doctorId);
         $patient = User::where('id', $patientId)->where('role', 'patient')->firstOrFail();
+
+        $hasAccess = Appointment::where('doctor_id', $doctorId)
+            ->where('patient_id', $patientId)
+            ->exists()
+            || $patient->created_by_doctor_id === $doctor->user_id;
+
+        if (!$hasAccess) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
+        }
 
         $appointments = Appointment::where('doctor_id', $doctorId)
             ->where('patient_id', $patientId)
-            ->with('medicalRecord')
             ->orderByDesc('appointment_date')
             ->get();
 
@@ -127,15 +141,29 @@ class DoctorDashboardService
             ->orderByDesc('created_at')
             ->get();
 
-        $reviews = Review::where('doctor_id', $doctorId)
-            ->where('patient_id', $patientId)
-            ->get();
+        $age = $patient->birthdate ? Carbon::parse($patient->birthdate)->age : null;
 
         return [
-            'patient' => $patient,
-            'appointments' => $appointments,
-            'medical_records' => $medicalRecords,
-            'reviews' => $reviews,
+            'id' => $patient->id,
+            'name' => $patient->name,
+            'phone' => $patient->phone,
+            'email' => $patient->email,
+            'gender' => $patient->gender,
+            'age' => $age,
+            'address' => $patient->address,
+            'is_ghost' => (bool) $patient->is_ghost,
+            'medical_history' => null,
+            'total_appointments' => $appointments->count(),
+            'total_prescriptions' => $medicalRecords->where('record_type', 'prescription')->count(),
+            'total_records' => $medicalRecords->count(),
+            'recent_appointments' => $appointments->take(5)->map(fn ($a) => [
+                'id' => $a->id,
+                'appointment_date' => $a->appointment_date?->format('Y-m-d'),
+                'appointment_time' => $this->formatTime($a->appointment_time),
+                'status' => $a->status,
+                'notes' => $a->notes,
+            ])->values()->all(),
+            'medical_records' => $medicalRecords->map(fn ($record) => $this->formatRecord($record))->values()->all(),
         ];
     }
 

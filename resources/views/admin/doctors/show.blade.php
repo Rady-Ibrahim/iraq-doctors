@@ -51,6 +51,15 @@
                 <p class="text-gray-700 leading-relaxed" id="doctorBio">-</p>
             </div>
 
+            <!-- Verification Documents -->
+            <div class="border-t mt-6 pt-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">مستندات التحقق</h3>
+                <div class="flex flex-wrap gap-4" id="doctorDocuments">
+                    <p class="text-gray-500">جاري التحميل...</p>
+                </div>
+                <p class="text-sm text-red-600 mt-3 hidden" id="rejectReasonBox"></p>
+            </div>
+
             <!-- Contact Info -->
             <div class="border-t mt-6 pt-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-3">معلومات الاتصال</h3>
@@ -173,6 +182,23 @@ function renderDoctorDetails(doctor) {
     document.getElementById('doctorExperience').textContent = (doctor.experience_years || 0) + ' سنة';
     document.getElementById('doctorFee').textContent = (doctor.consultation_fee || 0) + ' د.ع';
     document.getElementById('doctorBio').textContent = doctor.bio || '-';
+
+    const docs = document.getElementById('doctorDocuments');
+    let docsHtml = '';
+    if (doctor.license_document) {
+        docsHtml += `<a href="${doctor.license_document}" target="_blank" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg"><i class="fas fa-file ml-2"></i>رخصة المزاولة</a>`;
+    }
+    if (doctor.clinic_image) {
+        docsHtml += `<a href="${doctor.clinic_image}" target="_blank" class="px-4 py-2 bg-green-100 text-green-700 rounded-lg"><i class="fas fa-image ml-2"></i>صورة العيادة</a>`;
+    }
+    docs.innerHTML = docsHtml || '<p class="text-gray-500">لا توجد مستندات</p>';
+
+    if (doctor.reject_reason) {
+        const box = document.getElementById('rejectReasonBox');
+        box.textContent = 'سبب الرفض: ' + doctor.reject_reason;
+        box.classList.remove('hidden');
+    }
+
     document.getElementById('doctorPhone').textContent = doctor.phone || '-';
     document.getElementById('doctorEmail').textContent = doctor.email || '-';
     document.getElementById('doctorAddress').textContent = doctor.address || '-';
@@ -198,9 +224,6 @@ function renderDoctorDetails(doctor) {
     }
     
     buttons += `
-        <a href="/admin/dashboard/doctors/${doctorId}/edit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-            <i class="fas fa-edit ml-2"></i>تعديل
-        </a>
         <button onclick="deleteDoctor()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
             <i class="fas fa-trash ml-2"></i>حذف
         </button>
@@ -312,11 +335,13 @@ async function approveDoctor() {
 }
 
 async function rejectDoctor() {
-    if (!confirm('هل أنت متأكد من رفض هذا الطبيب؟')) return;
+    const reason = prompt('سبب الرفض (اختياري):');
+    if (reason === null) return;
 
     try {
         const data = await apiCall(`/admin/api/doctors/${doctorId}/reject`, {
-            method: 'POST'
+            method: 'POST',
+            body: JSON.stringify({ reject_reason: reason }),
         });
 
         if (data.success) {

@@ -30,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin'            => \App\Http\Middleware\AdminMiddleware::class,
             'doctor'           => \App\Http\Middleware\DoctorMiddleware::class,
+            'doctor.approved'  => \App\Http\Middleware\DoctorApprovedMiddleware::class,
+            'doctor.email.verified' => \App\Http\Middleware\DoctorEmailVerifiedMiddleware::class,
             'role'             => \App\Http\Middleware\RoleMiddleware::class, // 🌟 تم إضافة الرول ميدل وير هنا
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
         ]);

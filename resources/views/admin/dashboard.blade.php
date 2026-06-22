@@ -252,11 +252,13 @@
     }
 
     async function rejectDoctor(doctorId) {
-        if (!confirm('هل أنت متأكد من رفض هذا الطبيب؟')) return;
+        const reason = prompt('سبب الرفض (اختياري):');
+        if (reason === null) return;
 
         try {
             const data = await apiCall(`/admin/api/doctors/${doctorId}/reject`, {
-                method: 'POST'
+                method: 'POST',
+                body: JSON.stringify({ reject_reason: reason }),
             });
 
             if (data.success) {

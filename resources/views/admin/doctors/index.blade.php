@@ -26,9 +26,6 @@
             <label class="block text-sm font-semibold text-gray-700 mb-2">التخصص</label>
             <select id="specialityFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                 <option value="">جميع التخصصات</option>
-                <option value="cardiology">أمراض القلب</option>
-                <option value="neurology">الأعصاب</option>
-                <option value="orthopedics">العظام</option>
             </select>
         </div>
         <div>
@@ -84,8 +81,22 @@ let currentPage = 1;
 let currentFilters = {};
 
 window.addEventListener('load', async function() {
+    await loadSpecialityOptions();
     await loadDoctors();
 });
+
+async function loadSpecialityOptions() {
+    const data = await apiCall('/admin/api/specialities');
+    const select = document.getElementById('specialityFilter');
+    if (!data?.success) return;
+
+    data.data.forEach(speciality => {
+        const option = document.createElement('option');
+        option.value = speciality.id;
+        option.textContent = speciality.name_ar;
+        select.appendChild(option);
+    });
+}
 
 async function loadDoctors(page = 1) {
     try {
@@ -241,11 +252,13 @@ async function approveDoctor(doctorId) {
 }
 
 async function rejectDoctor(doctorId) {
-    if (!confirm('هل أنت متأكد من رفض هذا الطبيب؟')) return;
+    const reason = prompt('سبب الرفض (اختياري):');
+    if (reason === null) return;
 
     try {
         const data = await apiCall(`/admin/api/doctors/${doctorId}/reject`, {
-            method: 'POST'
+            method: 'POST',
+            body: JSON.stringify({ reject_reason: reason }),
         });
 
         if (data.success) {

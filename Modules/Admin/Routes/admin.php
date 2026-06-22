@@ -4,57 +4,73 @@ use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\Web\AdminAuthController;
 use Modules\Admin\Http\Controllers\Api\AdminDashboardController;
 use Modules\Admin\Http\Controllers\Api\AdminDashboardApiController;
+use Modules\Admin\Http\Controllers\Api\AdminCatalogApiController;
 use Modules\Auth\Http\Controllers\Admin\AdminUserController;
 
 Route::middleware('web')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
-    Route::middleware('guest:web')->group(function () {
-        Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
-        Route::post('/login', [AdminAuthController::class, 'login']);
-    });
+        Route::middleware('guest:web')->group(function () {
+            Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
+            Route::post('/login', [AdminAuthController::class, 'login']);
+        });
 
-    Route::middleware(['auth:web', 'admin'])->group(function () {
-        Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+        Route::middleware(['auth:web', 'admin'])->group(function () {
+            Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
-        Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
-        Route::get('/dashboard/doctors', fn () => view('admin.doctors.index'))->name('doctors.index');
-        Route::get('/dashboard/doctors/{id}', fn () => view('admin.doctors.show'))->name('doctors.show');
-        Route::get('/dashboard/patients', fn () => view('admin.patients.index'))->name('patients.index');
-        Route::get('/dashboard/patients/{id}', fn () => view('admin.patients.show'))->name('patients.show');
-        Route::get('/dashboard/appointments', fn () => view('admin.appointments.index'))->name('appointments.index');
-        Route::get('/dashboard/revenue', fn () => view('admin.revenue'))->name('revenue');
-        Route::get('/dashboard/analytics', fn () => view('admin.analytics'))->name('analytics');
-        Route::get('/users', fn () => view('admin.users.index'))->name('users.index');
+            Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
+            Route::get('/dashboard/doctors', fn () => view('admin.doctors.index'))->name('doctors.index');
+            Route::get('/dashboard/doctors/{id}', fn () => view('admin.doctors.show'))->name('doctors.show');
+            Route::get('/dashboard/patients', fn () => view('admin.patients.index'))->name('patients.index');
+            Route::get('/dashboard/patients/{id}', fn () => view('admin.patients.show'))->name('patients.show');
+            Route::get('/dashboard/appointments', fn () => view('admin.appointments.index'))->name('appointments.index');
+            Route::get('/dashboard/revenue', fn () => view('admin.revenue'))->name('revenue');
+            Route::get('/dashboard/subscriptions', fn () => view('admin.subscriptions.index'))->name('subscriptions.index');
+            Route::get('/dashboard/analytics', fn () => view('admin.analytics'))->name('analytics');
+            Route::get('/dashboard/specialities', fn () => view('admin.specialities.index'))->name('specialities.index');
+            Route::get('/dashboard/governorates', fn () => view('admin.governorates.index'))->name('governorates.index');
+            Route::get('/users', fn () => view('admin.users.index'))->name('users.index');
+            Route::redirect('/subscriptions', '/admin/dashboard/subscriptions')->name('subscriptions');
 
-        Route::post('/doctors/{id}/approve', [AdminDashboardController::class, 'approveDoctor'])->name('doctors.approve');
-        Route::post('/doctors/{id}/reject', [AdminDashboardController::class, 'rejectDoctor'])->name('doctors.reject');
-        Route::post('/doctors/{id}/suspend', [AdminDashboardController::class, 'suspendDoctor'])->name('doctors.suspend');
-        Route::post('/doctors/{id}/activate', [AdminDashboardController::class, 'activateDoctor'])->name('doctors.activate');
+            Route::post('/doctors/{id}/approve', [AdminDashboardController::class, 'approveDoctor'])->name('doctors.approve');
+            Route::post('/doctors/{id}/reject', [AdminDashboardController::class, 'rejectDoctor'])->name('doctors.reject');
+            Route::post('/doctors/{id}/suspend', [AdminDashboardController::class, 'suspendDoctor'])->name('doctors.suspend');
+            Route::post('/doctors/{id}/activate', [AdminDashboardController::class, 'activateDoctor'])->name('doctors.activate');
 
-        Route::prefix('api')->group(function () {
-            Route::get('/metrics', [AdminDashboardApiController::class, 'metrics']);
-            Route::get('/doctors', [AdminDashboardApiController::class, 'doctors']);
-            Route::get('/doctors/{id}', [AdminDashboardApiController::class, 'doctorDetails']);
-            Route::post('/doctors/{id}/approve', [AdminDashboardApiController::class, 'approveDoctor']);
-            Route::post('/doctors/{id}/reject', [AdminDashboardApiController::class, 'rejectDoctor']);
-            Route::post('/doctors/{id}/suspend', [AdminDashboardApiController::class, 'suspendDoctor']);
-            Route::post('/doctors/{id}/activate', [AdminDashboardApiController::class, 'activateDoctor']);
-            Route::get('/patients', [AdminDashboardApiController::class, 'patients']);
-            Route::get('/patients/{id}', [AdminDashboardApiController::class, 'patientDetails']);
-            Route::get('/appointments', [AdminDashboardApiController::class, 'appointments']);
+            Route::prefix('api')->group(function () {
+                Route::get('/metrics', [AdminDashboardApiController::class, 'metrics']);
+                Route::get('/doctors', [AdminDashboardApiController::class, 'doctors']);
+                Route::get('/doctors/{id}', [AdminDashboardApiController::class, 'doctorDetails']);
+                Route::delete('/doctors/{id}', [AdminDashboardApiController::class, 'destroyDoctor']);
+                Route::post('/doctors/{id}/approve', [AdminDashboardApiController::class, 'approveDoctor']);
+                Route::post('/doctors/{id}/reject', [AdminDashboardApiController::class, 'rejectDoctor']);
+                Route::post('/doctors/{id}/suspend', [AdminDashboardApiController::class, 'suspendDoctor']);
+                Route::post('/doctors/{id}/activate', [AdminDashboardApiController::class, 'activateDoctor']);
+                Route::get('/patients', [AdminDashboardApiController::class, 'patients']);
+                Route::get('/patients/{id}', [AdminDashboardApiController::class, 'patientDetails']);
+                Route::get('/appointments', [AdminDashboardApiController::class, 'appointments']);
             Route::get('/revenue', [AdminDashboardApiController::class, 'revenue']);
+            Route::get('/subscriptions', [AdminDashboardApiController::class, 'subscriptions']);
             Route::get('/analytics', [AdminDashboardApiController::class, 'analytics']);
-            Route::post('/patients/{id}/block', [AdminDashboardApiController::class, 'blockPatient']);
-            Route::post('/patients/{id}/unblock', [AdminDashboardApiController::class, 'unblockPatient']);
-            Route::delete('/patients/{id}', [AdminDashboardApiController::class, 'deletePatient']);
-            Route::post('/patients/{id}/reset-password', [AdminDashboardApiController::class, 'resetPatientPassword']);
-            Route::post('/appointments/{id}/confirm', [AdminDashboardApiController::class, 'confirmAppointment']);
-            Route::post('/appointments/{id}/cancel', [AdminDashboardApiController::class, 'cancelAppointment']);
-            Route::get('/users', [AdminUserController::class, 'index']);
-            Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
-            Route::post('/users/{id}/block', [AdminUserController::class, 'block']);
-            Route::post('/users/{id}/unblock', [AdminUserController::class, 'unblock']);
+                Route::post('/patients/{id}/block', [AdminDashboardApiController::class, 'blockPatient']);
+                Route::post('/patients/{id}/unblock', [AdminDashboardApiController::class, 'unblockPatient']);
+                Route::delete('/patients/{id}', [AdminDashboardApiController::class, 'deletePatient']);
+                Route::post('/patients/{id}/reset-password', [AdminDashboardApiController::class, 'resetPatientPassword']);
+                Route::post('/appointments/{id}/confirm', [AdminDashboardApiController::class, 'confirmAppointment']);
+                Route::post('/appointments/{id}/cancel', [AdminDashboardApiController::class, 'cancelAppointment']);
+                Route::get('/users', [AdminUserController::class, 'index']);
+                Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+                Route::post('/users/{id}/block', [AdminUserController::class, 'block']);
+                Route::post('/users/{id}/unblock', [AdminUserController::class, 'unblock']);
+
+                Route::get('/specialities', [AdminCatalogApiController::class, 'specialities']);
+                Route::post('/specialities', [AdminCatalogApiController::class, 'storeSpeciality']);
+                Route::put('/specialities/{id}', [AdminCatalogApiController::class, 'updateSpeciality']);
+                Route::delete('/specialities/{id}', [AdminCatalogApiController::class, 'destroySpeciality']);
+                Route::get('/governorates', [AdminCatalogApiController::class, 'governorates']);
+                Route::post('/governorates', [AdminCatalogApiController::class, 'storeGovernorate']);
+                Route::put('/governorates/{id}', [AdminCatalogApiController::class, 'updateGovernorate']);
+                Route::delete('/governorates/{id}', [AdminCatalogApiController::class, 'destroyGovernorate']);
+            });
         });
     });
-});
 });

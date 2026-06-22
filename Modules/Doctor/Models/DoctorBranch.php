@@ -13,6 +13,7 @@ class DoctorBranch extends Model
 
     protected $fillable = [
         'doctor_id',
+        'governorate_id',
         'branch_name',
         'governorate',
         'district',
@@ -34,6 +35,11 @@ class DoctorBranch extends Model
     public function doctor()
     {
         return $this->belongsTo(Doctor::class);
+    }
+
+    public function governorateModel()
+    {
+        return $this->belongsTo(Governorate::class, 'governorate_id');
     }
 
     public function schedules()

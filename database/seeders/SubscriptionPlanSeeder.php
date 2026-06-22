@@ -77,7 +77,7 @@ class SubscriptionPlanSeeder extends Seeder
         foreach ($plans as $plan) {
             Subscription::firstOrCreate(
                 ['name' => $plan['name']],
-                array_merge($plan, ['id' => Str::uuid()])
+                $plan
             );
         }
     }

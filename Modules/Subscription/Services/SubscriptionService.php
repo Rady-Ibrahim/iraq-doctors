@@ -6,7 +6,6 @@ use Modules\Subscription\Models\Subscription;
 use Modules\Subscription\Models\DoctorSubscription;
 use Modules\Doctor\Models\Doctor;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class SubscriptionService
 {
@@ -26,7 +25,6 @@ class SubscriptionService
     {
         return DB::transaction(function () use ($data) {
             return Subscription::create([
-                'id' => Str::uuid(),
                 'name' => $data['name'],
                 'description_ar' => $data['description_ar'] ?? null,
                 'description_en' => $data['description_en'] ?? null,
@@ -78,7 +76,6 @@ class SubscriptionService
             $endDate = now()->addDays($subscription->duration_days);
 
             $doctorSubscription = DoctorSubscription::create([
-                'id' => Str::uuid(),
                 'doctor_id' => $doctorId,
                 'subscription_id' => $subscriptionId,
                 'start_date' => $startDate,
@@ -112,7 +109,6 @@ class SubscriptionService
             $newEndDate = now()->addDays($subscription->duration_days);
 
             $newSubscription = DoctorSubscription::create([
-                'id' => Str::uuid(),
                 'doctor_id' => $doctorId,
                 'subscription_id' => $subscription->id,
                 'start_date' => now(),
@@ -256,7 +252,7 @@ class SubscriptionService
         ];
 
         foreach ($plans as $plan) {
-            Subscription::create(array_merge($plan, ['id' => Str::uuid()]));
+            Subscription::create($plan);
         }
     }
 }

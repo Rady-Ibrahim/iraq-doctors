@@ -5,6 +5,42 @@
 @section('page-description', 'إدارة قائمة مرضاك والسجلات الطبية')
 
 @section('content')
+<div class="flex items-center justify-between mb-6">
+    <div></div>
+    <button onclick="openGhostModal()" class="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+        <i class="fas fa-user-plus ml-2"></i>مريض خارجي (Ghost)
+    </button>
+</div>
+
+<!-- Ghost Patient Modal -->
+<div id="ghostModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">إضافة مريض خارجي</h3>
+        <form id="ghostForm" onsubmit="createGhostPatient(event)" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">الاسم *</label>
+                <input type="text" id="ghostName" required class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">الهاتف *</label>
+                <input type="text" id="ghostPhone" required class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">الجنس</label>
+                <select id="ghostGender" class="w-full px-4 py-2 border rounded-lg">
+                    <option value="">غير محدد</option>
+                    <option value="male">ذكر</option>
+                    <option value="female">أنثى</option>
+                </select>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg">حفظ</button>
+                <button type="button" onclick="closeGhostModal()" class="flex-1 px-4 py-2 bg-gray-200 rounded-lg">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Filters -->
 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -76,7 +112,7 @@ async function loadPatients(page = 1) {
             renderPagination(data.meta);
             currentPage = page;
         } else {
-            alert(data.error?.message || 'فشل تحميل المرضى');
+            document.getElementById('patientsGrid').innerHTML = '<div class="col-span-full text-center py-12 text-red-600">تعذر تحميل المرضى</div>';
         }
     } catch (error) {
         console.error('Error loading patients:', error);
@@ -106,7 +142,7 @@ function renderPatientsGrid(patients) {
                     <i class="fas fa-user text-teal-600 text-2xl"></i>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-gray-800">${patient.name || 'غير محدد'}</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">${patient.name || 'غير محدد'} ${patient.is_ghost ? '<span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">خارجي</span>' : ''}</h3>
                     <p class="text-sm text-gray-500">${patient.phone || '-'}</p>
                 </div>
             </div>
@@ -181,6 +217,39 @@ function applyFilters() {
 function formatDate(date) {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('ar-IQ');
+}
+
+function openGhostModal() {
+    document.getElementById('ghostModal').classList.remove('hidden');
+}
+
+function closeGhostModal() {
+    document.getElementById('ghostModal').classList.add('hidden');
+    document.getElementById('ghostForm').reset();
+}
+
+async function createGhostPatient(event) {
+    event.preventDefault();
+    try {
+        showLoading();
+        const data = await apiCall('/doctor/api/ghost-patients', {
+            method: 'POST',
+            body: JSON.stringify({
+                name: document.getElementById('ghostName').value,
+                phone: document.getElementById('ghostPhone').value,
+                gender: document.getElementById('ghostGender').value || null,
+            }),
+        });
+        if (data?.success) {
+            showSuccess('تم إضافة المريض');
+            closeGhostModal();
+            loadPatients(currentPage);
+        }
+    } catch (e) {
+        showError('حدث خطأ أثناء الإضافة');
+    } finally {
+        hideLoading();
+    }
 }
 </script>
 @endsection

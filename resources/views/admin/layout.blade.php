@@ -60,17 +60,25 @@
                     <i class="fas fa-chart-line w-5"></i>
                     <span>الإيرادات</span>
                 </a>
+                <a href="/admin/dashboard/subscriptions" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                    <i class="fas fa-crown w-5"></i>
+                    <span>الاشتراكات</span>
+                </a>
                 <a href="/admin/dashboard/analytics" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
                     <i class="fas fa-chart-pie w-5"></i>
                     <span>التحليلات</span>
                 </a>
+                <a href="/admin/dashboard/specialities" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                    <i class="fas fa-stethoscope w-5"></i>
+                    <span>التخصصات</span>
+                </a>
+                <a href="/admin/dashboard/governorates" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                    <i class="fas fa-map-marker-alt w-5"></i>
+                    <span>المحافظات</span>
+                </a>
                 <a href="/admin/users" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
                     <i class="fas fa-user-cog w-5"></i>
                     <span>إدارة المستخدمين</span>
-                </a>
-                <a href="/admin/subscriptions" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
-                    <i class="fas fa-crown w-5"></i>
-                    <span>الاشتراكات</span>
                 </a>
             </nav>
 
@@ -303,5 +311,6 @@
             });
         }
     </script>
+    @yield('scripts')
 </body>
 </html>

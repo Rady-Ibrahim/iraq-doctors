@@ -18,10 +18,12 @@ class Otp extends Model
         'type',
         'attempts',
         'expires_at',
+        'verified_at',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
+        'verified_at' => 'datetime',
     ];
 
     public function isExpired(): bool

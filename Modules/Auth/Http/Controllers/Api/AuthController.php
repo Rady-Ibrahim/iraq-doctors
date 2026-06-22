@@ -123,12 +123,12 @@ class AuthController extends Controller
     public function verifyOtp(VerifyOtpRequest $request): JsonResponse
     {
         $otp = $this->authService->verifyOtp(
-            null,
+            $request->phone,
             $request->code,
             $request->type,
             $request->email
         );
-        
+
         if (!$otp) {
             return $this->error(
                 'الكود غير صحيح أو منتهي الصلاحية',
@@ -136,17 +136,26 @@ class AuthController extends Controller
                 401
             );
         }
-        
-        $user = User::where('email', $request->email)->first();
-        
-        if ($user) {
-            $user->update([
-                'email_verified_at' => now(),
-            ]);
+
+        $email = $request->email ?: $otp->email;
+        $phone = $request->phone ?: $otp->phone;
+        $user = null;
+
+        if ($email) {
+            $user = User::where('email', $email)->first();
+        } elseif ($phone) {
+            $user = User::where('phone', $phone)->first();
         }
-        
+
+        if ($user) {
+            $user->update(['email_verified_at' => now()]);
+        }
+
         return $this->success([
             'verified' => true,
+            'email' => $email,
+            'user_exists' => (bool) $user,
+            'email_verified_at' => $user?->fresh()->email_verified_at,
         ], 'تم التحقق بنجاح');
     }
 

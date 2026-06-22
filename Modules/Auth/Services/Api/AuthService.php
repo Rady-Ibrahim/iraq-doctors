@@ -15,13 +15,29 @@ class AuthService
     public function register(array $data): User
     {
         return DB::transaction(function () use ($data) {
+            $emailVerifiedAt = null;
+
+            if (!empty($data['email'])) {
+                $hasVerifiedOtp = Otp::where('email', $data['email'])
+                    ->where('type', 'register')
+                    ->whereNotNull('verified_at')
+                    ->where('verified_at', '>=', now()->subHour())
+                    ->exists();
+
+                if ($hasVerifiedOtp) {
+                    $emailVerifiedAt = now();
+                    Otp::where('email', $data['email'])->where('type', 'register')->delete();
+                }
+            }
+
             $user = User::create([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
                 'email' => $data['email'] ?? null,
                 'password' => Hash::make($data['password']),
-                'role' => 'patient',  // Mobile users are always patients
+                'role' => 'patient',
                 'status' => 'active',
+                'email_verified_at' => $emailVerifiedAt,
             ]);
 
             return $user;
@@ -100,6 +116,11 @@ class AuthService
 
     public function verifyOtp(?string $phone, string $code, string $type = 'login', ?string $email = null): ?Otp
     {
+        $type = match ($type) {
+            'reset_password' => 'password_reset',
+            default => $type,
+        };
+
         $query = Otp::where('type', $type)->latest();
 
         if ($email) {
@@ -119,7 +140,9 @@ class AuthService
             return null;
         }
 
-        return $otp;
+        $otp->update(['verified_at' => now()]);
+
+        return $otp->fresh();
     }
 
     public function loginWithOtp(string $phone, string $code): ?User
