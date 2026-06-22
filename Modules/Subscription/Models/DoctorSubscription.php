@@ -20,6 +20,12 @@ class DoctorSubscription extends Model
         'amount_paid',
         'payment_method',
         'transaction_id',
+        'payment_receipt',
+        'submitted_amount',
+        'payment_reject_reason',
+        'reviewed_by',
+        'reviewed_at',
+        'expiry_reminder_sent_at',
         'auto_renew',
         'cancelled_at',
     ];
@@ -30,6 +36,9 @@ class DoctorSubscription extends Model
         'amount_paid' => 'decimal:2',
         'auto_renew' => 'boolean',
         'cancelled_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+        'expiry_reminder_sent_at' => 'datetime',
+        'submitted_amount' => 'decimal:2',
     ];
 
     public function subscription()
@@ -55,6 +64,11 @@ class DoctorSubscription extends Model
             ->orWhere('end_date', '<', now());
     }
 
+    public function scopePendingPayment($query)
+    {
+        return $query->where('status', 'pending_payment');
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active'
@@ -65,6 +79,11 @@ class DoctorSubscription extends Model
     public function isExpired(): bool
     {
         return $this->status === 'expired' || $this->end_date < now();
+    }
+
+    public function isPendingPayment(): bool
+    {
+        return $this->status === 'pending_payment';
     }
 
     public function getDaysRemainingAttribute(): int

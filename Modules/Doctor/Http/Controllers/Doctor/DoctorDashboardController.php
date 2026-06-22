@@ -6,15 +6,20 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Doctor\Http\Requests\Web\CreateGhostPatientRequest;
+use Modules\Auth\Models\User;
 use Modules\Doctor\Models\Doctor;
 use Modules\Doctor\Services\DoctorDashboardService;
+use Modules\Appointment\Services\Api\AppointmentService;
 use App\Traits\ApiResponse;
 
 class DoctorDashboardController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private DoctorDashboardService $doctorDashboardService) {}
+    public function __construct(
+        private DoctorDashboardService $doctorDashboardService,
+        private AppointmentService $appointmentService
+    ) {}
 
     protected function resolveDoctor(): Doctor
     {
@@ -230,6 +235,120 @@ class DoctorDashboardController extends Controller
         }
     }
 
+    public function confirmAppointment($appointmentId): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            $appointment = $this->appointmentService->confirmByDoctor((int) $appointmentId, $doctor->id);
+
+            if (!$appointment) {
+                return $this->error('لا يمكن تأكيد هذا الموعد', 'INVALID_STATUS', 400);
+            }
+
+            return $this->success(
+                $this->doctorDashboardService->getAppointmentDetails($doctor->id, $appointment->id),
+                'تم تأكيد الموعد بنجاح'
+            );
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تأكيد الموعد');
+        }
+    }
+
+    public function rejectAppointment($appointmentId): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            $appointment = $this->appointmentService->rejectByDoctor((int) $appointmentId, $doctor->id);
+
+            if (!$appointment) {
+                return $this->error('لا يمكن رفض هذا الموعد', 'INVALID_STATUS', 400);
+            }
+
+            return $this->success(
+                $this->doctorDashboardService->getAppointmentDetails($doctor->id, $appointment->id),
+                'تم رفض الموعد بنجاح'
+            );
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء رفض الموعد');
+        }
+    }
+
+    public function completeAppointment($appointmentId): JsonResponse
+    {
+        try {
+            $doctor = $this->resolveDoctor();
+            $appointment = $this->appointmentService->completeByDoctor((int) $appointmentId, $doctor->id);
+
+            if (!$appointment) {
+                return $this->error('لا يمكن إكمال هذا الموعد', 'INVALID_STATUS', 400);
+            }
+
+            return $this->success(
+                $this->doctorDashboardService->getAppointmentDetails($doctor->id, $appointment->id),
+                'تم إكمال الموعد بنجاح'
+            );
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء إكمال الموعد');
+        }
+    }
+
+    public function unreadNotifications(): JsonResponse
+    {
+        try {
+            $user = User::findOrFail(auth('web')->id());
+            $notifications = $user
+                ->unreadNotifications()
+                ->latest()
+                ->limit(20)
+                ->get()
+                ->map(fn ($notification) => [
+                    'id' => $notification->id,
+                    'title' => $notification->data['title'] ?? 'إشعار',
+                    'message' => $notification->data['message'] ?? '',
+                    'type' => $notification->data['type'] ?? 'general',
+                    'action_url' => $notification->data['action_url'] ?? null,
+                    'created_at' => $notification->created_at?->format('Y-m-d H:i'),
+                ])
+                ->values()
+                ->all();
+
+            return $this->success([
+                'count' => count($notifications),
+                'items' => $notifications,
+            ]);
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب الإشعارات');
+        }
+    }
+
+    public function markNotificationRead($notificationId): JsonResponse
+    {
+        try {
+            $user = User::findOrFail(auth('web')->id());
+            $notification = $user
+                ->notifications()
+                ->where('id', $notificationId)
+                ->firstOrFail();
+
+            $notification->markAsRead();
+
+            return $this->success(null, 'تم تعليم الإشعار كمقروء');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث الإشعار');
+        }
+    }
+
+    public function markAllNotificationsRead(): JsonResponse
+    {
+        try {
+            $user = User::findOrFail(auth('web')->id());
+            $user->unreadNotifications->markAsRead();
+            return $this->success(null, 'تم تعليم كل الإشعارات كمقروءة');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث الإشعارات');
+        }
+    }
+
     public function subscription(): JsonResponse
     {
         try {
@@ -258,16 +377,6 @@ class DoctorDashboardController extends Controller
         }
 
         return $this->success(null, 'تم تغيير كلمة المرور بنجاح');
-    }
-
-    public function twoFactorStatus(): JsonResponse
-    {
-        return $this->success(['enabled' => false]);
-    }
-
-    public function toggleTwoFactor(): JsonResponse
-    {
-        return $this->success(['enabled' => false], 'المصادقة الثنائية غير متاحة حالياً');
     }
 
     public function createGhostPatient(CreateGhostPatientRequest $request): JsonResponse
@@ -357,7 +466,8 @@ class DoctorDashboardController extends Controller
     public function storeRecord(Request $request): JsonResponse
     {
         $request->validate([
-            'patient_id' => 'required|integer|exists:users,id',
+            'patient_id' => 'required_without:appointment_id|integer|exists:users,id',
+            'appointment_id' => 'nullable|integer|exists:appointments,id',
             'type' => 'required|string',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -371,11 +481,13 @@ class DoctorDashboardController extends Controller
             $record = $this->doctorDashboardService->createRecord(
                 $doctor->id,
                 auth('web')->id(),
-                $request->only(['patient_id', 'type', 'title', 'description', 'notes']),
+                $request->only(['patient_id', 'appointment_id', 'type', 'title', 'description', 'notes']),
                 $request->file('files', [])
             );
 
             return $this->created($this->doctorDashboardService->getRecord($doctor->id, $record->id), 'تم إنشاء السجل بنجاح');
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 'VALIDATION_ERROR', 422);
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء إنشاء السجل');
         }

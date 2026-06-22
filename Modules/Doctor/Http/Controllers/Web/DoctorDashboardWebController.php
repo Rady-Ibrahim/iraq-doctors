@@ -82,4 +82,14 @@ class DoctorDashboardWebController extends Controller
     {
         return view('doctor.records.edit', ['recordId' => $id]);
     }
+
+    public function subscriptionPlans(): View
+    {
+        return view('doctor.subscription.plans', ['doctor' => $this->resolveDoctor()]);
+    }
+
+    public function requests(): View
+    {
+        return view('doctor.requests.index');
+    }
 }

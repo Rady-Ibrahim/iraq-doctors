@@ -64,6 +64,36 @@
     </div>
 </div>
 
+<!-- Daily Clinic Stats -->
+<div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-gray-800">إحصائيات يوم العيادة</h3>
+        <p class="text-sm text-gray-500">{{ now()->format('Y-m-d') }}</p>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="p-4 rounded-lg bg-green-50">
+            <p class="text-xs text-gray-600">مكتملة اليوم</p>
+            <p id="clinicCompleted" class="text-2xl font-bold text-green-700 mt-1">0</p>
+        </div>
+        <div class="p-4 rounded-lg bg-blue-50">
+            <p class="text-xs text-gray-600">مؤكدة اليوم</p>
+            <p id="clinicConfirmed" class="text-2xl font-bold text-blue-700 mt-1">0</p>
+        </div>
+        <div class="p-4 rounded-lg bg-red-50">
+            <p class="text-xs text-gray-600">ملغاة اليوم</p>
+            <p id="clinicCancelled" class="text-2xl font-bold text-red-700 mt-1">0</p>
+        </div>
+        <div class="p-4 rounded-lg bg-purple-50">
+            <p class="text-xs text-gray-600">سجلات أُنشئت</p>
+            <p id="clinicRecords" class="text-2xl font-bold text-purple-700 mt-1">0</p>
+        </div>
+        <div class="p-4 rounded-lg bg-amber-50">
+            <p class="text-xs text-gray-600">إيراد اليوم</p>
+            <p id="clinicRevenue" class="text-2xl font-bold text-amber-700 mt-1">0</p>
+        </div>
+    </div>
+</div>
+
 <!-- Today's Activity & Upcoming Tasks -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <!-- Today's Appointments -->
@@ -139,6 +169,12 @@
 
                 document.getElementById('totalPrescriptions').textContent = metrics.prescriptions.total || 0;
                 document.getElementById('thisMonthPrescriptions').textContent = `${metrics.prescriptions.this_month || 0} هذا الشهر`;
+
+                document.getElementById('clinicCompleted').textContent = metrics.clinic_today?.completed || 0;
+                document.getElementById('clinicConfirmed').textContent = metrics.clinic_today?.confirmed || 0;
+                document.getElementById('clinicCancelled').textContent = metrics.clinic_today?.cancelled || 0;
+                document.getElementById('clinicRecords').textContent = metrics.clinic_today?.records_created || 0;
+                document.getElementById('clinicRevenue').textContent = formatCurrency(metrics.clinic_today?.revenue || 0);
 
                 document.getElementById('averageRating').textContent = metrics.reviews.average_rating || '0.0';
                 document.getElementById('totalReviews').textContent = `${metrics.reviews.total || 0} تقييم`;
@@ -305,6 +341,10 @@
             'no_show': 'لم يحضر'
         };
         return texts[status] || status;
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'IQD', minimumFractionDigits: 0 }).format(amount || 0);
     }
 </script>
 @endsection

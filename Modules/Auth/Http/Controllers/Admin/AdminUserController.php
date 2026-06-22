@@ -110,6 +110,11 @@ class AdminUserController extends Controller
     {
         try {
             $user = User::findOrFail($id);
+
+            if ($user->id === auth('web')->id()) {
+                return $this->error('لا يمكنك حذف حسابك الخاص', 'FORBIDDEN', 403);
+            }
+
             $user->delete();
             return $this->success(null, 'تم حذف المستخدم بنجاح');
         } catch (\Exception $e) {

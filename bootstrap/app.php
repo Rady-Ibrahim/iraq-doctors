@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
+use Illuminate\Console\Scheduling\Schedule;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         api: __DIR__.'/../routes/api.php',
     )
+    ->withSchedule(function (Schedule $schedule) {
+        $schedule->command('subscriptions:process')->dailyAt('08:00');
+    })
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectGuestsTo(function (Request $request) {
             if ($request->is('doctor/*')) {
@@ -32,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'doctor'           => \App\Http\Middleware\DoctorMiddleware::class,
             'doctor.approved'  => \App\Http\Middleware\DoctorApprovedMiddleware::class,
             'doctor.email.verified' => \App\Http\Middleware\DoctorEmailVerifiedMiddleware::class,
+            'session.scope'       => \App\Http\Middleware\SetSessionCookie::class,
             'role'             => \App\Http\Middleware\RoleMiddleware::class, // 🌟 تم إضافة الرول ميدل وير هنا
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
         ]);
@@ -60,7 +65,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'success' => false,
                     'error' => [
                         'code'    => class_basename($e),
-                        'message' => config('app.debug') ? $e->getMessage() : 'حدث خطأ في الخادممم',
+                        'message' => config('app.debug') ? $e->getMessage() : 'حدث خطأ في الخادم',
                     ],
                 ], $statusCode);
             }

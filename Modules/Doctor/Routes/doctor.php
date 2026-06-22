@@ -5,9 +5,10 @@ use Modules\Doctor\Http\Controllers\Doctor\DoctorDashboardController;
 use Modules\Doctor\Http\Controllers\Web\DoctorAuthController;
 use Modules\Doctor\Http\Controllers\Web\DoctorBranchController;
 use Modules\Doctor\Http\Controllers\Web\DoctorDashboardWebController;
+use Modules\Doctor\Http\Controllers\Web\DoctorSubscriptionController;
 use Modules\Doctor\Http\Controllers\Web\DoctorVerificationController;
 
-Route::middleware('web')->group(function () {
+Route::middleware(['session.scope:doctor', 'web'])->group(function () {
     Route::redirect('/', '/doctor/login');
 
     Route::prefix('doctor')->name('doctor.')->group(function () {
@@ -45,6 +46,8 @@ Route::middleware('web')->group(function () {
                 Route::get('/dashboard/records/create', [DoctorDashboardWebController::class, 'recordCreate'])->name('records.create');
                 Route::get('/dashboard/records/{id}', [DoctorDashboardWebController::class, 'recordShow'])->name('records.show');
                 Route::get('/dashboard/records/{id}/edit', [DoctorDashboardWebController::class, 'recordEdit'])->name('records.edit');
+                Route::get('/dashboard/subscription/plans', [DoctorDashboardWebController::class, 'subscriptionPlans'])->name('subscription.plans');
+                Route::get('/dashboard/requests', [DoctorDashboardWebController::class, 'requests'])->name('requests');
 
                 Route::prefix('api')->group(function () {
                     Route::get('/metrics', [DoctorDashboardController::class, 'metrics']);
@@ -78,11 +81,18 @@ Route::middleware('web')->group(function () {
                     Route::get('/calendar', [DoctorDashboardController::class, 'calendar']);
                     Route::get('/appointments', [DoctorDashboardController::class, 'appointments']);
                     Route::get('/appointments/{appointmentId}', [DoctorDashboardController::class, 'appointmentDetails']);
+                    Route::post('/appointments/{appointmentId}/confirm', [DoctorDashboardController::class, 'confirmAppointment']);
+                    Route::post('/appointments/{appointmentId}/reject', [DoctorDashboardController::class, 'rejectAppointment']);
+                    Route::post('/appointments/{appointmentId}/complete', [DoctorDashboardController::class, 'completeAppointment']);
+                    Route::get('/notifications/unread', [DoctorDashboardController::class, 'unreadNotifications']);
+                    Route::post('/notifications/{notificationId}/read', [DoctorDashboardController::class, 'markNotificationRead']);
+                    Route::post('/notifications/read-all', [DoctorDashboardController::class, 'markAllNotificationsRead']);
 
                     Route::get('/subscription', [DoctorDashboardController::class, 'subscription']);
+                    Route::get('/subscription/plans', [DoctorSubscriptionController::class, 'plans']);
+                    Route::get('/payment-settings', [DoctorSubscriptionController::class, 'paymentSettings']);
+                    Route::post('/subscription/subscribe', [DoctorSubscriptionController::class, 'subscribe']);
                     Route::post('/change-password', [DoctorDashboardController::class, 'changePassword']);
-                    Route::get('/two-factor-status', [DoctorDashboardController::class, 'twoFactorStatus']);
-                    Route::post('/two-factor', [DoctorDashboardController::class, 'toggleTwoFactor']);
 
                     Route::get('/branches', [DoctorBranchController::class, 'index']);
                     Route::post('/branches', [DoctorBranchController::class, 'store']);

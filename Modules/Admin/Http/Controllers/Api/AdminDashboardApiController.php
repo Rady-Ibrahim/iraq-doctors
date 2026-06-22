@@ -5,14 +5,19 @@ namespace Modules\Admin\Http\Controllers\Api;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use App\Models\AppSetting;
 use Modules\Admin\Services\AdminDashboardService;
+use Modules\Subscription\Services\SubscriptionService;
 use App\Traits\ApiResponse;
 
 class AdminDashboardApiController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private AdminDashboardService $adminDashboardService) {}
+    public function __construct(
+        private AdminDashboardService $adminDashboardService,
+        private SubscriptionService $subscriptionService
+    ) {}
 
     public function metrics(): JsonResponse
     {
@@ -125,6 +130,127 @@ class AdminDashboardApiController extends Controller
             return $this->success($data);
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء جلب الاشتراكات');
+        }
+    }
+
+    public function paymentSettings(): JsonResponse
+    {
+        return $this->success(AppSetting::getPaymentSettings());
+    }
+
+    public function updatePaymentSettings(Request $request): JsonResponse
+    {
+        $request->validate([
+            'vodafone_cash_number' => 'nullable|string|max:20',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_account_name' => 'nullable|string|max:255',
+            'bank_account_number' => 'nullable|string|max:50',
+        ]);
+
+        $settings = AppSetting::updatePaymentSettings($request->only([
+            'vodafone_cash_number',
+            'bank_name',
+            'bank_account_name',
+            'bank_account_number',
+        ]));
+
+        return $this->success($settings, 'تم حفظ إعدادات الدفع بنجاح');
+    }
+
+    public function confirmSubscription($id): JsonResponse
+    {
+        try {
+            $subscription = $this->subscriptionService->confirmPayment((int) $id, auth('web')->id());
+            return $this->success($subscription, 'تم تأكيد الاشتراك بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تأكيد الاشتراك');
+        }
+    }
+
+    public function rejectSubscription(Request $request, $id): JsonResponse
+    {
+        $request->validate(['reason' => 'nullable|string|max:500']);
+
+        try {
+            $subscription = $this->subscriptionService->rejectPayment(
+                (int) $id,
+                auth('web')->id(),
+                $request->reason
+            );
+            return $this->success($subscription, 'تم رفض طلب الاشتراك');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء رفض الاشتراك');
+        }
+    }
+
+    public function subscriptionPlans(): JsonResponse
+    {
+        try {
+            return $this->success($this->subscriptionService->getAllPlans());
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب خطط الاشتراك');
+        }
+    }
+
+    public function storeSubscriptionPlan(Request $request): JsonResponse
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description_ar' => 'nullable|string',
+            'description_en' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'duration_days' => 'required|integer|min:1',
+            'max_appointments' => 'nullable|integer|min:1',
+            'is_featured' => 'nullable|boolean',
+            'has_analytics' => 'nullable|boolean',
+            'has_banner' => 'nullable|boolean',
+            'visibility_score' => 'nullable|integer|min:1|max:10',
+            'features' => 'nullable|array',
+            'status' => 'nullable|in:active,inactive',
+            'sort_order' => 'nullable|integer|min:0',
+        ]);
+
+        try {
+            $plan = $this->subscriptionService->createPlan($request->all());
+            return $this->created($plan, 'تم إنشاء خطة الاشتراك بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء إنشاء الخطة');
+        }
+    }
+
+    public function updateSubscriptionPlan(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'description_ar' => 'nullable|string',
+            'description_en' => 'nullable|string',
+            'price' => 'sometimes|required|numeric|min:0',
+            'duration_days' => 'sometimes|required|integer|min:1',
+            'max_appointments' => 'nullable|integer|min:1',
+            'is_featured' => 'nullable|boolean',
+            'has_analytics' => 'nullable|boolean',
+            'has_banner' => 'nullable|boolean',
+            'visibility_score' => 'nullable|integer|min:1|max:10',
+            'features' => 'nullable|array',
+            'status' => 'nullable|in:active,inactive',
+            'sort_order' => 'nullable|integer|min:0',
+        ]);
+
+        try {
+            $plan = $this->subscriptionService->updatePlan((int) $id, $request->all());
+            return $this->success($plan, 'تم تحديث خطة الاشتراك بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث الخطة');
+        }
+    }
+
+    public function deleteSubscriptionPlan($id): JsonResponse
+    {
+        try {
+            $this->subscriptionService->deletePlan((int) $id);
+            return $this->success(null, 'تم حذف خطة الاشتراك بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء حذف الخطة');
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace Modules\Appointment\Services\Api;
 
+use App\Notifications\NewAppointmentBooked;
 use Modules\Appointment\Models\Appointment;
 use Modules\Doctor\Models\Doctor;
 use Modules\Auth\Models\User;
@@ -25,6 +26,11 @@ class AppointmentService
                 'payment_status' => 'pending',
                 'notes' => $data['notes'] ?? null,
             ]);
+
+            $doctor->loadMissing('user');
+            if ($doctor->user) {
+                $doctor->user->notify(new NewAppointmentBooked($appointment));
+            }
 
             return $appointment;
         });
@@ -76,6 +82,57 @@ class AppointmentService
             $appointment->update(['status' => 'completed']);
 
             return $appointment;
+        });
+    }
+
+    public function confirmByDoctor(int $appointmentId, int $doctorId): ?Appointment
+    {
+        return DB::transaction(function () use ($appointmentId, $doctorId) {
+            $appointment = Appointment::where('id', $appointmentId)
+                ->where('doctor_id', $doctorId)
+                ->first();
+
+            if (!$appointment || !$appointment->canBeConfirmed()) {
+                return null;
+            }
+
+            $appointment->update(['status' => 'confirmed']);
+
+            return $appointment->fresh(['patient']);
+        });
+    }
+
+    public function rejectByDoctor(int $appointmentId, int $doctorId): ?Appointment
+    {
+        return DB::transaction(function () use ($appointmentId, $doctorId) {
+            $appointment = Appointment::where('id', $appointmentId)
+                ->where('doctor_id', $doctorId)
+                ->first();
+
+            if (!$appointment || $appointment->status !== 'pending') {
+                return null;
+            }
+
+            $appointment->update(['status' => 'cancelled']);
+
+            return $appointment->fresh(['patient']);
+        });
+    }
+
+    public function completeByDoctor(int $appointmentId, int $doctorId): ?Appointment
+    {
+        return DB::transaction(function () use ($appointmentId, $doctorId) {
+            $appointment = Appointment::where('id', $appointmentId)
+                ->where('doctor_id', $doctorId)
+                ->first();
+
+            if (!$appointment || !$appointment->canBeCompleted()) {
+                return null;
+            }
+
+            $appointment->update(['status' => 'completed']);
+
+            return $appointment->fresh(['patient']);
         });
     }
 

@@ -7,7 +7,7 @@ use Modules\Admin\Http\Controllers\Api\AdminDashboardApiController;
 use Modules\Admin\Http\Controllers\Api\AdminCatalogApiController;
 use Modules\Auth\Http\Controllers\Admin\AdminUserController;
 
-Route::middleware('web')->group(function () {
+Route::middleware(['session.scope:admin', 'web'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('guest:web')->group(function () {
             Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
@@ -50,6 +50,14 @@ Route::middleware('web')->group(function () {
                 Route::get('/appointments', [AdminDashboardApiController::class, 'appointments']);
             Route::get('/revenue', [AdminDashboardApiController::class, 'revenue']);
             Route::get('/subscriptions', [AdminDashboardApiController::class, 'subscriptions']);
+            Route::get('/subscriptions/plans', [AdminDashboardApiController::class, 'subscriptionPlans']);
+            Route::post('/subscriptions/plans', [AdminDashboardApiController::class, 'storeSubscriptionPlan']);
+            Route::put('/subscriptions/plans/{id}', [AdminDashboardApiController::class, 'updateSubscriptionPlan']);
+            Route::delete('/subscriptions/plans/{id}', [AdminDashboardApiController::class, 'deleteSubscriptionPlan']);
+            Route::get('/payment-settings', [AdminDashboardApiController::class, 'paymentSettings']);
+            Route::put('/payment-settings', [AdminDashboardApiController::class, 'updatePaymentSettings']);
+            Route::post('/subscriptions/{id}/confirm', [AdminDashboardApiController::class, 'confirmSubscription']);
+            Route::post('/subscriptions/{id}/reject', [AdminDashboardApiController::class, 'rejectSubscription']);
             Route::get('/analytics', [AdminDashboardApiController::class, 'analytics']);
                 Route::post('/patients/{id}/block', [AdminDashboardApiController::class, 'blockPatient']);
                 Route::post('/patients/{id}/unblock', [AdminDashboardApiController::class, 'unblockPatient']);
@@ -58,6 +66,7 @@ Route::middleware('web')->group(function () {
                 Route::post('/appointments/{id}/confirm', [AdminDashboardApiController::class, 'confirmAppointment']);
                 Route::post('/appointments/{id}/cancel', [AdminDashboardApiController::class, 'cancelAppointment']);
                 Route::get('/users', [AdminUserController::class, 'index']);
+                Route::post('/users/admins', [AdminUserController::class, 'createAdmin']);
                 Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
                 Route::post('/users/{id}/block', [AdminUserController::class, 'block']);
                 Route::post('/users/{id}/unblock', [AdminUserController::class, 'unblock']);

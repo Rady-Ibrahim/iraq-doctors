@@ -83,7 +83,7 @@
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
                     </div>
                     <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">الصورة الشخصية</label>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">الصورة الشخصية (حتى 10 ميجا)</label>
                         <input type="file" name="avatar" accept=".jpg,.jpeg,.png" required
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
                     </div>

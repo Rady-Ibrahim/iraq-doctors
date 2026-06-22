@@ -5,6 +5,45 @@
 @section('page-description', 'إدارة جميع مستخدمي النظام')
 
 @section('content')
+<div class="flex justify-end mb-4">
+    <button onclick="openAddAdminModal()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+        <i class="fas fa-user-plus ml-2"></i>إضافة مسؤول
+    </button>
+</div>
+
+<!-- Add Admin Modal -->
+<div id="addAdminModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+        <div class="p-6 border-b flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-800">إضافة مسؤول جديد</h3>
+            <button onclick="closeAddAdminModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="addAdminForm" onsubmit="createAdmin(event)" class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">الاسم</label>
+                <input type="text" id="adminName" required class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">رقم الهاتف</label>
+                <input type="tel" id="adminPhone" required class="w-full px-4 py-2 border rounded-lg" placeholder="07xxxxxxxxx">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">البريد الإلكتروني</label>
+                <input type="email" id="adminEmail" required class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">كلمة المرور</label>
+                <input type="password" id="adminPassword" required minlength="8" class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">تأكيد كلمة المرور</label>
+                <input type="password" id="adminPasswordConfirmation" required minlength="8" class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <button type="submit" class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">إنشاء الحساب</button>
+        </form>
+    </div>
+</div>
+
 <!-- Filters -->
 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -295,6 +334,50 @@ function getRoleText(role) {
 function formatDate(date) {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('ar-IQ');
+}
+
+function openAddAdminModal() {
+    document.getElementById('addAdminModal').classList.remove('hidden');
+    document.getElementById('addAdminModal').classList.add('flex');
+}
+
+function closeAddAdminModal() {
+    document.getElementById('addAdminModal').classList.add('hidden');
+    document.getElementById('addAdminModal').classList.remove('flex');
+    document.getElementById('addAdminForm').reset();
+}
+
+async function createAdmin(e) {
+    e.preventDefault();
+    const password = document.getElementById('adminPassword').value;
+    const confirmation = document.getElementById('adminPasswordConfirmation').value;
+    if (password !== confirmation) {
+        alert('كلمات المرور غير متطابقة');
+        return;
+    }
+
+    try {
+        showLoading();
+        const data = await apiCall('/admin/api/users/admins', {
+            method: 'POST',
+            body: JSON.stringify({
+                name: document.getElementById('adminName').value,
+                phone: document.getElementById('adminPhone').value,
+                email: document.getElementById('adminEmail').value,
+                password,
+                password_confirmation: confirmation,
+            }),
+        });
+        if (data?.success) {
+            alert(data.message || 'تم إنشاء المسؤول بنجاح');
+            closeAddAdminModal();
+            loadUsers(1);
+        }
+    } catch (err) {
+        alert('حدث خطأ أثناء إنشاء المسؤول');
+    } finally {
+        hideLoading();
+    }
 }
 </script>
 @endsection

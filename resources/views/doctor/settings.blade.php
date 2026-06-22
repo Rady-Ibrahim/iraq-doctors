@@ -124,8 +124,7 @@
 
 <!-- Security Tab -->
 <div id="content-security" class="tab-content hidden">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Change Password -->
+    <div class="max-w-lg">
         <div class="bg-white rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-6">تغيير كلمة المرور</h3>
             <form id="passwordForm" onsubmit="changePassword(event)">
@@ -150,23 +149,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-
-        <!-- Two-Factor Authentication -->
-        <div class="bg-white rounded-xl shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-6">المصادقة الثنائية</h3>
-            <div class="space-y-4">
-                <p class="text-gray-600">تفعيل المصادقة الثنائية يضيف طبقة أمان إضافية لحسابك.</p>
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                        <p class="font-semibold text-gray-800">المصادقة الثنائية</p>
-                        <p class="text-sm text-gray-600" id="twoFactorStatus">غير مفعلة</p>
-                    </div>
-                    <button onclick="toggleTwoFactor()" id="toggleTwoFactorBtn" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
-                        تفعيل
-                    </button>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -363,27 +345,27 @@ function renderSubscription(subscription) {
         return;
     }
 
+    const statusLabels = { active: 'نشط', pending_payment: 'بانتظار الدفع' };
+    const statusColors = { active: 'bg-green-100 text-green-800', pending_payment: 'bg-yellow-100 text-yellow-800' };
+
     container.innerHTML = `
         <div class="p-4 bg-gray-50 rounded-lg">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <p class="font-semibold text-gray-800">${subscription.plan_name || 'غير محدد'}</p>
-                    <p class="text-sm text-gray-600">${subscription.price || 0} د.ع / شهر</p>
+                    <p class="text-sm text-gray-600">${subscription.price || 0} د.ع</p>
                 </div>
-                <span class="px-3 py-1 rounded-full text-xs font-semibold ${subscription.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                    ${subscription.status === 'active' ? 'نشط' : 'غير نشط'}
+                <span class="px-3 py-1 rounded-full text-xs font-semibold ${statusColors[subscription.status] || 'bg-red-100 text-red-800'}">
+                    ${statusLabels[subscription.status] || 'غير نشط'}
                 </span>
             </div>
-            <div class="space-y-2 text-sm">
-                <p class="text-gray-600">
-                    <span class="font-semibold">تاريخ البدء:</span>
-                    ${formatDate(subscription.start_date)}
-                </p>
-                <p class="text-gray-600">
-                    <span class="font-semibold">تاريخ الانتهاء:</span>
-                    ${formatDate(subscription.end_date)}
-                </p>
-            </div>
+            ${subscription.status === 'active' ? `<div class="space-y-2 text-sm">
+                <p class="text-gray-600"><span class="font-semibold">تاريخ البدء:</span> ${formatDate(subscription.start_date)}</p>
+                <p class="text-gray-600"><span class="font-semibold">تاريخ الانتهاء:</span> ${formatDate(subscription.end_date)}</p>
+            </div>` : subscription.status === 'pending_payment' ? '<p class="text-sm text-yellow-700">طلبك قيد المراجعة من الإدارة</p>' : ''}
+            <a href="/doctor/dashboard/subscription/plans" class="inline-block mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm">
+                ${subscription.status === 'active' ? 'تغيير الباقة' : 'عرض الخطط'}
+            </a>
         </div>
     `;
 }
@@ -416,37 +398,6 @@ async function changePassword(event) {
         }
     } catch (error) {
         alert('حدث خطأ أثناء تغيير كلمة المرور');
-    }
-}
-
-async function toggleTwoFactor() {
-    try {
-        const data = await apiCall('/doctor/api/two-factor', {
-            method: 'POST'
-        });
-
-        if (data.success) {
-            alert('تم تغيير إعدادات المصادقة الثنائية بنجاح');
-            loadTwoFactorStatus();
-        } else {
-            alert(data.error?.message || 'فشلت العملية');
-        }
-    } catch (error) {
-        alert('حدث خطأ أثناء تغيير الإعدادات');
-    }
-}
-
-async function loadTwoFactorStatus() {
-    try {
-        const data = await apiCall('/doctor/api/two-factor-status');
-        
-        if (data.success) {
-            const isEnabled = data.data.enabled;
-            document.getElementById('twoFactorStatus').textContent = isEnabled ? 'مفعلة' : 'غير مفعلة';
-            document.getElementById('toggleTwoFactorBtn').textContent = isEnabled ? 'إلغاء التفعيل' : 'تفعيل';
-        }
-    } catch (error) {
-        console.error('Error loading two-factor status:', error);
     }
 }
 

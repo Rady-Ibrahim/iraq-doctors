@@ -5,6 +5,12 @@
 @section('page-description', 'إضافة سجل طبي جديد للمريض')
 
 @section('content')
+@if(request('appointment_id'))
+<div class="mb-6 bg-teal-50 border border-teal-200 rounded-lg p-4">
+    <p class="text-teal-800 font-semibold"><i class="fas fa-link ml-2"></i>إضافة سجل طبي لموعد مكتمل من التطبيق</p>
+    <p class="text-sm text-teal-700 mt-1">سيتم ربط السجل بالموعد رقم {{ request('appointment_id') }}</p>
+</div>
+@endif
 <!-- Back Button -->
 <div class="mb-6">
     <a href="/doctor/dashboard/records" class="text-teal-600 hover:text-teal-700 flex items-center gap-2">
@@ -143,8 +149,11 @@
 @section('scripts')
 <script>
 let selectedFiles = [];
+let linkedAppointmentId = null;
 
 window.addEventListener('load', async function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    linkedAppointmentId = urlParams.get('appointment_id');
     await loadPatients();
 });
 
@@ -244,6 +253,7 @@ async function createRecord(event) {
         // Create FormData for file upload
         const formData = new FormData();
         formData.append('patient_id', document.getElementById('patientId').value);
+        if (linkedAppointmentId) formData.append('appointment_id', linkedAppointmentId);
         formData.append('type', document.getElementById('recordType').value);
         formData.append('title', document.getElementById('recordTitle').value);
         formData.append('description', document.getElementById('recordDescription').value);

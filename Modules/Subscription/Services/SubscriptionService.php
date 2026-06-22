@@ -6,6 +6,7 @@ use Modules\Subscription\Models\Subscription;
 use Modules\Subscription\Models\DoctorSubscription;
 use Modules\Doctor\Models\Doctor;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
 
 class SubscriptionService
 {
@@ -66,10 +67,14 @@ class SubscriptionService
             $doctor = Doctor::findOrFail($doctorId);
             $subscription = Subscription::findOrFail($subscriptionId);
 
-            // Check if doctor has active subscription
             $activeSubscription = $doctor->doctorSubscriptions()->active()->first();
             if ($activeSubscription) {
                 throw new \Exception('Doctor already has an active subscription');
+            }
+
+            $pending = $doctor->doctorSubscriptions()->pendingPayment()->first();
+            if ($pending) {
+                throw new \Exception('Doctor already has a pending payment request');
             }
 
             $startDate = now();
@@ -87,12 +92,126 @@ class SubscriptionService
                 'auto_renew' => $paymentData['auto_renew'] ?? false,
             ]);
 
-            // Update doctor's current subscription
             $doctor->subscription_id = $subscriptionId;
             $doctor->save();
 
             return $doctorSubscription;
         });
+    }
+
+    public function submitPaymentRequest(
+        int $doctorId,
+        int $subscriptionId,
+        float $submittedAmount,
+        UploadedFile $receipt,
+        string $paymentMethod = 'bank_transfer'
+    ): DoctorSubscription {
+        return DB::transaction(function () use ($doctorId, $subscriptionId, $submittedAmount, $receipt, $paymentMethod) {
+            $doctor = Doctor::findOrFail($doctorId);
+            $subscription = Subscription::findOrFail($subscriptionId);
+
+            if ($doctor->doctorSubscriptions()->active()->exists()) {
+                throw new \InvalidArgumentException('لديك اشتراك نشط بالفعل');
+            }
+
+            if ($doctor->doctorSubscriptions()->pendingPayment()->exists()) {
+                throw new \InvalidArgumentException('لديك طلب دفع قيد المراجعة بالفعل');
+            }
+
+            if ((float) $submittedAmount !== (float) $subscription->price) {
+                throw new \InvalidArgumentException('المبلغ المُدخل يجب أن يساوي سعر الباقة بالضبط');
+            }
+
+            return DoctorSubscription::create([
+                'doctor_id' => $doctorId,
+                'subscription_id' => $subscriptionId,
+                'start_date' => null,
+                'end_date' => null,
+                'status' => 'pending_payment',
+                'amount_paid' => 0,
+                'submitted_amount' => $submittedAmount,
+                'payment_method' => $paymentMethod,
+                'payment_receipt' => $receipt->store('subscriptions/receipts', 'public'),
+            ]);
+        });
+    }
+
+    public function confirmPayment(int $doctorSubscriptionId, int $adminUserId): DoctorSubscription
+    {
+        return DB::transaction(function () use ($doctorSubscriptionId, $adminUserId) {
+            $doctorSubscription = DoctorSubscription::with('subscription')
+                ->where('status', 'pending_payment')
+                ->findOrFail($doctorSubscriptionId);
+
+            $subscription = $doctorSubscription->subscription;
+            $startDate = now();
+            $endDate = now()->addDays($subscription->duration_days);
+
+            $doctorSubscription->update([
+                'status' => 'active',
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'amount_paid' => $doctorSubscription->submitted_amount ?? $subscription->price,
+                'reviewed_by' => $adminUserId,
+                'reviewed_at' => now(),
+                'payment_reject_reason' => null,
+                'expiry_reminder_sent_at' => null,
+            ]);
+
+            $doctorSubscription->doctor->update(['subscription_id' => $subscription->id]);
+
+            return $doctorSubscription->fresh(['doctor.user', 'subscription']);
+        });
+    }
+
+    public function rejectPayment(int $doctorSubscriptionId, int $adminUserId, ?string $reason = null): DoctorSubscription
+    {
+        return DB::transaction(function () use ($doctorSubscriptionId, $adminUserId, $reason) {
+            $doctorSubscription = DoctorSubscription::where('status', 'pending_payment')
+                ->findOrFail($doctorSubscriptionId);
+
+            $doctorSubscription->update([
+                'status' => 'cancelled',
+                'payment_reject_reason' => $reason,
+                'reviewed_by' => $adminUserId,
+                'reviewed_at' => now(),
+                'cancelled_at' => now(),
+            ]);
+
+            return $doctorSubscription->fresh(['doctor.user', 'subscription']);
+        });
+    }
+
+    public function getDoctorSubscriptionStatus(int $doctorId): ?array
+    {
+        $doctor = Doctor::findOrFail($doctorId);
+
+        $pending = $doctor->doctorSubscriptions()->pendingPayment()->with('subscription')->latest()->first();
+        if ($pending) {
+            return [
+                'status' => 'pending_payment',
+                'plan_name' => $pending->subscription?->name,
+                'price' => $pending->subscription?->price,
+                'submitted_amount' => $pending->submitted_amount,
+                'payment_method' => $pending->payment_method,
+                'payment_reject_reason' => $pending->payment_reject_reason,
+                'created_at' => $pending->created_at?->format('Y-m-d'),
+            ];
+        }
+
+        $active = $doctor->doctorSubscriptions()->active()->with('subscription')->first();
+        if ($active) {
+            return [
+                'status' => 'active',
+                'plan_name' => $active->subscription?->name,
+                'price' => $active->amount_paid,
+                'start_date' => $active->start_date?->format('Y-m-d'),
+                'end_date' => $active->end_date?->format('Y-m-d'),
+                'days_remaining' => $active->days_remaining,
+            ];
+        }
+
+        return null;
     }
 
     public function renewSubscription($doctorId)

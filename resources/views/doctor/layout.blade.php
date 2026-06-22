@@ -48,6 +48,15 @@
                     <i class="fas fa-users w-5"></i>
                     <span>المرضى</span>
                 </a>
+                <a href="/doctor/dashboard/requests" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                    <i class="fas fa-inbox w-5"></i>
+                    <span class="flex-1">طلبات المواعيد</span>
+                    <span id="pendingRequestsBadge" class="hidden bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
+                </a>
+                <a href="/doctor/dashboard/subscription/plans" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                    <i class="fas fa-crown w-5"></i>
+                    <span>الاشتراكات</span>
+                </a>
                 <a href="/doctor/dashboard/prescriptions" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
                     <i class="fas fa-prescription w-5"></i>
                     <span>الوصفات</span>
@@ -97,10 +106,21 @@
                         <p class="text-sm text-gray-500">@yield('page-description', 'نظرة عامة على حسابك')</p>
                     </div>
                     <div class="flex items-center gap-4">
-                        <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                        <div class="relative">
+                        <button onclick="toggleNotificationsMenu()" class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
                             <i class="fas fa-bell"></i>
-                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                            <span id="notificationDot" class="hidden absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                         </button>
+                        <div id="notificationsMenu" class="hidden absolute left-0 mt-2 w-96 bg-white border rounded-xl shadow-xl z-40">
+                            <div class="p-3 border-b flex items-center justify-between">
+                                <p class="font-semibold text-sm">الإشعارات</p>
+                                <button onclick="markAllNotificationsRead()" class="text-xs text-teal-600 hover:text-teal-700">تعليم الكل كمقروء</button>
+                            </div>
+                            <div id="notificationsList" class="max-h-96 overflow-y-auto">
+                                <p class="p-4 text-sm text-gray-500">لا توجد إشعارات جديدة</p>
+                            </div>
+                        </div>
+                        </div>
                         <button onclick="refreshData()" class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
                             <i class="fas fa-sync-alt"></i>
                         </button>
@@ -162,6 +182,9 @@
             location.reload();
         }
 
+        let notificationPolling = null;
+        let lastNotificationIds = new Set();
+
         @if (session('success'))
             window.addEventListener('load', function() {
                 showSuccess(@json(session('success')));
@@ -193,6 +216,64 @@
             }
 
             return data;
+        }
+
+        async function apiPost(endpoint, body = {}) {
+            return apiCall(endpoint, { method: 'POST', body: JSON.stringify(body) });
+        }
+
+        function toggleNotificationsMenu() {
+            const menu = document.getElementById('notificationsMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        async function loadUnreadNotifications(showToastForNew = false) {
+            const data = await apiCall('/doctor/api/notifications/unread');
+            if (!data?.success) return;
+
+            const items = data.data?.items || [];
+            const list = document.getElementById('notificationsList');
+            const dot = document.getElementById('notificationDot');
+            dot.classList.toggle('hidden', items.length === 0);
+
+            if (!items.length) {
+                list.innerHTML = '<p class="p-4 text-sm text-gray-500">لا توجد إشعارات جديدة</p>';
+                return;
+            }
+
+            if (showToastForNew) {
+                const newOnes = items.filter((item) => !lastNotificationIds.has(item.id));
+                newOnes.forEach((item) => showSuccess(item.message || 'إشعار جديد'));
+            }
+            lastNotificationIds = new Set(items.map((item) => item.id));
+
+            list.innerHTML = items.map((item) => `
+                <div class="p-3 border-b hover:bg-gray-50">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="cursor-pointer flex-1" onclick="openNotification('${item.id}', '${item.action_url || ''}')">
+                            <p class="text-sm font-semibold text-gray-800">${item.title || 'إشعار'}</p>
+                            <p class="text-xs text-gray-600 mt-1">${item.message || ''}</p>
+                            <p class="text-[11px] text-gray-400 mt-1">${item.created_at || ''}</p>
+                        </div>
+                        <button onclick="markNotificationRead('${item.id}')" class="text-xs text-teal-600 hover:text-teal-700">تمت القراءة</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function markNotificationRead(id) {
+            await apiPost(`/doctor/api/notifications/${id}/read`, {});
+            await loadUnreadNotifications(false);
+        }
+
+        async function markAllNotificationsRead() {
+            await apiPost('/doctor/api/notifications/read-all', {});
+            await loadUnreadNotifications(false);
+        }
+
+        async function openNotification(id, actionUrl) {
+            await markNotificationRead(id);
+            if (actionUrl) window.location.href = actionUrl;
         }
 
         async function apiUpload(endpoint, formData, method = 'POST') {
@@ -320,6 +401,20 @@
                 input.classList.remove('border-red-500');
             });
         }
+
+        window.addEventListener('load', async function() {
+            try {
+                const data = await apiCall('/doctor/api/metrics');
+                const badge = document.getElementById('pendingRequestsBadge');
+                if (badge && data?.success) {
+                    const count = data.data?.appointments?.pending_requests || 0;
+                    badge.textContent = count;
+                    badge.classList.toggle('hidden', count === 0);
+                }
+                await loadUnreadNotifications(false);
+                notificationPolling = setInterval(() => loadUnreadNotifications(true), 20000);
+            } catch (e) {}
+        });
     </script>
     @yield('scripts')
 </body>

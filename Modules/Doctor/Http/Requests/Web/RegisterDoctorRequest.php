@@ -13,6 +13,9 @@ class RegisterDoctorRequest extends FormRequest
 
     public function rules(): array
     {
+        $imageMax = config('uploads.max_image_kb', 10240);
+        $docMax = config('uploads.max_document_kb', 10240);
+
         return [
             'name' => 'required|string|max:255',
             'phone' => 'required|string|unique:users,phone|regex:/^[0-9]{10,15}$/',
@@ -26,14 +29,16 @@ class RegisterDoctorRequest extends FormRequest
             'longitude' => 'required|numeric|between:-180,180',
             'bio_ar' => 'nullable|string|max:2000',
             'experience_years' => 'nullable|integer|min:0|max:60',
-            'avatar' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-            'license_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'clinic_image' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'avatar' => "required|image|mimes:jpg,jpeg,png|max:{$imageMax}",
+            'license_document' => "required|file|mimes:pdf,jpg,jpeg,png|max:{$docMax}",
+            'clinic_image' => "nullable|file|mimes:jpg,jpeg,png|max:{$docMax}",
         ];
     }
 
     public function messages(): array
     {
+        $maxMb = (int) (config('uploads.max_image_kb', 10240) / 1024);
+
         return [
             'phone.regex' => 'رقم الهاتف غير صحيح',
             'phone.unique' => 'رقم الهاتف مسجل بالفعل',
@@ -48,6 +53,7 @@ class RegisterDoctorRequest extends FormRequest
             'longitude.required' => 'موقع العيادة (خط الطول) مطلوب',
             'avatar.required' => 'الصورة الشخصية مطلوبة',
             'avatar.image' => 'الصورة الشخصية يجب أن تكون صورة',
+            'avatar.max' => "حجم الصورة الشخصية يجب أن يكون أقل من {$maxMb} ميجا",
             'license_document.required' => 'صورة الترخيص مطلوبة',
             'license_document.mimes' => 'صورة الترخيص يجب أن تكون PDF أو صورة',
         ];

@@ -50,6 +50,34 @@ class DoctorDashboardService
 
         $totalReviews = Review::where('doctor_id', $doctorId)->count();
 
+        $pendingRequests = Appointment::where('doctor_id', $doctorId)
+            ->where('status', 'pending')
+            ->count();
+
+        $todayCompleted = Appointment::where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', today())
+            ->where('status', 'completed')
+            ->count();
+
+        $todayConfirmed = Appointment::where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', today())
+            ->where('status', 'confirmed')
+            ->count();
+
+        $todayCancelled = Appointment::where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', today())
+            ->where('status', 'cancelled')
+            ->count();
+
+        $todayRevenue = Appointment::where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', today())
+            ->where('status', 'completed')
+            ->sum('price');
+
+        $todayRecords = MedicalRecord::where('doctor_id', $doctorId)
+            ->whereDate('created_at', today())
+            ->count();
+
         return [
             'patients' => [
                 'total' => $totalPatients,
@@ -58,10 +86,18 @@ class DoctorDashboardService
             'appointments' => [
                 'today' => $todayAppointments,
                 'upcoming' => $upcomingAppointments,
+                'pending_requests' => $pendingRequests,
             ],
             'prescriptions' => [
                 'total' => $totalPrescriptions,
                 'this_month' => $thisMonthPrescriptions,
+            ],
+            'clinic_today' => [
+                'completed' => $todayCompleted,
+                'confirmed' => $todayConfirmed,
+                'cancelled' => $todayCancelled,
+                'records_created' => $todayRecords,
+                'revenue' => (float) $todayRevenue,
             ],
             'reviews' => [
                 'average_rating' => round((float) $doctor->rating, 1),
@@ -354,7 +390,7 @@ class DoctorDashboardService
 
     public function getAppointments(int $doctorId, array $filters = []): array
     {
-        $query = Appointment::where('doctor_id', $doctorId)->with('patient');
+        $query = Appointment::where('doctor_id', $doctorId)->with(['patient', 'medicalRecord']);
 
         if (!empty($filters['date'])) {
             $query->whereDate('appointment_date', $filters['date']);
@@ -375,7 +411,7 @@ class DoctorDashboardService
     public function getAppointmentDetails(int $doctorId, int $appointmentId): array
     {
         $appointment = Appointment::where('doctor_id', $doctorId)
-            ->with('patient')
+            ->with(['patient', 'medicalRecord'])
             ->findOrFail($appointmentId);
 
         return $this->formatAppointment($appointment);
@@ -383,20 +419,8 @@ class DoctorDashboardService
 
     public function getSubscription(int $doctorId): ?array
     {
-        $doctor = Doctor::findOrFail($doctorId);
-        $active = $doctor->activeSubscription();
-
-        if (!$active) {
-            return null;
-        }
-
-        return [
-            'plan_name' => $active->subscription?->name ?? 'خطة اشتراك',
-            'price' => $active->amount_paid,
-            'status' => $active->status,
-            'start_date' => $active->start_date?->format('Y-m-d'),
-            'end_date' => $active->end_date?->format('Y-m-d'),
-        ];
+        return app(\Modules\Subscription\Services\SubscriptionService::class)
+            ->getDoctorSubscriptionStatus($doctorId);
     }
 
     public function changePassword(int $userId, string $currentPassword, string $newPassword): bool
@@ -484,13 +508,28 @@ class DoctorDashboardService
     public function createRecord(int $doctorId, int $userId, array $data, array $files = []): MedicalRecord
     {
         return DB::transaction(function () use ($doctorId, $userId, $data, $files) {
-            $appointment = $this->ensureWalkInAppointment($doctorId, (int) $data['patient_id']);
+            if (!empty($data['appointment_id'])) {
+                $appointment = Appointment::where('doctor_id', $doctorId)
+                    ->where('id', $data['appointment_id'])
+                    ->where('status', 'completed')
+                    ->firstOrFail();
+
+                if (MedicalRecord::where('appointment_id', $appointment->id)->exists()) {
+                    throw new \InvalidArgumentException('يوجد سجل طبي لهذا الموعد بالفعل');
+                }
+
+                $patientId = $appointment->patient_id;
+            } else {
+                $patientId = (int) $data['patient_id'];
+                $appointment = $this->ensureWalkInAppointment($doctorId, $patientId);
+            }
+
             $attachments = $this->uploadAttachments($files);
 
             return MedicalRecord::create([
                 'appointment_id' => $appointment->id,
                 'doctor_id' => $doctorId,
-                'patient_id' => $data['patient_id'],
+                'patient_id' => $patientId,
                 'record_type' => $this->mapRecordTypeToDb($data['type'] ?? 'diagnosis'),
                 'diagnosis' => $data['title'] ?? null,
                 'notes' => $this->buildRecordNotes($data),
@@ -658,14 +697,25 @@ class DoctorDashboardService
 
     protected function formatAppointment(Appointment $appointment): array
     {
+        $hasRecord = $appointment->relationLoaded('medicalRecord')
+            ? $appointment->medicalRecord !== null
+            : $appointment->medicalRecord()->exists();
+
         return [
             'id' => $appointment->id,
             'patient_name' => $appointment->patient?->name,
             'patient_id' => $appointment->patient_id,
+            'patient_phone' => $appointment->patient?->phone,
             'date' => $appointment->appointment_date?->format('Y-m-d'),
             'time' => $this->formatTime($appointment->appointment_time),
             'status' => $appointment->status,
             'notes' => $appointment->notes,
+            'price' => $appointment->price,
+            'has_medical_record' => $hasRecord,
+            'can_add_record' => $appointment->status === 'completed' && !$hasRecord,
+            'record_create_url' => ($appointment->status === 'completed' && !$hasRecord)
+                ? '/doctor/dashboard/records/create?appointment_id=' . $appointment->id . '&patient_id=' . $appointment->patient_id
+                : null,
         ];
     }
 

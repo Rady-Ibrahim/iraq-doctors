@@ -13,9 +13,11 @@ class ResubmitDoctorDocumentsRequest extends FormRequest
 
     public function rules(): array
     {
+        $docMax = config('uploads.max_document_kb', 10240);
+
         return [
-            'license_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'clinic_image' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'license_document' => "required|file|mimes:pdf,jpg,jpeg,png|max:{$docMax}",
+            'clinic_image' => "nullable|file|mimes:jpg,jpeg,png|max:{$docMax}",
         ];
     }
 
