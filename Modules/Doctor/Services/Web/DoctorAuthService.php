@@ -5,6 +5,9 @@ namespace Modules\Doctor\Services\Web;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Notifications\DoctorDocumentsResubmitted;
+use App\Notifications\NewDoctorRegistered;
+use App\Services\AdminNotificationService;
 use Modules\Auth\Models\User;
 use Modules\Auth\Services\Api\AuthService;
 use Modules\Doctor\Models\Doctor;
@@ -74,6 +77,8 @@ class DoctorAuthService
                 'is_active' => true,
             ]);
 
+            AdminNotificationService::notify(new NewDoctorRegistered($doctor));
+
             return $user;
         });
     }
@@ -130,6 +135,8 @@ class DoctorAuthService
         }
 
         $doctor->update($updates);
+
+        AdminNotificationService::notify(new DoctorDocumentsResubmitted($doctor->fresh()));
 
         return $doctor->fresh();
     }

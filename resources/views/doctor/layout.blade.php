@@ -7,6 +7,7 @@
     <title>@yield('title', 'لوحة تحكم الطبيب')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    @include('partials.dashboard-ui', ['confirmColor' => '#14b8a6'])
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
         body {
@@ -39,37 +40,42 @@
             </div>
 
             <!-- Navigation -->
+            @php
+                $navClass = fn (bool $active) => $active
+                    ? 'sidebar-link active flex items-center gap-3 px-4 py-3 rounded-lg transition'
+                    : 'sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700';
+            @endphp
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <a href="/doctor/dashboard" class="sidebar-link active flex items-center gap-3 px-4 py-3 rounded-lg transition">
+                <a href="/doctor/dashboard" class="{{ $navClass(request()->routeIs('doctor.dashboard')) }}">
                     <i class="fas fa-home w-5"></i>
                     <span>الرئيسية</span>
                 </a>
-                <a href="/doctor/dashboard/patients" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/doctor/dashboard/patients" class="{{ $navClass(request()->routeIs('doctor.patients.*')) }}">
                     <i class="fas fa-users w-5"></i>
                     <span>المرضى</span>
                 </a>
-                <a href="/doctor/dashboard/requests" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/doctor/dashboard/requests" class="{{ $navClass(request()->routeIs('doctor.requests')) }}">
                     <i class="fas fa-inbox w-5"></i>
                     <span class="flex-1">طلبات المواعيد</span>
                     <span id="pendingRequestsBadge" class="hidden bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
                 </a>
-                <a href="/doctor/dashboard/subscription/plans" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/doctor/dashboard/subscription/plans" class="{{ $navClass(request()->routeIs('doctor.subscription.*')) }}">
                     <i class="fas fa-crown w-5"></i>
                     <span>الاشتراكات</span>
                 </a>
-                <a href="/doctor/dashboard/prescriptions" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/doctor/dashboard/prescriptions" class="{{ $navClass(request()->routeIs('doctor.prescriptions.*')) }}">
                     <i class="fas fa-prescription w-5"></i>
                     <span>الوصفات</span>
                 </a>
-                <a href="/doctor/dashboard/records" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/doctor/dashboard/records" class="{{ $navClass(request()->routeIs('doctor.records.*')) }}">
                     <i class="fas fa-file-medical w-5"></i>
                     <span>السجلات الطبية</span>
                 </a>
-                <a href="/doctor/dashboard/calendar" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/doctor/dashboard/calendar" class="{{ $navClass(request()->routeIs('doctor.calendar')) }}">
                     <i class="fas fa-calendar-alt w-5"></i>
                     <span>التقويم</span>
                 </a>
-                <a href="/doctor/dashboard/settings" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/doctor/dashboard/settings" class="{{ $navClass(request()->routeIs('doctor.settings')) }}">
                     <i class="fas fa-cog w-5"></i>
                     <span>الإعدادات</span>
                 </a>
@@ -166,15 +172,21 @@
     </div>
 
     <script>
+        let loadingTimer = null;
+
         function getCsrfToken() {
             return document.querySelector('meta[name="csrf-token"]')?.content || '';
         }
 
         function showLoading() {
-            document.getElementById('loadingOverlay').classList.remove('hidden');
+            clearTimeout(loadingTimer);
+            loadingTimer = setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+            }, 350);
         }
 
         function hideLoading() {
+            clearTimeout(loadingTimer);
             document.getElementById('loadingOverlay').classList.add('hidden');
         }
 

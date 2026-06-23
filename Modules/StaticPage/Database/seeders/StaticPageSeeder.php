@@ -3,7 +3,6 @@
 namespace Modules\StaticPage\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 use Modules\StaticPage\Models\StaticPage;
 
 class StaticPageSeeder extends Seeder
@@ -59,16 +58,7 @@ class StaticPageSeeder extends Seeder
         ];
 
         foreach ($pages as $page) {
-            $existing = StaticPage::where('slug', $page['slug'])->first();
-
-            if ($existing) {
-                $existing->update($page);
-                continue;
-            }
-
-            StaticPage::create(array_merge([
-                'id' => (string) Str::uuid(),
-            ], $page));
+            StaticPage::updateOrCreate(['slug' => $page['slug']], $page);
         }
     }
 }

@@ -257,7 +257,7 @@ function applyFilters() {
 }
 
 async function blockUser(userId) {
-    if (!confirm('هل أنت متأكد من حظر هذا المستخدم؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حظر هذا المستخدم؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/users/${userId}/block`, {
@@ -276,7 +276,7 @@ async function blockUser(userId) {
 }
 
 async function unblockUser(userId) {
-    if (!confirm('هل أنت متأكد من إلغاء الحظر عن هذا المستخدم؟')) return;
+    if (!await confirmAction('هل أنت متأكد من إلغاء الحظر عن هذا المستخدم؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/users/${userId}/unblock`, {
@@ -295,7 +295,7 @@ async function unblockUser(userId) {
 }
 
 async function deleteUser(userId) {
-    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حذف هذا المستخدم؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/users/${userId}`, {

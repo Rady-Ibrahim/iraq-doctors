@@ -14,8 +14,8 @@ class BookAppointmentRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'doctor_id' => 'required|uuid|exists:doctors,id',
-            'schedule_id' => 'nullable|uuid|exists:doctor_schedules,id',
+            'doctor_id' => 'required|integer|exists:doctors,id',
+            'schedule_id' => 'nullable|integer|exists:doctor_schedules,id',
             'appointment_date' => 'required|date|after:today',
             'appointment_time' => 'required|date_format:H:i',
             'notes' => 'nullable|string|max:1000',

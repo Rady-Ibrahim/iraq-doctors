@@ -14,7 +14,7 @@ class CreateReviewRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'appointment_id' => 'required|uuid|exists:appointments,id',
+            'appointment_id' => 'required|integer|exists:appointments,id',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
         ];

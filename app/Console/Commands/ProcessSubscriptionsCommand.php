@@ -2,6 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Notifications\SubscriptionExpiringSoonAdmin;
+use App\Notifications\SubscriptionExpiryReminder;
+use App\Services\AdminNotificationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Modules\Subscription\Models\DoctorSubscription;
@@ -31,24 +34,30 @@ class ProcessSubscriptionsCommand extends Command
 
         $sent = 0;
         foreach ($dueForReminder as $sub) {
-            $email = $sub->doctor?->user?->email;
-            if (!$email) {
-                continue;
-            }
-
+            $doctorUser = $sub->doctor?->user;
+            $email = $doctorUser?->email;
             $planName = $sub->subscription?->name ?? 'اشتراكك';
             $endDate = $sub->end_date?->format('Y-m-d');
 
-            try {
-                Mail::raw(
-                    "تنبيه: اشتراكك في باقة \"{$planName}\" سينتهي بتاريخ {$endDate}. يرجى تجديد الاشتراك من لوحة تحكم الطبيب.",
-                    fn ($message) => $message->to($email)->subject('تنبيه: اشتراكك على وشك الانتهاء — أطباء العراق')
-                );
-                $sub->update(['expiry_reminder_sent_at' => now()]);
-                $sent++;
-            } catch (\Throwable $e) {
-                $this->warn("Failed to email {$email}: {$e->getMessage()}");
+            if ($email) {
+                try {
+                    Mail::raw(
+                        "تنبيه: اشتراكك في باقة \"{$planName}\" سينتهي بتاريخ {$endDate}. يرجى تجديد الاشتراك من لوحة تحكم الطبيب.",
+                        fn ($message) => $message->to($email)->subject('تنبيه: اشتراكك على وشك الانتهاء — أطباء العراق')
+                    );
+                } catch (\Throwable $e) {
+                    $this->warn("Failed to email {$email}: {$e->getMessage()}");
+                }
             }
+
+            if ($doctorUser) {
+                $doctorUser->notify(new SubscriptionExpiryReminder($sub));
+            }
+
+            AdminNotificationService::notify(new SubscriptionExpiringSoonAdmin($sub));
+
+            $sub->update(['expiry_reminder_sent_at' => now()]);
+            $sent++;
         }
 
         $this->info("Sent {$sent} expiry reminder(s).");

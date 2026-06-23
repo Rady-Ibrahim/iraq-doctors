@@ -5,6 +5,8 @@ namespace Modules\Subscription\Services;
 use Modules\Subscription\Models\Subscription;
 use Modules\Subscription\Models\DoctorSubscription;
 use Modules\Doctor\Models\Doctor;
+use App\Notifications\DoctorSubscriptionRequested;
+use App\Services\AdminNotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\UploadedFile;
 
@@ -122,7 +124,7 @@ class SubscriptionService
                 throw new \InvalidArgumentException('المبلغ المُدخل يجب أن يساوي سعر الباقة بالضبط');
             }
 
-            return DoctorSubscription::create([
+            $doctorSubscription = DoctorSubscription::create([
                 'doctor_id' => $doctorId,
                 'subscription_id' => $subscriptionId,
                 'start_date' => null,
@@ -133,6 +135,10 @@ class SubscriptionService
                 'payment_method' => $paymentMethod,
                 'payment_receipt' => $receipt->store('subscriptions/receipts', 'public'),
             ]);
+
+            AdminNotificationService::notify(new DoctorSubscriptionRequested($doctorSubscription));
+
+            return $doctorSubscription;
         });
     }
 

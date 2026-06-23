@@ -302,7 +302,7 @@ function addSchedule() {
 }
 
 async function deleteSchedule(scheduleId) {
-    if (!confirm('هل أنت متأكد من حذف هذا الجدول؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حذف هذا الجدول؟')) return;
 
     try {
         const data = await apiCall(`/doctor/api/schedules/${scheduleId}`, {

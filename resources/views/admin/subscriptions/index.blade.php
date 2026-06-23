@@ -293,7 +293,7 @@ async function savePlan(e) {
 }
 
 async function deletePlan(id) {
-    if (!confirm('هل أنت متأكد من حذف هذه الخطة؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حذف هذه الخطة؟')) return;
     const res = await apiCall(`/admin/api/subscriptions/plans/${id}`, { method: 'DELETE' });
     if (res?.success) {
         alert(res.message || 'تم حذف الخطة');
@@ -325,7 +325,7 @@ function renderSubscriptions(items) {
 }
 
 async function confirmSub(id) {
-    if (!confirm('تأكيد هذا الاشتراك؟')) return;
+    if (!await confirmAction('تأكيد هذا الاشتراك؟')) return;
     const data = await apiCall(`/admin/api/subscriptions/${id}/confirm`, { method: 'POST', body: '{}' });
     if (data?.success) { alert(data.message); loadSubscriptions(); }
 }

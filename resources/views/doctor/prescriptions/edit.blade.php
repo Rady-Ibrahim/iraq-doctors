@@ -262,7 +262,7 @@ function downloadPDF() {
 }
 
 async function deletePrescription() {
-    if (!confirm('هل أنت متأكد من حذف هذه الوصفة؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حذف هذه الوصفة؟')) return;
 
     try {
         const data = await apiCall(`/doctor/api/prescriptions/${prescriptionId}`, {

@@ -229,7 +229,7 @@ function applyFilters() {
 }
 
 async function confirmAppointment(appointmentId) {
-    if (!confirm('هل أنت متأكد من تأكيد هذا الموعد؟')) return;
+    if (!await confirmAction('هل أنت متأكد من تأكيد هذا الموعد؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/appointments/${appointmentId}/confirm`, {
@@ -248,7 +248,7 @@ async function confirmAppointment(appointmentId) {
 }
 
 async function cancelAppointment(appointmentId) {
-    if (!confirm('هل أنت متأكد من إلغاء هذا الموعد؟')) return;
+    if (!await confirmAction('هل أنت متأكد من إلغاء هذا الموعد؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/appointments/${appointmentId}/cancel`, {

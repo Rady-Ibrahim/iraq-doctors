@@ -219,7 +219,7 @@ function renderRecentAppointments(appointments) {
 }
 
 async function blockPatient() {
-    if (!confirm('هل أنت متأكد من حظر هذا المريض؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حظر هذا المريض؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/patients/${patientId}/block`, {
@@ -238,7 +238,7 @@ async function blockPatient() {
 }
 
 async function unblockPatient() {
-    if (!confirm('هل أنت متأكد من إلغاء الحظر عن هذا المريض؟')) return;
+    if (!await confirmAction('هل أنت متأكد من إلغاء الحظر عن هذا المريض؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/patients/${patientId}/unblock`, {
@@ -257,7 +257,7 @@ async function unblockPatient() {
 }
 
 async function deletePatient() {
-    if (!confirm('هل أنت متأكد من حذف هذا المريض؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حذف هذا المريض؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/patients/${patientId}`, {
@@ -276,7 +276,7 @@ async function deletePatient() {
 }
 
 async function resetPassword() {
-    if (!confirm('هل أنت متأكد من إعادة تعيين كلمة المرور؟')) return;
+    if (!await confirmAction('هل أنت متأكد من إعادة تعيين كلمة المرور؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/patients/${patientId}/reset-password`, {

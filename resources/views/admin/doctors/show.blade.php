@@ -316,7 +316,7 @@ function renderReviews(reviews) {
 }
 
 async function approveDoctor() {
-    if (!confirm('هل أنت متأكد من الموافقة على هذا الطبيب؟')) return;
+    if (!await confirmAction('هل أنت متأكد من الموافقة على هذا الطبيب؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/doctors/${doctorId}/approve`, {
@@ -356,7 +356,7 @@ async function rejectDoctor() {
 }
 
 async function deleteDoctor() {
-    if (!confirm('هل أنت متأكد من حذف هذا الطبيب؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حذف هذا الطبيب؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/doctors/${doctorId}`, {

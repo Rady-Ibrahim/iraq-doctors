@@ -8,6 +8,7 @@ use Illuminate\Routing\Controller;
 use App\Models\AppSetting;
 use Modules\Admin\Services\AdminDashboardService;
 use Modules\Subscription\Services\SubscriptionService;
+use Modules\Auth\Models\User;
 use App\Traits\ApiResponse;
 
 class AdminDashboardApiController extends Controller
@@ -370,6 +371,64 @@ class AdminDashboardApiController extends Controller
             return $this->success($appointment, 'تم إلغاء الموعد بنجاح');
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء إلغاء الموعد');
+        }
+    }
+
+    public function unreadNotifications(): JsonResponse
+    {
+        try {
+            $user = User::findOrFail(auth('web')->id());
+            $notifications = $user
+                ->unreadNotifications()
+                ->latest()
+                ->limit(20)
+                ->get()
+                ->map(fn ($notification) => [
+                    'id' => $notification->id,
+                    'title' => $notification->data['title'] ?? 'إشعار',
+                    'message' => $notification->data['message'] ?? '',
+                    'type' => $notification->data['type'] ?? 'general',
+                    'action_url' => $notification->data['action_url'] ?? null,
+                    'created_at' => $notification->created_at?->format('Y-m-d H:i'),
+                ])
+                ->values()
+                ->all();
+
+            return $this->success([
+                'count' => count($notifications),
+                'items' => $notifications,
+            ]);
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب الإشعارات');
+        }
+    }
+
+    public function markNotificationRead($notificationId): JsonResponse
+    {
+        try {
+            $user = User::findOrFail(auth('web')->id());
+            $notification = $user
+                ->notifications()
+                ->where('id', $notificationId)
+                ->firstOrFail();
+
+            $notification->markAsRead();
+
+            return $this->success(null, 'تم تعليم الإشعار كمقروء');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث الإشعار');
+        }
+    }
+
+    public function markAllNotificationsRead(): JsonResponse
+    {
+        try {
+            $user = User::findOrFail(auth('web')->id());
+            $user->unreadNotifications->markAsRead();
+
+            return $this->success(null, 'تم تعليم جميع الإشعارات كمقروءة');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث الإشعارات');
         }
     }
 

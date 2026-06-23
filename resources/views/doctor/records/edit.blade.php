@@ -304,7 +304,7 @@ function downloadPDF() {
 }
 
 async function deleteRecord() {
-    if (!confirm('هل أنت متأكد من حذف هذا السجل؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حذف هذا السجل؟')) return;
 
     try {
         const data = await apiCall(`/doctor/api/records/${recordId}`, {

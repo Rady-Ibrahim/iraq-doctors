@@ -118,13 +118,16 @@ function openSubscribeModal(id, name, price) {
     document.getElementById('submittedAmount').value = price;
 
     const info = document.getElementById('paymentInfo');
+    const hasBank = paymentSettings.bank_name && paymentSettings.bank_account_number;
     info.innerHTML = `
-        <p><strong>فودافون كاش:</strong> ${paymentSettings.vodafone_cash_number || '-'}
-            <button type="button" onclick="copyText('${paymentSettings.vodafone_cash_number}')" class="text-teal-600 text-xs mr-2">نسخ</button></p>
-        <p><strong>البنك:</strong> ${paymentSettings.bank_name || '-'}</p>
+        <p><strong>فودافون كاش:</strong> ${paymentSettings.vodafone_cash_number || 'غير مُعرَّف'}
+            ${paymentSettings.vodafone_cash_number ? `<button type="button" onclick="copyText('${paymentSettings.vodafone_cash_number}')" class="text-teal-600 text-xs mr-2">نسخ</button>` : ''}</p>
+        ${hasBank ? `
+        <p><strong>البنك:</strong> ${paymentSettings.bank_name}</p>
         <p><strong>اسم الحساب:</strong> ${paymentSettings.bank_account_name || '-'}</p>
-        <p><strong>رقم الحساب:</strong> ${paymentSettings.bank_account_number || '-'}
+        <p><strong>رقم الحساب:</strong> ${paymentSettings.bank_account_number}
             <button type="button" onclick="copyText('${paymentSettings.bank_account_number}')" class="text-teal-600 text-xs mr-2">نسخ</button></p>
+        ` : `<p class="text-amber-700 text-xs mt-2">بيانات التحويل البنكي تُضبط من لوحة الإدارة → الاشتراكات → إعدادات الدفع</p>`}
     `;
 
     document.getElementById('subscribeModal').classList.remove('hidden');

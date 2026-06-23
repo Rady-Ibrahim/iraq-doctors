@@ -219,7 +219,7 @@ function applyFilters() {
 }
 
 async function blockPatient(patientId) {
-    if (!confirm('هل أنت متأكد من حظر هذا المريض؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حظر هذا المريض؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/patients/${patientId}/block`, {
@@ -238,7 +238,7 @@ async function blockPatient(patientId) {
 }
 
 async function unblockPatient(patientId) {
-    if (!confirm('هل أنت متأكد من إلغاء الحظر عن هذا المريض؟')) return;
+    if (!await confirmAction('هل أنت متأكد من إلغاء الحظر عن هذا المريض؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/patients/${patientId}/unblock`, {
@@ -257,7 +257,7 @@ async function unblockPatient(patientId) {
 }
 
 async function deletePatient(patientId) {
-    if (!confirm('هل أنت متأكد من حذف هذا المريض؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حذف هذا المريض؟')) return;
 
     try {
         const data = await apiCall(`/admin/api/patients/${patientId}`, {

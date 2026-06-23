@@ -102,7 +102,7 @@ async function toggleGovernorate(id, isActive) {
 }
 
 async function deleteGovernorate(id) {
-    if (!confirm('هل أنت متأكد من حذف هذه المحافظة؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حذف هذه المحافظة؟')) return;
     const data = await apiCall(`/admin/api/governorates/${id}`, { method: 'DELETE' });
     if (data?.success) {
         showSuccess('تم الحذف');

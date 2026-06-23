@@ -38,6 +38,9 @@ Route::middleware(['session.scope:admin', 'web'])->group(function () {
 
             Route::prefix('api')->group(function () {
                 Route::get('/metrics', [AdminDashboardApiController::class, 'metrics']);
+                Route::get('/notifications/unread', [AdminDashboardApiController::class, 'unreadNotifications']);
+                Route::post('/notifications/{notificationId}/read', [AdminDashboardApiController::class, 'markNotificationRead']);
+                Route::post('/notifications/read-all', [AdminDashboardApiController::class, 'markAllNotificationsRead']);
                 Route::get('/doctors', [AdminDashboardApiController::class, 'doctors']);
                 Route::get('/doctors/{id}', [AdminDashboardApiController::class, 'doctorDetails']);
                 Route::delete('/doctors/{id}', [AdminDashboardApiController::class, 'destroyDoctor']);

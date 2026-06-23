@@ -14,7 +14,7 @@ class CreateMedicalRecordRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'appointment_id' => 'required|uuid|exists:appointments,id',
+            'appointment_id' => 'required|integer|exists:appointments,id',
             'record_type' => 'required|in:prescription,report,diagnosis',
             'diagnosis' => 'nullable|string',
             'prescription' => 'nullable|array',

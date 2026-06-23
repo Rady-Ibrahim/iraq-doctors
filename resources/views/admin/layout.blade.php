@@ -7,6 +7,7 @@
     <title>@yield('title', 'لوحة تحكم الإدارة')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    @include('partials.dashboard-ui', ['confirmColor' => '#3b82f6'])
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
         body {
@@ -39,44 +40,49 @@
             </div>
 
             <!-- Navigation -->
+            @php
+                $navClass = fn (bool $active) => $active
+                    ? 'sidebar-link active flex items-center gap-3 px-4 py-3 rounded-lg transition'
+                    : 'sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700';
+            @endphp
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <a href="/admin/dashboard" class="sidebar-link active flex items-center gap-3 px-4 py-3 rounded-lg transition">
+                <a href="/admin/dashboard" class="{{ $navClass(request()->routeIs('admin.dashboard')) }}">
                     <i class="fas fa-home w-5"></i>
                     <span>الرئيسية</span>
                 </a>
-                <a href="/admin/dashboard/doctors" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/admin/dashboard/doctors" class="{{ $navClass(request()->routeIs('admin.doctors.*')) }}">
                     <i class="fas fa-user-md w-5"></i>
                     <span>الأطباء</span>
                 </a>
-                <a href="/admin/dashboard/patients" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/admin/dashboard/patients" class="{{ $navClass(request()->routeIs('admin.patients.*')) }}">
                     <i class="fas fa-users w-5"></i>
                     <span>المرضى</span>
                 </a>
-                <a href="/admin/dashboard/appointments" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/admin/dashboard/appointments" class="{{ $navClass(request()->routeIs('admin.appointments.*')) }}">
                     <i class="fas fa-calendar-check w-5"></i>
                     <span>المواعيد</span>
                 </a>
-                <a href="/admin/dashboard/revenue" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/admin/dashboard/revenue" class="{{ $navClass(request()->routeIs('admin.revenue')) }}">
                     <i class="fas fa-chart-line w-5"></i>
                     <span>الإيرادات</span>
                 </a>
-                <a href="/admin/dashboard/subscriptions" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/admin/dashboard/subscriptions" class="{{ $navClass(request()->routeIs('admin.subscriptions*')) }}">
                     <i class="fas fa-crown w-5"></i>
                     <span>الاشتراكات</span>
                 </a>
-                <a href="/admin/dashboard/analytics" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/admin/dashboard/analytics" class="{{ $navClass(request()->routeIs('admin.analytics')) }}">
                     <i class="fas fa-chart-pie w-5"></i>
                     <span>التحليلات</span>
                 </a>
-                <a href="/admin/dashboard/specialities" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/admin/dashboard/specialities" class="{{ $navClass(request()->routeIs('admin.specialities.*')) }}">
                     <i class="fas fa-stethoscope w-5"></i>
                     <span>التخصصات</span>
                 </a>
-                <a href="/admin/dashboard/governorates" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/admin/dashboard/governorates" class="{{ $navClass(request()->routeIs('admin.governorates.*')) }}">
                     <i class="fas fa-map-marker-alt w-5"></i>
                     <span>المحافظات</span>
                 </a>
-                <a href="/admin/users" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700">
+                <a href="/admin/users" class="{{ $navClass(request()->routeIs('admin.users.*')) }}">
                     <i class="fas fa-user-cog w-5"></i>
                     <span>إدارة المستخدمين</span>
                 </a>
@@ -113,10 +119,21 @@
                         <p class="text-sm text-gray-500">@yield('page-description', 'نظرة عامة على النظام')</p>
                     </div>
                     <div class="flex items-center gap-4">
-                        <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                        <div class="relative">
+                        <button onclick="toggleNotificationsMenu()" class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
                             <i class="fas fa-bell"></i>
-                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                            <span id="notificationDot" class="hidden absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                         </button>
+                        <div id="notificationsMenu" class="hidden absolute left-0 mt-2 w-96 bg-white border rounded-xl shadow-xl z-40">
+                            <div class="p-3 border-b flex items-center justify-between">
+                                <p class="font-semibold text-sm">الإشعارات</p>
+                                <button onclick="markAllNotificationsRead()" class="text-xs text-blue-600 hover:text-blue-700">تعليم الكل كمقروء</button>
+                            </div>
+                            <div id="notificationsList" class="max-h-96 overflow-y-auto">
+                                <p class="p-4 text-sm text-gray-500">لا توجد إشعارات جديدة</p>
+                            </div>
+                        </div>
+                        </div>
                         <button onclick="refreshData()" class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
                             <i class="fas fa-sync-alt"></i>
                         </button>
@@ -162,15 +179,21 @@
     </div>
 
     <script>
+        let loadingTimer = null;
+
         function getCsrfToken() {
             return document.querySelector('meta[name="csrf-token"]')?.content || '';
         }
 
         function showLoading() {
-            document.getElementById('loadingOverlay').classList.remove('hidden');
+            clearTimeout(loadingTimer);
+            loadingTimer = setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+            }, 350);
         }
 
         function hideLoading() {
+            clearTimeout(loadingTimer);
             document.getElementById('loadingOverlay').classList.add('hidden');
         }
 
@@ -293,6 +316,73 @@
             const re = /^[0-9]{10,15}$/;
             return re.test(phone);
         }
+
+        async function apiPost(endpoint, body = {}) {
+            return apiCall(endpoint, { method: 'POST', body: JSON.stringify(body) });
+        }
+
+        let notificationPolling = null;
+        let lastNotificationIds = new Set();
+
+        function toggleNotificationsMenu() {
+            document.getElementById('notificationsMenu').classList.toggle('hidden');
+        }
+
+        async function loadUnreadNotifications(showToastForNew = false) {
+            const data = await apiCall('/admin/api/notifications/unread');
+            if (!data?.success) return;
+
+            const items = data.data?.items || [];
+            const list = document.getElementById('notificationsList');
+            const dot = document.getElementById('notificationDot');
+            dot.classList.toggle('hidden', items.length === 0);
+
+            if (!items.length) {
+                list.innerHTML = '<p class="p-4 text-sm text-gray-500">لا توجد إشعارات جديدة</p>';
+                return;
+            }
+
+            if (showToastForNew) {
+                items.filter((item) => !lastNotificationIds.has(item.id))
+                    .forEach((item) => showSuccess(item.message || item.title || 'إشعار جديد'));
+            }
+            lastNotificationIds = new Set(items.map((item) => item.id));
+
+            list.innerHTML = items.map((item) => `
+                <div class="p-3 border-b hover:bg-gray-50">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="cursor-pointer flex-1" onclick="openNotification('${item.id}', '${item.action_url || ''}')">
+                            <p class="text-sm font-semibold text-gray-800">${item.title || 'إشعار'}</p>
+                            <p class="text-xs text-gray-600 mt-1">${item.message || ''}</p>
+                            <p class="text-[11px] text-gray-400 mt-1">${item.created_at || ''}</p>
+                        </div>
+                        <button onclick="markNotificationRead('${item.id}')" class="text-xs text-blue-600 hover:text-blue-700">تمت القراءة</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function markNotificationRead(id) {
+            await apiPost(`/admin/api/notifications/${id}/read`, {});
+            await loadUnreadNotifications(false);
+        }
+
+        async function markAllNotificationsRead() {
+            await apiPost('/admin/api/notifications/read-all', {});
+            await loadUnreadNotifications(false);
+        }
+
+        async function openNotification(id, actionUrl) {
+            await markNotificationRead(id);
+            if (actionUrl) window.location.href = actionUrl;
+        }
+
+        window.addEventListener('load', async function() {
+            try {
+                await loadUnreadNotifications(false);
+                notificationPolling = setInterval(() => loadUnreadNotifications(true), 20000);
+            } catch (e) {}
+        });
 
         // Clear Form Errors
         function clearFormErrors(formId) {

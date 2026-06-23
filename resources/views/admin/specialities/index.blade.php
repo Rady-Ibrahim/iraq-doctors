@@ -107,7 +107,7 @@ async function toggleSpeciality(id, isActive) {
 }
 
 async function deleteSpeciality(id) {
-    if (!confirm('هل أنت متأكد من حذف هذا التخصص؟')) return;
+    if (!await confirmAction('هل أنت متأكد من حذف هذا التخصص؟')) return;
     const data = await apiCall(`/admin/api/specialities/${id}`, { method: 'DELETE' });
     if (data?.success) {
         showSuccess('تم الحذف');

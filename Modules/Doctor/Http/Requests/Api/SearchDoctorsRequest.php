@@ -14,7 +14,7 @@ class SearchDoctorsRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'speciality_id' => 'nullable|uuid|exists:specialities,id',
+            'speciality_id' => 'nullable|integer|exists:specialities,id',
             'name' => 'nullable|string|max:255',
             'min_rating' => 'nullable|numeric|min:0|max:5',
             'max_rating' => 'nullable|numeric|min:0|max:5',

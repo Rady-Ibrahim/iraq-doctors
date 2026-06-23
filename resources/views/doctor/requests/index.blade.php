@@ -96,25 +96,25 @@ async function loadRequests() {
 }
 
 async function confirmAppointment(id) {
-    if (!confirm('تأكيد هذا الموعد؟')) return;
+    if (!await confirmAction('تأكيد هذا الموعد؟')) return;
     const data = await apiPost(`/doctor/api/appointments/${id}/confirm`, {});
     if (data?.success) { alert(data.message); loadRequests(); loadPendingBadge(); }
     else alert(data?.error?.message || 'حدث خطأ');
 }
 
 async function rejectAppointment(id) {
-    if (!confirm('رفض هذا الموعد؟')) return;
+    if (!await confirmAction('رفض هذا الموعد؟')) return;
     const data = await apiPost(`/doctor/api/appointments/${id}/reject`, {});
     if (data?.success) { alert(data.message); loadRequests(); loadPendingBadge(); }
     else alert(data?.error?.message || 'حدث خطأ');
 }
 
 async function completeAppointment(id) {
-    if (!confirm('تحديد الموعد كمكتمل؟')) return;
+    if (!await confirmAction('تحديد الموعد كمكتمل؟')) return;
     const data = await apiPost(`/doctor/api/appointments/${id}/complete`, {});
     if (data?.success) {
         alert(data.message);
-        if (data.data?.can_add_record && confirm('هل تريد إضافة سجل طبي الآن؟')) {
+        if (data.data?.can_add_record && await confirmAction('هل تريد إضافة سجل طبي الآن؟', { icon: 'question', confirmText: 'نعم' })) {
             window.location.href = data.data.record_create_url;
             return;
         }

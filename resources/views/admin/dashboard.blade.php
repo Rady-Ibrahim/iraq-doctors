@@ -233,7 +233,7 @@
     }
 
     async function approveDoctor(doctorId) {
-        if (!confirm('هل أنت متأكد من الموافقة على هذا الطبيب؟')) return;
+        if (!await confirmAction('هل أنت متأكد من الموافقة على هذا الطبيب؟')) return;
 
         try {
             const data = await apiCall(`/admin/api/doctors/${doctorId}/approve`, {
