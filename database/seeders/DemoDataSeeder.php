@@ -74,7 +74,8 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
-        $professionalPlan = Subscription::where('name', 'Professional')->first()
+        $professionalPlan = Subscription::where('name', 'Premium')->first()
+            ?? Subscription::where('is_featured', true)->first()
             ?? Subscription::first();
 
         $doctor = Doctor::updateOrCreate(

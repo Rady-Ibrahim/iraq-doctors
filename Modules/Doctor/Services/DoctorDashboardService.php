@@ -48,7 +48,7 @@ class DoctorDashboardService
             ->whereYear('created_at', now()->year)
             ->count();
 
-        $totalReviews = Review::where('doctor_id', $doctorId)->count();
+        $totalReviews = Review::where('doctor_id', $doctorId)->approved()->count();
 
         $pendingRequests = Appointment::where('doctor_id', $doctorId)
             ->where('status', 'pending')

@@ -25,6 +25,7 @@ Route::middleware(['session.scope:admin', 'web'])->group(function () {
             Route::get('/dashboard/appointments', fn () => view('admin.appointments.index'))->name('appointments.index');
             Route::get('/dashboard/revenue', fn () => view('admin.revenue'))->name('revenue');
             Route::get('/dashboard/subscriptions', fn () => view('admin.subscriptions.index'))->name('subscriptions.index');
+            Route::get('/dashboard/reviews', fn () => view('admin.reviews.index'))->name('reviews.index');
             Route::get('/dashboard/analytics', fn () => view('admin.analytics'))->name('analytics');
             Route::get('/dashboard/specialities', fn () => view('admin.specialities.index'))->name('specialities.index');
             Route::get('/dashboard/governorates', fn () => view('admin.governorates.index'))->name('governorates.index');
@@ -62,6 +63,9 @@ Route::middleware(['session.scope:admin', 'web'])->group(function () {
             Route::post('/subscriptions/{id}/confirm', [AdminDashboardApiController::class, 'confirmSubscription']);
             Route::post('/subscriptions/{id}/reject', [AdminDashboardApiController::class, 'rejectSubscription']);
             Route::get('/analytics', [AdminDashboardApiController::class, 'analytics']);
+                Route::get('/reviews', [AdminDashboardApiController::class, 'reviews']);
+                Route::post('/reviews/{id}/approve', [AdminDashboardApiController::class, 'approveReview']);
+                Route::post('/reviews/{id}/reject', [AdminDashboardApiController::class, 'rejectReview']);
                 Route::post('/patients/{id}/block', [AdminDashboardApiController::class, 'blockPatient']);
                 Route::post('/patients/{id}/unblock', [AdminDashboardApiController::class, 'unblockPatient']);
                 Route::delete('/patients/{id}', [AdminDashboardApiController::class, 'deletePatient']);

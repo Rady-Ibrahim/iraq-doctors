@@ -131,6 +131,88 @@ class DoctorService
         return $query;
     }
 
+    public function getFeatured(array $filters = []): Builder
+    {
+        $query = Doctor::with(['user', 'speciality', 'primaryBranch'])
+            ->where('status', 'approved')
+            ->whereHas('doctorSubscriptions', function ($q) {
+                $q->active()
+                    ->whereHas('subscription', function ($sq) {
+                        $sq->where('is_featured', true)->where('status', 'active');
+                    });
+            });
+
+        if (!empty($filters['speciality_id'])) {
+            $query->where('speciality_id', $filters['speciality_id']);
+        }
+
+        if (!empty($filters['governorate'])) {
+            $query->whereHas('branches', function ($q) use ($filters) {
+                $q->where('governorate', $filters['governorate']);
+            });
+        }
+
+        return $query->orderByDesc('rating');
+    }
+
+    public function getNearby(float $latitude, float $longitude, float $radius = 10, ?string $governorate = null): array
+    {
+        $branchQuery = \Modules\Doctor\Models\DoctorBranch::query()
+            ->selectRaw("
+                doctor_branches.*,
+                (6371 * acos(
+                    cos(radians(?)) * cos(radians(latitude)) *
+                    cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))
+                )) AS distance_km
+            ", [$latitude, $longitude, $latitude])
+            ->where('is_active', true)
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereHas('doctor', fn ($q) => $q->where('status', 'approved'));
+
+        if ($governorate) {
+            $branchQuery->where('governorate', $governorate);
+        }
+
+        $branchQuery->whereRaw("
+            (6371 * acos(
+                cos(radians(?)) * cos(radians(latitude)) *
+                cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))
+            )) < ?
+        ", [$latitude, $longitude, $latitude, $radius])
+            ->orderByRaw("
+                (6371 * acos(
+                    cos(radians(?)) * cos(radians(latitude)) *
+                    cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))
+                ))
+            ", [$latitude, $longitude, $latitude]);
+
+        $branches = $branchQuery->get();
+
+        $doctorDistances = [];
+        foreach ($branches as $branch) {
+            $doctorId = $branch->doctor_id;
+            if (!isset($doctorDistances[$doctorId]) || $branch->distance_km < $doctorDistances[$doctorId]) {
+                $doctorDistances[$doctorId] = round((float) $branch->distance_km, 2);
+            }
+        }
+
+        if (empty($doctorDistances)) {
+            return [];
+        }
+
+        $doctors = Doctor::with(['user', 'speciality', 'primaryBranch'])
+            ->whereIn('id', array_keys($doctorDistances))
+            ->get()
+            ->sortBy(fn ($doctor) => $doctorDistances[$doctor->id])
+            ->values();
+
+        return $doctors->map(fn ($doctor) => [
+            'doctor' => $doctor,
+            'distance_km' => $doctorDistances[$doctor->id],
+        ])->all();
+    }
+
     private function filterByAvailability(Builder $query, string $availability): Builder
     {
         $targetDate = match($availability) {
@@ -165,7 +247,7 @@ class DoctorService
 
     public function getProfile(string $doctorId): ?Doctor
     {
-        return Doctor::with(['user', 'speciality', 'schedules', 'reviews'])
+        return Doctor::with(['user', 'speciality', 'schedules', 'approvedReviews'])
             ->where('id', $doctorId)
             ->where('status', 'approved')
             ->first();

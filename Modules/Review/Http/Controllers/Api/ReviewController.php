@@ -37,7 +37,8 @@ class ReviewController extends Controller
             'id' => $review->id,
             'rating' => $review->rating,
             'comment' => $review->comment,
-        ], 'تم إضافة التقييم بنجاح');
+            'status' => $review->status,
+        ], 'تم إرسال التقييم وسيُعرض بعد موافقة الإدارة');
     }
 
     public function doctorReviews(string $doctorId): JsonResponse
@@ -50,6 +51,7 @@ class ReviewController extends Controller
                 'patient_name' => $review->patient->name,
                 'rating' => $review->rating,
                 'comment' => $review->comment,
+                'status' => $review->status,
                 'created_at' => $review->created_at,
             ];
         }));
@@ -67,6 +69,7 @@ class ReviewController extends Controller
                 'speciality' => $review->doctor->speciality->name_ar,
                 'rating' => $review->rating,
                 'comment' => $review->comment,
+                'status' => $review->status,
                 'created_at' => $review->created_at,
             ];
         }));

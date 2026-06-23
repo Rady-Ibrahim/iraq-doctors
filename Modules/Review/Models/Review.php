@@ -15,19 +15,53 @@ class Review extends Model
 
     protected $table = 'reviews';
 
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+
     protected $fillable = [
         'appointment_id',
         'doctor_id',
         'patient_id',
         'rating',
         'comment',
+        'status',
+        'reviewed_by',
+        'reviewed_at',
+        'reject_reason',
         'is_flagged',
     ];
 
     protected $casts = [
         'rating' => 'integer',
         'is_flagged' => 'boolean',
+        'reviewed_at' => 'datetime',
     ];
+
+    public function scopeApproved($query)
+    {
+        return $query->where('status', self::STATUS_APPROVED);
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === self::STATUS_APPROVED;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
 
     public function appointment()
     {

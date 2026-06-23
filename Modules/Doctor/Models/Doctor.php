@@ -77,6 +77,13 @@ class Doctor extends Model
         return $this->hasMany(\Modules\Review\Models\Review::class);
     }
 
+    public function approvedReviews()
+    {
+        return $this->hasMany(\Modules\Review\Models\Review::class)
+            ->where('status', \Modules\Review\Models\Review::STATUS_APPROVED)
+            ->where('is_flagged', false);
+    }
+
     public function subscription()
     {
         return $this->belongsTo(\Modules\Subscription\Models\Subscription::class);
@@ -103,5 +110,27 @@ class Doctor extends Model
         $this->rating_count++;
         $this->rating = $totalRating / $this->rating_count;
         $this->save();
+    }
+
+    public function recalculateRatingFromReviews(): void
+    {
+        $stats = $this->approvedReviews()
+            ->selectRaw('COUNT(*) as count, AVG(rating) as average')
+            ->first();
+
+        $count = (int) ($stats->count ?? 0);
+        $this->rating_count = $count;
+        $this->rating = $count > 0 ? round((float) $stats->average, 2) : 0;
+        $this->save();
+    }
+
+    public function hasFeaturedSubscription(): bool
+    {
+        $active = $this->activeSubscription();
+
+        return $active
+            && $active->subscription
+            && $active->subscription->is_featured
+            && $active->subscription->status === 'active';
     }
 }

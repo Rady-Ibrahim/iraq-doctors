@@ -44,8 +44,9 @@ class AdminDashboardService
             ? round((($monthlyRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1)
             : 0;
 
-        $avgRating = Review::avg('rating') ?? 0;
-        $totalReviews = Review::count();
+        $avgRating = Review::approved()->avg('rating') ?? 0;
+        $totalReviews = Review::approved()->count();
+        $pendingReviews = Review::pending()->count();
 
         $activeSubscriptions = DoctorSubscription::where('status', 'active')->count();
         $expiredSubscriptions = DoctorSubscription::where('status', 'expired')->count();
@@ -77,6 +78,7 @@ class AdminDashboardService
             'reviews' => [
                 'average' => round($avgRating, 2),
                 'total' => $totalReviews,
+                'pending' => $pendingReviews,
             ],
             'subscriptions' => [
                 'active' => $activeSubscriptions,
@@ -117,9 +119,10 @@ class AdminDashboardService
         $totalAppointments = Appointment::where('doctor_id', $doctorId)->count();
         $completedAppointments = Appointment::where('doctor_id', $doctorId)->where('status', 'completed')->count();
         $totalPatients = Appointment::where('doctor_id', $doctorId)->distinct('patient_id')->count('patient_id');
-        $totalReviews = Review::where('doctor_id', $doctorId)->count();
+        $totalReviews = Review::where('doctor_id', $doctorId)->approved()->count();
 
         $recentReviews = Review::where('doctor_id', $doctorId)
+            ->approved()
             ->with('patient')
             ->latest()
             ->limit(5)
@@ -128,6 +131,7 @@ class AdminDashboardService
                 'id' => $review->id,
                 'rating' => $review->rating,
                 'comment' => $review->comment,
+                'status' => $review->status,
                 'patient_name' => $review->patient?->name,
                 'created_at' => $review->created_at,
             ])
@@ -535,5 +539,50 @@ class AdminDashboardService
         };
 
         return [$start, now()->endOfDay()];
+    }
+
+    public function getReviews(array $filters = [])
+    {
+        $limit = (int) ($filters['limit'] ?? 20);
+
+        $query = Review::with(['patient', 'doctor.user', 'doctor.speciality', 'reviewer']);
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['doctor_id'])) {
+            $query->where('doctor_id', $filters['doctor_id']);
+        }
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('patient', fn ($sub) => $sub->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('doctor.user', fn ($sub) => $sub->where('name', 'like', "%{$search}%"))
+                    ->orWhere('comment', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->latest()->paginate($limit);
+    }
+
+    public function formatReview(Review $review): array
+    {
+        return [
+            'id' => $review->id,
+            'rating' => $review->rating,
+            'comment' => $review->comment,
+            'status' => $review->status,
+            'reject_reason' => $review->reject_reason,
+            'patient_name' => $review->patient?->name,
+            'patient_phone' => $review->patient?->phone,
+            'doctor_id' => $review->doctor_id,
+            'doctor_name' => $review->doctor?->user?->name,
+            'speciality' => $review->doctor?->speciality?->name_ar,
+            'reviewed_by' => $review->reviewer?->name,
+            'reviewed_at' => $review->reviewed_at?->format('Y-m-d H:i'),
+            'created_at' => $review->created_at?->format('Y-m-d H:i'),
+        ];
     }
 }

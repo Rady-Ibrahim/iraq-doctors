@@ -8,6 +8,8 @@ use Illuminate\Routing\Controller;
 use App\Models\AppSetting;
 use Modules\Admin\Services\AdminDashboardService;
 use Modules\Subscription\Services\SubscriptionService;
+use Modules\Review\Services\Api\ReviewService;
+use Modules\Review\Models\Review;
 use Modules\Auth\Models\User;
 use App\Traits\ApiResponse;
 
@@ -17,7 +19,8 @@ class AdminDashboardApiController extends Controller
 
     public function __construct(
         private AdminDashboardService $adminDashboardService,
-        private SubscriptionService $subscriptionService
+        private SubscriptionService $subscriptionService,
+        private ReviewService $reviewService
     ) {}
 
     public function metrics(): JsonResponse
@@ -429,6 +432,64 @@ class AdminDashboardApiController extends Controller
             return $this->success(null, 'تم تعليم جميع الإشعارات كمقروءة');
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء تحديث الإشعارات');
+        }
+    }
+
+    public function reviews(Request $request): JsonResponse
+    {
+        try {
+            $paginator = $this->adminDashboardService->getReviews($request->all());
+            $items = $paginator->getCollection()
+                ->map(fn (Review $review) => $this->adminDashboardService->formatReview($review))
+                ->values()
+                ->all();
+
+            return $this->paginated(
+                $items,
+                $paginator->total(),
+                $paginator->currentPage(),
+                $paginator->perPage()
+            );
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب التقييمات');
+        }
+    }
+
+    public function approveReview($id): JsonResponse
+    {
+        try {
+            $review = Review::findOrFail($id);
+            $approved = $this->reviewService->approve($review, (int) auth('web')->id());
+
+            return $this->success(
+                $this->adminDashboardService->formatReview($approved),
+                'تمت الموافقة على التقييم'
+            );
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء الموافقة على التقييم');
+        }
+    }
+
+    public function rejectReview(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $review = Review::findOrFail($id);
+            $rejected = $this->reviewService->reject(
+                $review,
+                (int) auth('web')->id(),
+                $request->input('reason')
+            );
+
+            return $this->success(
+                $this->adminDashboardService->formatReview($rejected),
+                'تم رفض التقييم'
+            );
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء رفض التقييم');
         }
     }
 

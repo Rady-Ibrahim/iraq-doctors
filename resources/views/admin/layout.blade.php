@@ -70,6 +70,10 @@
                     <i class="fas fa-crown w-5"></i>
                     <span>الاشتراكات</span>
                 </a>
+                <a href="/admin/dashboard/reviews" class="{{ $navClass(request()->routeIs('admin.reviews.*')) }}">
+                    <i class="fas fa-star w-5"></i>
+                    <span>التقييمات</span>
+                </a>
                 <a href="/admin/dashboard/analytics" class="{{ $navClass(request()->routeIs('admin.analytics')) }}">
                     <i class="fas fa-chart-pie w-5"></i>
                     <span>التحليلات</span>

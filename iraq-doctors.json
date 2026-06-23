@@ -327,6 +327,45 @@
           }
         },
         {
+          "name": "Featured Doctors (Premium)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/doctors/featured?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "doctors", "featured"],
+              "query": [
+                { "key": "speciality_id", "value": "", "disabled": true },
+                { "key": "governorate", "value": "بغداد", "disabled": true },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "أطباء مشتركون في باقة Premium (is_featured)"
+          }
+        },
+        {
+          "name": "Nearby Doctors",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/doctors/nearby?latitude=33.3152&longitude=44.3661&radius=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "doctors", "nearby"],
+              "query": [
+                { "key": "latitude", "value": "33.3152" },
+                { "key": "longitude", "value": "44.3661" },
+                { "key": "radius", "value": "10" },
+                { "key": "governorate", "value": "بغداد", "disabled": true },
+                { "key": "limit", "value": "20", "disabled": true }
+              ]
+            },
+            "description": "أطباء بالقرب من موقع المريض — مرتبة حسب المسافة"
+          }
+        },
+        {
           "name": "Get Doctor Details",
           "request": {
             "method": "GET",
@@ -541,7 +580,7 @@
               "raw": "{\n  \"appointment_id\": {{appointment_id}},\n  \"rating\": 5,\n  \"comment\": \"دكتور ممتاز!\"\n}"
             },
             "url": "{{base_url}}/api/v1/reviews",
-            "description": "فقط بعد اكتمال الموعد — مرة واحدة لكل موعد"
+            "description": "فقط بعد اكتمال الموعد — مرة واحدة لكل موعد. يبقى بانتظار موافقة الإدارة قبل العرض."
           }
         },
         {
