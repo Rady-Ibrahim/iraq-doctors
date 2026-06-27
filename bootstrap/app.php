@@ -37,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'doctor'           => \App\Http\Middleware\DoctorMiddleware::class,
             'doctor.approved'  => \App\Http\Middleware\DoctorApprovedMiddleware::class,
             'doctor.email.verified' => \App\Http\Middleware\DoctorEmailVerifiedMiddleware::class,
+            'doctor.phone.verified' => \App\Http\Middleware\DoctorPhoneVerifiedMiddleware::class,
             'session.scope'       => \App\Http\Middleware\SetSessionCookie::class,
             'role'             => \App\Http\Middleware\RoleMiddleware::class, // 🌟 تم إضافة الرول ميدل وير هنا
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,

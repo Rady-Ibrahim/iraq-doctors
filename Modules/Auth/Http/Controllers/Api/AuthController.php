@@ -5,6 +5,7 @@ namespace Modules\Auth\Http\Controllers\Api;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
+use Modules\Auth\Http\Requests\Api\FirebaseAuthRequest;
 use Modules\Auth\Http\Requests\Api\RegisterRequest;
 use Modules\Auth\Http\Requests\Api\LoginRequest;
 use Modules\Auth\Http\Requests\Api\SendOtpRequest;
@@ -15,6 +16,8 @@ use Modules\Auth\Http\Requests\Api\ForgotPasswordRequest;
 use Modules\Auth\Http\Requests\Api\ResetPasswordRequest;
 use Modules\Auth\Http\Requests\Api\UploadAvatarRequest;
 use Modules\Auth\Services\Api\AuthService;
+use Modules\Auth\Services\Api\FirebaseAuthService;
+use Modules\Auth\Exceptions\FirebaseAuthException;
 use Modules\Auth\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +26,10 @@ class AuthController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private AuthService $authService) {}
+    public function __construct(
+        private AuthService $authService,
+        private FirebaseAuthService $firebaseAuthService,
+    ) {}
 
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -99,6 +105,36 @@ class AuthController extends Controller
             ],
             'token' => $token,
         ], 'تم الدخول بنجاح');
+    }
+
+    /**
+     * Patient mobile auth via Firebase ID token (login or register by phone).
+     * Postman test mode: X-Auth-Test-Key + phone (+ name for new users).
+     */
+    public function firebase(FirebaseAuthRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->firebaseAuthService->authenticate(
+                $request->input('firebase_token'),
+                $request->input('phone'),
+                $request->input('name'),
+                $request->header('X-Auth-Test-Key'),
+            );
+
+            $message = $result['is_new_user'] ? 'تم التسجيل بنجاح' : 'تم الدخول بنجاح';
+
+            return $this->success([
+                'user' => FirebaseAuthService::formatUserPayload($result['user']),
+                'token' => $result['token'],
+                'is_new_user' => $result['is_new_user'],
+            ], $message);
+        } catch (FirebaseAuthException $e) {
+            return $this->error($e->getMessage(), $e->errorCode, $e->statusCode);
+        } catch (\Throwable $e) {
+            Log::error('Firebase auth error: ' . $e->getMessage(), ['exception' => $e]);
+
+            return $this->serverError('فشل تسجيل الدخول');
+        }
     }
 
     public function sendOtp(SendOtpRequest $request): JsonResponse

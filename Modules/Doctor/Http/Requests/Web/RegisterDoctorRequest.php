@@ -2,7 +2,10 @@
 
 namespace Modules\Doctor\Http\Requests\Web;
 
+use App\Support\PhoneNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
+use InvalidArgumentException;
 
 class RegisterDoctorRequest extends FormRequest
 {
@@ -25,7 +28,7 @@ class RegisterDoctorRequest extends FormRequest
 
         return [
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|unique:users,phone|regex:/^[0-9]{10,15}$/',
+            'phone' => 'required|string|unique:users,phone',
             'email' => 'nullable|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
             'speciality_id' => 'required|integer|exists:specialities,id',
@@ -40,6 +43,21 @@ class RegisterDoctorRequest extends FormRequest
             'license_document' => "required|file|mimes:pdf,jpg,jpeg,png|max:{$docMax}",
             'clinic_image' => "nullable|file|mimes:jpg,jpeg,png|max:{$docMax}",
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->has('phone')) {
+                return;
+            }
+
+            try {
+                PhoneNormalizer::toE164((string) $this->input('phone'));
+            } catch (InvalidArgumentException $e) {
+                $validator->errors()->add('phone', $e->getMessage());
+            }
+        });
     }
 
     public function messages(): array

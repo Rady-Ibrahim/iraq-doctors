@@ -2,9 +2,12 @@
 
 namespace Modules\Doctor\Services\Web;
 
+use App\Services\FirebaseTokenVerifier;
+use App\Support\PhoneNormalizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use InvalidArgumentException;
 use App\Notifications\DoctorDocumentsResubmitted;
 use App\Notifications\NewDoctorRegistered;
 use App\Services\AdminNotificationService;
@@ -16,7 +19,10 @@ use Modules\Doctor\Models\Governorate;
 
 class DoctorAuthService
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(
+        private AuthService $authService,
+        private FirebaseTokenVerifier $tokenVerifier,
+    ) {}
 
     public function register(
         array $data,
@@ -26,14 +32,16 @@ class DoctorAuthService
     ): User {
         return DB::transaction(function () use ($data, $licenseDocument, $clinicImage, $avatar) {
             $email = !empty($data['email']) ? $data['email'] : null;
+            $phone = PhoneNormalizer::toE164($data['phone']);
 
             $userData = [
                 'name' => $data['name'],
-                'phone' => $data['phone'],
+                'phone' => $phone,
                 'email' => $email,
                 'password' => $data['password'],
                 'role' => 'doctor',
                 'status' => 'active',
+                'phone_verified_at' => null,
                 'email_verified_at' => $email ? null : now(),
             ];
 
@@ -75,7 +83,7 @@ class DoctorAuthService
                 'address' => $data['address'],
                 'latitude' => $data['latitude'],
                 'longitude' => $data['longitude'],
-                'phone' => $data['phone'],
+                'phone' => $phone,
                 'is_primary' => true,
                 'is_active' => true,
             ]);
@@ -86,37 +94,36 @@ class DoctorAuthService
         });
     }
 
-    public function sendVerificationOtp(User $user): void
+    public function needsPhoneVerification(User $user): bool
     {
-        if (!$user->email) {
-            return;
-        }
-
-        $this->authService->sendOtp(null, 'register', $user->email);
+        return $user->isDoctor() && !$user->phone_verified_at;
     }
 
-    public function needsEmailVerification(User $user): bool
+    public function isFirebaseWebConfigured(): bool
     {
-        return (bool) $user->email && !$user->email_verified_at;
+        return (bool) config('firebase.web_api_key')
+            && (bool) config('firebase.auth_domain')
+            && (bool) config('firebase.project_id');
     }
 
-    public function verifyEmail(User $user, string $code): bool
+    /**
+     * @throws InvalidArgumentException
+     */
+    public function verifyPhoneWithFirebaseToken(User $user, string $firebaseToken): void
     {
-        $otp = $this->authService->verifyOtp(null, $code, 'register', $user->email);
+        $verified = $this->tokenVerifier->verifyAndMatchPhone($firebaseToken, $user->phone);
 
-        if (!$otp) {
-            return false;
-        }
-
-        $user->update(['email_verified_at' => now()]);
-        $otp->delete();
-
-        return true;
+        $user->update([
+            'phone' => $verified['phone'],
+            'phone_verified_at' => now(),
+            'firebase_uid' => $verified['uid'],
+        ]);
     }
 
     public function login(string $phone, string $password): ?User
     {
-        $user = User::where('phone', $phone)->first();
+        $variants = PhoneNormalizer::lookupVariants($phone);
+        $user = User::query()->whereIn('phone', $variants)->first();
 
         if (!$user || !Hash::check($password, $user->password)) {
             return null;
@@ -155,8 +162,8 @@ class DoctorAuthService
 
     public function getPostLoginRoute(User $user): string
     {
-        if ($this->needsEmailVerification($user)) {
-            return 'doctor.verify-email';
+        if ($this->needsPhoneVerification($user)) {
+            return 'doctor.verify-phone';
         }
 
         $doctor = Doctor::where('user_id', $user->id)->first();
