@@ -11,12 +11,19 @@ class CreateDoctorRequest extends ApiFormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->email === '') {
+            $this->merge(['email' => null]);
+        }
+    }
+
     public function rules(): array
     {
         return [
             'name' => 'required|string|max:255',
             'phone' => 'required|string|unique:users,phone|regex:/^[0-9]{10,15}$/',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
             'speciality_id' => 'nullable|integer|exists:specialities,id',
             'bio_ar' => 'nullable|string',

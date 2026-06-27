@@ -8,6 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.dashboard-ui', ['confirmColor' => '#3b82f6'])
+    @include('partials.dashboard-api', [
+        'loginUrl' => route('admin.login'),
+        'csrfRefreshUrl' => '/admin/api/csrf-token',
+    ])
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
         body {
@@ -185,10 +189,6 @@
     <script>
         let loadingTimer = null;
 
-        function getCsrfToken() {
-            return document.querySelector('meta[name="csrf-token"]')?.content || '';
-        }
-
         function showLoading() {
             clearTimeout(loadingTimer);
             loadingTimer = setTimeout(() => {
@@ -210,33 +210,6 @@
                 showSuccess(@json(session('success')));
             });
         @endif
-
-        async function apiCall(endpoint, options = {}) {
-            const response = await fetch(endpoint, {
-                ...options,
-                credentials: 'same-origin',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': getCsrfToken(),
-                    'X-Requested-With': 'XMLHttpRequest',
-                    ...options.headers
-                }
-            });
-
-            if (response.status === 401 || response.status === 419) {
-                window.location.href = '{{ route('admin.login') }}';
-                return;
-            }
-
-            const data = await response.json();
-
-            if (!data.success && data.error) {
-                showError(data.error.message || 'حدث خطأ');
-            }
-
-            return data;
-        }
 
         // Error Handling
         function showError(message) {

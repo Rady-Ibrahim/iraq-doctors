@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Models\AppSetting;
 use Modules\Admin\Services\AdminDashboardService;
+use Modules\Appointment\Services\Api\AppointmentService;
 use Modules\Subscription\Services\SubscriptionService;
 use Modules\Review\Services\Api\ReviewService;
 use Modules\Review\Models\Review;
@@ -19,6 +20,7 @@ class AdminDashboardApiController extends Controller
 
     public function __construct(
         private AdminDashboardService $adminDashboardService,
+        private AppointmentService $appointmentService,
         private SubscriptionService $subscriptionService,
         private ReviewService $reviewService
     ) {}
@@ -358,8 +360,12 @@ class AdminDashboardApiController extends Controller
     public function confirmAppointment($id): JsonResponse
     {
         try {
-            $appointment = \Modules\Appointment\Models\Appointment::findOrFail($id);
-            $appointment->update(['status' => 'confirmed']);
+            $appointment = $this->appointmentService->confirm((string) $id);
+
+            if (!$appointment) {
+                return $this->error('لا يمكن تأكيد هذا الموعد', 'INVALID_STATUS', 400);
+            }
+
             return $this->success($appointment, 'تم تأكيد الموعد بنجاح');
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء تأكيد الموعد');
@@ -370,7 +376,20 @@ class AdminDashboardApiController extends Controller
     {
         try {
             $appointment = \Modules\Appointment\Models\Appointment::findOrFail($id);
+
+            if ($appointment->status === 'cancelled') {
+                return $this->error('الموعد ملغي بالفعل', 'INVALID_STATUS', 400);
+            }
+
             $appointment->update(['status' => 'cancelled']);
+
+            $appointment->load('patient');
+            if ($appointment->patient?->isPatient()) {
+                $appointment->patient->notify(
+                    new \App\Notifications\AppointmentStatusChanged($appointment, 'إلغاء', 'appointment_cancelled')
+                );
+            }
+
             return $this->success($appointment, 'تم إلغاء الموعد بنجاح');
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء إلغاء الموعد');

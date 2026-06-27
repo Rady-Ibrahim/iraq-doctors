@@ -25,13 +25,16 @@ class DoctorAuthService
         ?UploadedFile $avatar = null
     ): User {
         return DB::transaction(function () use ($data, $licenseDocument, $clinicImage, $avatar) {
+            $email = !empty($data['email']) ? $data['email'] : null;
+
             $userData = [
                 'name' => $data['name'],
                 'phone' => $data['phone'],
-                'email' => $data['email'],
+                'email' => $email,
                 'password' => $data['password'],
                 'role' => 'doctor',
                 'status' => 'active',
+                'email_verified_at' => $email ? null : now(),
             ];
 
             if ($avatar) {
@@ -85,7 +88,16 @@ class DoctorAuthService
 
     public function sendVerificationOtp(User $user): void
     {
+        if (!$user->email) {
+            return;
+        }
+
         $this->authService->sendOtp(null, 'register', $user->email);
+    }
+
+    public function needsEmailVerification(User $user): bool
+    {
+        return (bool) $user->email && !$user->email_verified_at;
     }
 
     public function verifyEmail(User $user, string $code): bool
@@ -143,7 +155,7 @@ class DoctorAuthService
 
     public function getPostLoginRoute(User $user): string
     {
-        if (!$user->email_verified_at) {
+        if ($this->needsEmailVerification($user)) {
             return 'doctor.verify-email';
         }
 

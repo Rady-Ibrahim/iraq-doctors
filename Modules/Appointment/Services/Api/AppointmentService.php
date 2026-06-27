@@ -2,6 +2,7 @@
 
 namespace Modules\Appointment\Services\Api;
 
+use App\Notifications\AppointmentStatusChanged;
 use App\Notifications\NewAppointmentBooked;
 use Modules\Appointment\Models\Appointment;
 use Modules\Doctor\Models\Doctor;
@@ -47,6 +48,8 @@ class AppointmentService
 
             $appointment->update(['status' => 'confirmed']);
 
+            $this->notifyPatient($appointment->fresh(['patient']), 'تأكيد', 'appointment_confirmed');
+
             return $appointment;
         });
     }
@@ -60,7 +63,7 @@ class AppointmentService
                 return null;
             }
 
-            if ($appointment->patient_id !== $userId) {
+            if ((int) $appointment->patient_id !== (int) $userId) {
                 return null;
             }
 
@@ -98,7 +101,9 @@ class AppointmentService
 
             $appointment->update(['status' => 'confirmed']);
 
-            return $appointment->fresh(['patient']);
+            $this->notifyPatient($appointment->fresh(['patient']), 'تأكيد', 'appointment_confirmed');
+
+            return $appointment;
         });
     }
 
@@ -115,7 +120,9 @@ class AppointmentService
 
             $appointment->update(['status' => 'cancelled']);
 
-            return $appointment->fresh(['patient']);
+            $this->notifyPatient($appointment->fresh(['patient']), 'رفض', 'appointment_rejected');
+
+            return $appointment;
         });
     }
 
@@ -132,8 +139,21 @@ class AppointmentService
 
             $appointment->update(['status' => 'completed']);
 
+            $this->notifyPatient($appointment->fresh(['patient']), 'إكمال', 'appointment_completed');
+
             return $appointment->fresh(['patient']);
         });
+    }
+
+    private function notifyPatient(Appointment $appointment, string $statusLabel, string $type): void
+    {
+        $appointment->loadMissing('patient');
+
+        if ($appointment->patient?->isPatient()) {
+            $appointment->patient->notify(
+                new AppointmentStatusChanged($appointment, $statusLabel, $type)
+            );
+        }
     }
 
     public function getPatientAppointments(string $patientId, string $status = null)

@@ -37,7 +37,7 @@ class DoctorAuthController extends Controller
 
         Auth::guard('web')->login($user, $request->boolean('remember'));
 
-        if (!$user->email_verified_at) {
+        if ($this->doctorAuthService->needsEmailVerification($user)) {
             $this->doctorAuthService->sendVerificationOtp($user);
 
             return redirect()
@@ -67,18 +67,24 @@ class DoctorAuthController extends Controller
 
         Auth::guard('web')->login($user);
 
-        $this->doctorAuthService->sendVerificationOtp($user);
+        if ($this->doctorAuthService->needsEmailVerification($user)) {
+            $this->doctorAuthService->sendVerificationOtp($user);
+
+            return redirect()
+                ->route('doctor.verify-email')
+                ->with('success', 'تم إنشاء حسابك بنجاح. أدخل كود التفعيل المرسل إلى بريدك الإلكتروني.');
+        }
 
         return redirect()
-            ->route('doctor.verify-email')
-            ->with('success', 'تم إنشاء حسابك بنجاح. أدخل كود التفعيل المرسل إلى بريدك الإلكتروني.');
+            ->route('doctor.pending')
+            ->with('success', 'تم إنشاء حسابك بنجاح. حسابك قيد المراجعة من قبل الإدارة.');
     }
 
     public function showVerifyEmail(): View|RedirectResponse
     {
         $user = Auth::guard('web')->user();
 
-        if ($user->email_verified_at) {
+        if (!$this->doctorAuthService->needsEmailVerification($user)) {
             return redirect()->route($this->doctorAuthService->getPostLoginRoute($user));
         }
 
@@ -89,7 +95,7 @@ class DoctorAuthController extends Controller
     {
         $user = Auth::guard('web')->user();
 
-        if ($user->email_verified_at) {
+        if (!$this->doctorAuthService->needsEmailVerification($user)) {
             return redirect()->route($this->doctorAuthService->getPostLoginRoute($user));
         }
 
@@ -106,7 +112,7 @@ class DoctorAuthController extends Controller
     {
         $user = Auth::guard('web')->user();
 
-        if ($user->email_verified_at) {
+        if (!$this->doctorAuthService->needsEmailVerification($user)) {
             return redirect()->route($this->doctorAuthService->getPostLoginRoute($user));
         }
 

@@ -11,6 +11,13 @@ class RegisterDoctorRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->email === '') {
+            $this->merge(['email' => null]);
+        }
+    }
+
     public function rules(): array
     {
         $imageMax = config('uploads.max_image_kb', 10240);
@@ -19,7 +26,7 @@ class RegisterDoctorRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'phone' => 'required|string|unique:users,phone|regex:/^[0-9]{10,15}$/',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
             'speciality_id' => 'required|integer|exists:specialities,id',
             'governorate_id' => 'required|integer|exists:governorates,id',

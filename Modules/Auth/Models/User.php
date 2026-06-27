@@ -72,6 +72,11 @@ class User extends Authenticatable
         return $this->hasOne(\Modules\Doctor\Models\Doctor::class);
     }
 
+    public function deviceTokens()
+    {
+        return $this->hasMany(\App\Models\DeviceToken::class);
+    }
+
     public function appointments()
     {
         return $this->hasMany(\Modules\Appointment\Models\Appointment::class, 'patient_id');

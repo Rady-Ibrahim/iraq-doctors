@@ -143,6 +143,7 @@ class DoctorController extends Controller
             'consultation_fee' => $doctor->consultation_fee,
             'rating' => $doctor->rating,
             'rating_count' => $doctor->rating_count,
+            'avatar' => storage_public_url($doctor->user?->avatar),
             'address' => $doctor->primaryBranch?->address ?? $doctor->address,
             'latitude' => $doctor->primaryBranch?->latitude ?? $doctor->latitude,
             'longitude' => $doctor->primaryBranch?->longitude ?? $doctor->longitude,

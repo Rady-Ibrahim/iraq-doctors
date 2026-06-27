@@ -66,7 +66,7 @@ class AuthController extends Controller
             );
         }
     
-        if (!$user->email_verified_at) {
+        if ($user->email && !$user->email_verified_at) {
             return $this->error(
                 'يرجى تفعيل البريد الإلكتروني أولاً',
                 'EMAIL_NOT_VERIFIED',
@@ -182,7 +182,7 @@ class AuthController extends Controller
         $data = [
             'id'        => $user->id,
             'name'      => $user->name,
-            'avatar'    => $user->avatar ? asset('storage/' . $user->avatar) : null,
+            'avatar'    => storage_public_url($user->avatar),
             'phone'     => $user->phone,
             'email'     => $user->email,
             'role'      => $user->role,
@@ -215,7 +215,7 @@ class AuthController extends Controller
         $response = [
             'id'        => $updatedUser->id,
             'name'      => $updatedUser->name,
-            'avatar'    => $updatedUser->avatar ? asset('storage/' . $updatedUser->avatar) : null,
+            'avatar'    => storage_public_url($updatedUser->avatar),
             'phone'     => $updatedUser->phone,
             'email'     => $updatedUser->email,
             'role'      => $updatedUser->role,
@@ -255,7 +255,7 @@ class AuthController extends Controller
         $user->update(['avatar' => $path]);
 
         return $this->success([
-            'avatar' => asset('storage/' . $path),
+            'avatar' => storage_public_url($path),
         ], 'تم تحديث الصورة الشخصية بنجاح');
     }
 

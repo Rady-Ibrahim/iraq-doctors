@@ -11,7 +11,7 @@ class DoctorEmailVerifiedMiddleware
     {
         $user = auth('web')->user();
 
-        if ($user && !$user->email_verified_at) {
+        if ($user && $user->email && !$user->email_verified_at) {
             return redirect()->route('doctor.verify-email')
                 ->with('warning', 'يرجى تفعيل بريدك الإلكتروني للمتابعة.');
         }

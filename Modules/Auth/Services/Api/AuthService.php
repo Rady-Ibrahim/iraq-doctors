@@ -303,10 +303,11 @@ class AuthService
             $user = User::create([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
-                'email' => $data['email'],
+                'email' => $data['email'] ?? null,
                 'password' => Hash::make($data['password']),
                 'role' => 'doctor',
                 'status' => 'active',
+                'email_verified_at' => !empty($data['email']) ? null : now(),
             ]);
 
             Doctor::create([

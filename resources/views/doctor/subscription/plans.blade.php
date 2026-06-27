@@ -149,12 +149,9 @@ async function submitSubscription(e) {
 
     try {
         showLoading();
-        const res = await fetch('/doctor/api/subscription/subscribe', {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': getCsrfToken(), 'Accept': 'application/json' },
-            body: formData,
-        });
-        const data = await res.json();
+        const data = await apiUpload('/doctor/api/subscription/subscribe', formData);
+        if (!data) return;
+
         if (data.success) {
             alert(data.message || 'تم إرسال الطلب');
             closeSubscribeModal();

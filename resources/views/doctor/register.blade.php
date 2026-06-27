@@ -51,8 +51,8 @@
                             placeholder="07xxxxxxxxx">
                     </div>
                     <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">البريد الإلكتروني</label>
-                        <input type="email" name="email" value="{{ old('email') }}" required
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">البريد الإلكتروني <span class="text-gray-400 font-normal">(اختياري)</span></label>
+                        <input type="email" name="email" value="{{ old('email') }}"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
                     </div>
                     <div>

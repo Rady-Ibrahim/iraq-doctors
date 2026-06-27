@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\Api\AuthController;
+use Modules\Auth\Http\Controllers\Api\DeviceController;
 
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
@@ -17,5 +18,9 @@ Route::prefix('auth')->group(function () {
         Route::put('profile', [AuthController::class, 'updateProfile']);
         Route::put('password', [AuthController::class, 'updatePassword']);
         Route::post('avatar', [AuthController::class, 'uploadAvatar']);
+
+        Route::post('devices/register', [DeviceController::class, 'register']);
+        Route::delete('devices/unregister', [DeviceController::class, 'unregister']);
+        Route::delete('devices', [DeviceController::class, 'unregisterAll']);
     });
 });

@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Session\TokenMismatchException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -45,12 +46,45 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
+
+        // جلسات admin/doctor منفصلة — SetSessionCookie قبل StartSession
+        $middleware->priority([
+            \App\Http\Middleware\SetSessionCookie::class,
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         
         // 🎯 الفصل الذكي والمستقر في معالجة الأخطاء
         $exceptions->render(function (Throwable $e, Request $request) {
             
+            if ($e instanceof TokenMismatchException) {
+                if ($request->expectsJson() || $request->is('*/api/*') || $request->ajax()) {
+                    return response()->json(['success' => false], 419);
+                }
+
+                if ($request->is('admin/*')) {
+                    return redirect()->route('admin.login');
+                }
+
+                if ($request->is('doctor/*')) {
+                    return redirect()->route('doctor.login');
+                }
+
+                return redirect('/');
+            }
+
+            if ($e instanceof AuthenticationException) {
+                if ($request->expectsJson() || $request->is('*/api/*') || $request->ajax()) {
+                    return response()->json(['success' => false], 401);
+                }
+            }
+
             // 1️⃣ لو الطلب جاي من الـ API (بوست مان / الموبايل) -> رجع JSON دايماً بنظافة
             if ($request->expectsJson() || $request->is('api/*')) {
                 $statusCode = 500;

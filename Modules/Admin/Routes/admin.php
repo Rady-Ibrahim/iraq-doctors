@@ -16,6 +16,7 @@ Route::middleware(['session.scope:admin', 'web'])->group(function () {
 
         Route::middleware(['auth:web', 'admin'])->group(function () {
             Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+            Route::get('/api/csrf-token', fn () => response()->json(['token' => csrf_token()]));
 
             Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
             Route::get('/dashboard/doctors', fn () => view('admin.doctors.index'))->name('doctors.index');
