@@ -4,23 +4,30 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Patient / dev OTP delivery. Doctor SMS uses Firebase Web SDK (not this class).
+ */
 class OtpSmsSender
 {
     public function send(string $phoneE164, string $code, string $type): void
     {
         $message = match ($type) {
-            'password_reset' => "كود إعادة تعيين كلمة المرور: {$code}",
-            'phone_verify' => "كود تفعيل رقم هاتفك: {$code}",
-            'register' => "كود تفعيل حسابك: {$code}",
-            default => "كود التحقق: {$code}",
+            'password_reset' => "Password reset code: {$code}",
+            'phone_verify' => "Phone verify code: {$code}",
+            'register' => "Account verify code: {$code}",
+            default => "Verification code: {$code}",
         };
 
-        // TODO: integrate SMS provider (Firebase / Twilio) for production delivery.
-        Log::info('OTP SMS', [
+        Log::info('OTP SMS (log driver — not sent to phone; use Firebase for doctor)', [
             'phone' => $phoneE164,
             'type' => $type,
             'code' => $code,
             'message' => $message,
         ]);
+    }
+
+    public function deliversRealSms(): bool
+    {
+        return false;
     }
 }
