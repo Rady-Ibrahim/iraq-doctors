@@ -23,6 +23,7 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
             Route::get('/api/csrf-token', fn () => response()->json(['token' => csrf_token()]));
 
             Route::get('/verify-phone', [DoctorAuthController::class, 'showVerifyPhone'])->name('verify-phone');
+            Route::post('/verify-phone/send', [DoctorAuthController::class, 'sendVerifyPhoneOtp'])->name('verify-phone.send');
             Route::post('/verify-phone', [DoctorAuthController::class, 'verifyPhone'])->name('verify-phone.submit');
             Route::get('/verify-email', [DoctorAuthController::class, 'showVerifyEmail'])->name('verify-email');
             Route::post('/verify-email', [DoctorAuthController::class, 'verifyEmail'])->name('verify-email.submit');

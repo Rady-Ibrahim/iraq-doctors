@@ -2,10 +2,11 @@
 
 namespace Modules\Auth\Http\Controllers\Api;
 
+use App\Support\PhoneNormalizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
-use Modules\Auth\Http\Requests\Api\FirebaseAuthRequest;
+use InvalidArgumentException;
 use Modules\Auth\Http\Requests\Api\RegisterRequest;
 use Modules\Auth\Http\Requests\Api\LoginRequest;
 use Modules\Auth\Http\Requests\Api\SendOtpRequest;
@@ -16,8 +17,6 @@ use Modules\Auth\Http\Requests\Api\ForgotPasswordRequest;
 use Modules\Auth\Http\Requests\Api\ResetPasswordRequest;
 use Modules\Auth\Http\Requests\Api\UploadAvatarRequest;
 use Modules\Auth\Services\Api\AuthService;
-use Modules\Auth\Services\Api\FirebaseAuthService;
-use Modules\Auth\Exceptions\FirebaseAuthException;
 use Modules\Auth\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Storage;
@@ -26,10 +25,7 @@ class AuthController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(
-        private AuthService $authService,
-        private FirebaseAuthService $firebaseAuthService,
-    ) {}
+    public function __construct(private AuthService $authService) {}
 
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -43,6 +39,7 @@ class AuthController extends Controller
                     'phone' => $user->phone,
                     'email' => $user->email,
                     'role' => $user->role,
+                    'phone_verified_at' => $user->phone_verified_at,
                 ],
             ], 'تم التسجيل بنجاح');
         } catch (\Exception $e) {
@@ -50,20 +47,24 @@ class AuthController extends Controller
                 'exception' => $e,
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return $this->serverError('فشل التسجيل');
         }
     }
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $identifier = $request->email ?: $request->phone;
-    
-        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL)
-            ? 'email'
-            : 'phone';
-    
-        $user = User::where($field, $identifier)->first();
-    
+        $identifier = $request->phone;
+
+        try {
+            $phoneE164 = PhoneNormalizer::toE164($identifier);
+        } catch (InvalidArgumentException) {
+            return $this->error('رقم الهاتف غير صحيح', 'INVALID_PHONE', 422);
+        }
+
+        $variants = PhoneNormalizer::lookupVariants($phoneE164);
+        $user = User::query()->whereIn('phone', $variants)->first();
+
         if (!$user) {
             return $this->error(
                 'بيانات الدخول غير صحيحة',
@@ -71,20 +72,17 @@ class AuthController extends Controller
                 401
             );
         }
-    
-        if ($user->email && !$user->email_verified_at) {
+
+        if ($user->isPatient() && !$user->phone_verified_at) {
             return $this->error(
-                'يرجى تفعيل البريد الإلكتروني أولاً',
-                'EMAIL_NOT_VERIFIED',
+                'يرجى تفعيل رقم الهاتف أولاً',
+                'PHONE_NOT_VERIFIED',
                 403
             );
         }
-    
-        $user = $this->authService->login(
-            $identifier,
-            $request->password
-        );
-    
+
+        $user = $this->authService->login($identifier, $request->password);
+
         if (!$user) {
             return $this->error(
                 'بيانات الدخول غير صحيحة',
@@ -92,9 +90,9 @@ class AuthController extends Controller
                 401
             );
         }
-    
+
         $token = $this->authService->createToken($user);
-    
+
         return $this->success([
             'user' => [
                 'id' => $user->id,
@@ -107,50 +105,25 @@ class AuthController extends Controller
         ], 'تم الدخول بنجاح');
     }
 
-    /**
-     * Patient mobile auth via Firebase ID token (login or register by phone).
-     * Postman test mode: X-Auth-Test-Key + phone (+ name for new users).
-     */
-    public function firebase(FirebaseAuthRequest $request): JsonResponse
-    {
-        try {
-            $result = $this->firebaseAuthService->authenticate(
-                $request->input('firebase_token'),
-                $request->input('phone'),
-                $request->input('name'),
-                $request->header('X-Auth-Test-Key'),
-            );
-
-            $message = $result['is_new_user'] ? 'تم التسجيل بنجاح' : 'تم الدخول بنجاح';
-
-            return $this->success([
-                'user' => FirebaseAuthService::formatUserPayload($result['user']),
-                'token' => $result['token'],
-                'is_new_user' => $result['is_new_user'],
-            ], $message);
-        } catch (FirebaseAuthException $e) {
-            return $this->error($e->getMessage(), $e->errorCode, $e->statusCode);
-        } catch (\Throwable $e) {
-            Log::error('Firebase auth error: ' . $e->getMessage(), ['exception' => $e]);
-
-            return $this->serverError('فشل تسجيل الدخول');
-        }
-    }
-
     public function sendOtp(SendOtpRequest $request): JsonResponse
     {
         try {
-            $this->authService->sendOtp(
-                null,
-                $request->type,
-                $request->email
-            );
-    
-            return $this->success([
-                'email' => $request->email,
+            $otp = $this->authService->sendOtp($request->phone, $request->type);
+            $phone = PhoneNormalizer::toE164($request->phone);
+
+            $payload = [
+                'phone' => $phone,
                 'type' => $request->type,
-            ], 'تم إرسال الكود بنجاح');
-    
+                'expires_in' => (int) config('otp.expires_minutes', 10) * 60,
+            ];
+
+            if ($this->authService->shouldExposeOtpCode()) {
+                $payload['code'] = $otp->code;
+            }
+
+            return $this->success($payload, 'تم إرسال الكود بنجاح');
+        } catch (InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 'INVALID_PHONE', 422);
         } catch (\Exception $e) {
             return $this->serverError($e->getMessage());
         }
@@ -158,11 +131,16 @@ class AuthController extends Controller
 
     public function verifyOtp(VerifyOtpRequest $request): JsonResponse
     {
+        try {
+            $phone = PhoneNormalizer::toE164($request->phone);
+        } catch (InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 'INVALID_PHONE', 422);
+        }
+
         $otp = $this->authService->verifyOtp(
             $request->phone,
             $request->code,
-            $request->type,
-            $request->email
+            $request->type
         );
 
         if (!$otp) {
@@ -173,25 +151,14 @@ class AuthController extends Controller
             );
         }
 
-        $email = $request->email ?: $otp->email;
-        $phone = $request->phone ?: $otp->phone;
-        $user = null;
-
-        if ($email) {
-            $user = User::where('email', $email)->first();
-        } elseif ($phone) {
-            $user = User::where('phone', $phone)->first();
-        }
-
-        if ($user) {
-            $user->update(['email_verified_at' => now()]);
-        }
+        $variants = PhoneNormalizer::lookupVariants($phone);
+        $user = User::query()->whereIn('phone', $variants)->first();
 
         return $this->success([
             'verified' => true,
-            'email' => $email,
+            'phone' => $phone,
             'user_exists' => (bool) $user,
-            'email_verified_at' => $user?->fresh()->email_verified_at,
+            'phone_verified_at' => $user?->fresh()->phone_verified_at,
         ], 'تم التحقق بنجاح');
     }
 
@@ -216,18 +183,18 @@ class AuthController extends Controller
         }
 
         $data = [
-            'id'        => $user->id,
-            'name'      => $user->name,
-            'avatar'    => storage_public_url($user->avatar),
-            'phone'     => $user->phone,
-            'email'     => $user->email,
-            'role'      => $user->role,
-            'status'    => $user->status,
+            'id' => $user->id,
+            'name' => $user->name,
+            'avatar' => storage_public_url($user->avatar),
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'role' => $user->role,
+            'status' => $user->status,
             'birthdate' => $user->birthdate,
-            'gender'    => $user->gender,
-            'city'      => $user->city,
-            'district'  => $user->district,
-            'address'   => $user->address,
+            'gender' => $user->gender,
+            'city' => $user->city,
+            'district' => $user->district,
+            'address' => $user->address,
         ];
 
         if ($user->isDoctor()) {
@@ -249,17 +216,17 @@ class AuthController extends Controller
         $updatedUser = $this->authService->updateProfile($user, $request->validated());
 
         $response = [
-            'id'        => $updatedUser->id,
-            'name'      => $updatedUser->name,
-            'avatar'    => storage_public_url($updatedUser->avatar),
-            'phone'     => $updatedUser->phone,
-            'email'     => $updatedUser->email,
-            'role'      => $updatedUser->role,
+            'id' => $updatedUser->id,
+            'name' => $updatedUser->name,
+            'avatar' => storage_public_url($updatedUser->avatar),
+            'phone' => $updatedUser->phone,
+            'email' => $updatedUser->email,
+            'role' => $updatedUser->role,
             'birthdate' => $updatedUser->birthdate,
-            'gender'    => $updatedUser->gender,
-            'city'      => $updatedUser->city,
-            'district'  => $updatedUser->district,
-            'address'   => $updatedUser->address,
+            'gender' => $updatedUser->gender,
+            'city' => $updatedUser->city,
+            'district' => $updatedUser->district,
+            'address' => $updatedUser->address,
         ];
 
         if ($updatedUser->isDoctor()) {
@@ -282,7 +249,6 @@ class AuthController extends Controller
             return $this->error('المستخدم غير موجود', 'USER_NOT_FOUND', 404);
         }
 
-        // Delete old avatar
         if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
             Storage::disk('public')->delete($user->avatar);
         }
@@ -305,15 +271,33 @@ class AuthController extends Controller
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $sent = $this->authService->forgotPassword($request->phone);
+        try {
+            $sent = $this->authService->forgotPassword($request->phone);
 
-        if (!$sent) {
-            return $this->notFound('رقم الهاتف غير موجود');
+            if (!$sent) {
+                return $this->notFound('رقم الهاتف غير موجود');
+            }
+
+            $payload = [
+                'expires_in' => (int) config('otp.expires_minutes', 10) * 60,
+            ];
+
+            if ($this->authService->shouldExposeOtpCode()) {
+                $phone = PhoneNormalizer::toE164($request->phone);
+                $latest = \Modules\Auth\Models\Otp::query()
+                    ->where('phone', $phone)
+                    ->where('type', 'password_reset')
+                    ->latest()
+                    ->first();
+                if ($latest) {
+                    $payload['code'] = $latest->code;
+                }
+            }
+
+            return $this->success($payload, 'تم إرسال كود التحقق إلى رقم الهاتف');
+        } catch (InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 'INVALID_PHONE', 422);
         }
-
-        return $this->success([
-            'expires_in' => 600,
-        ], 'تم إرسال كود التحقق إلى رقم الهاتف');
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse

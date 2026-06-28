@@ -14,14 +14,15 @@ class VerifyDoctorPhoneRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'firebase_token' => 'required|string',
+            'code' => ['required', 'digits:6'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'firebase_token.required' => 'رمز التحقق من Firebase مطلوب',
+            'code.required' => 'كود التحقق مطلوب',
+            'code.digits' => 'كود التحقق يجب أن يكون 6 أرقام',
         ];
     }
 }

@@ -14,26 +14,16 @@ class SendOtpRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'email' => 'nullable|email',
-            'type'  => 'required|in:register,login,password_reset',
+            'phone' => 'required|string',
+            'type' => 'required|in:register,login,password_reset,phone_verify',
         ];
-    }
-
-    public function withValidator($validator): void
-    {
-        $validator->after(function ($v) {
-            if (empty($this->phone) && empty($this->email)) {
-                $v->errors()->add('identifier', 'يجب إدخال رقم الهاتف أو البريد الإلكتروني');
-            }
-        });
     }
 
     public function messages(): array
     {
         return [
-            'phone.regex' => 'رقم الهاتف غير صحيح',
-            'email.email' => 'البريد الإلكتروني غير صحيح',
-            'type.in'     => 'نوع OTP غير صحيح',
+            'phone.required' => 'رقم الهاتف مطلوب',
+            'type.in' => 'نوع OTP غير صحيح',
         ];
     }
 }

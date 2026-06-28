@@ -14,27 +14,16 @@ class LoginRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'phone'    => 'nullable|string|regex:/^[0-9]{10,15}$/',
-            'email'    => 'nullable|email',
+            'phone' => 'required|string',
             'password' => 'required|string|min:8',
         ];
-    }
-
-    public function withValidator($validator): void
-    {
-        $validator->after(function ($v) {
-            if (empty($this->phone) && empty($this->email)) {
-                $v->errors()->add('identifier', 'يجب إدخال رقم الهاتف أو البريد الإلكتروني');
-            }
-        });
     }
 
     public function messages(): array
     {
         return [
-            'phone.regex'    => 'رقم الهاتف غير صحيح',
-            'email.email'    => 'البريد الإلكتروني غير صحيح',
-            'password.min'   => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
+            'phone.required' => 'رقم الهاتف مطلوب',
+            'password.min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
         ];
     }
 }

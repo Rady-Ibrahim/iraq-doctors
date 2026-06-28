@@ -5,11 +5,10 @@ use Modules\Auth\Http\Controllers\Api\AuthController;
 use Modules\Auth\Http\Controllers\Api\DeviceController;
 
 Route::prefix('auth')->group(function () {
-    Route::post('firebase', [AuthController::class, 'firebase'])->middleware('throttle:auth');
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
-    Route::post('send-otp', [AuthController::class, 'sendOtp']);
-    Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('send-otp', [AuthController::class, 'sendOtp'])->middleware('throttle:auth');
+    Route::post('verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:auth');
     Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
 
