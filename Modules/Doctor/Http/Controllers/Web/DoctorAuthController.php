@@ -38,6 +38,7 @@ class DoctorAuthController extends Controller
         }
 
         Auth::guard('web')->login($user, $request->boolean('remember'));
+        $request->session()->regenerate();
 
         if ($this->doctorAuthService->needsPhoneVerification($user)) {
             return redirect()

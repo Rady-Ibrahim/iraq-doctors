@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Doctor\Http\Controllers\Doctor\DoctorDashboardController;
 use Modules\Doctor\Http\Controllers\Web\DoctorAuthController;
 use Modules\Doctor\Http\Controllers\Web\DoctorBranchController;
+use Modules\Doctor\Http\Controllers\Web\DoctorCsrfController;
 use Modules\Doctor\Http\Controllers\Web\DoctorDashboardWebController;
 use Modules\Doctor\Http\Controllers\Web\DoctorSubscriptionController;
 use Modules\Doctor\Http\Controllers\Web\DoctorVerificationController;
@@ -12,6 +13,8 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
     Route::redirect('/', '/doctor/login');
 
     Route::prefix('doctor')->name('doctor.')->group(function () {
+        Route::get('/api/csrf-token', [DoctorCsrfController::class, 'token']);
+
         Route::middleware('guest:web')->group(function () {
             Route::get('/login', [DoctorAuthController::class, 'showLogin'])->name('login');
             Route::post('/login', [DoctorAuthController::class, 'login']);
@@ -20,8 +23,6 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
         });
 
         Route::middleware(['auth:web', 'doctor'])->group(function () {
-            Route::get('/api/csrf-token', fn () => response()->json(['token' => csrf_token()]));
-
             Route::get('/verify-phone', [DoctorAuthController::class, 'showVerifyPhone'])->name('verify-phone');
             Route::post('/verify-phone', [DoctorAuthController::class, 'verifyPhone'])->name('verify-phone.submit');
             Route::get('/verify-email', [DoctorAuthController::class, 'showVerifyEmail'])->name('verify-email');
