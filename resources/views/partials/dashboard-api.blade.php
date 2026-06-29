@@ -11,6 +11,10 @@
         if (meta && token) {
             meta.content = token;
         }
+
+        document.querySelectorAll('input[name="_token"]').forEach((input) => {
+            input.value = token;
+        });
     }
 
     function goToLogin() {

@@ -29,6 +29,7 @@ class AdminAuthController extends Controller
         }
 
         Auth::guard('web')->login($user, $request->boolean('remember'));
+        $request->session()->regenerate();
 
         return redirect()->route('admin.dashboard');
     }
