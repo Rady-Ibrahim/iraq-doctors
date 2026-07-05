@@ -9,7 +9,7 @@ class AdminServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->singleton(\Modules\Admin\Services\AdminOrdersService::class);
     }
 
     public function boot(): void

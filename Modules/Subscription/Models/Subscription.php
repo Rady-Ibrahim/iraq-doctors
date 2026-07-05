@@ -12,6 +12,7 @@ class Subscription extends Model
     protected $table = 'subscriptions';
 
     protected $fillable = [
+        'type',
         'name',
         'description_ar',
         'description_en',
@@ -39,6 +40,16 @@ class Subscription extends Model
     public function doctorSubscriptions()
     {
         return $this->hasMany(DoctorSubscription::class);
+    }
+
+    public function laboratorySubscriptions()
+    {
+        return $this->hasMany(\Modules\Laboratory\Models\LaboratorySubscription::class);
+    }
+
+    public function scopeOfType($query, string $type)
+    {
+        return $query->where('type', $type);
     }
 
     public function doctors()

@@ -63,6 +63,16 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function isLaboratory(): bool
+    {
+        return $this->role === 'laboratory';
+    }
+
+    public function isPharmacy(): bool
+    {
+        return $this->role === 'pharmacy';
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';
@@ -71,6 +81,16 @@ class User extends Authenticatable
     public function doctor()
     {
         return $this->hasOne(\Modules\Doctor\Models\Doctor::class);
+    }
+
+    public function laboratory()
+    {
+        return $this->hasOne(\Modules\Laboratory\Models\Laboratory::class);
+    }
+
+    public function pharmacy()
+    {
+        return $this->hasOne(\Modules\Pharmacy\Models\Pharmacy::class);
     }
 
     public function deviceTokens()

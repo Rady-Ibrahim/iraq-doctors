@@ -9,7 +9,15 @@ use Modules\Auth\Models\User;
 use Modules\Appointment\Models\Appointment;
 use Modules\Subscription\Models\DoctorSubscription;
 use Modules\Subscription\Models\Subscription;
+use Modules\Laboratory\Models\LaboratorySubscription;
+use Modules\Pharmacy\Models\Pharmacy;
+use Modules\Pharmacy\Models\PharmacySubscription;
 use Modules\Review\Models\Review;
+use Modules\Laboratory\Models\Laboratory;
+use Modules\Laboratory\Models\LaboratoryOrder;
+use Modules\Laboratory\Enums\LaboratoryOrderStatus;
+use Modules\Pharmacy\Models\PharmacyOrder;
+use Modules\Pharmacy\Enums\PharmacyOrderStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,6 +29,8 @@ class AdminDashboardService
         $activeDoctors = Doctor::where('status', 'approved')->count();
         $pendingDoctors = Doctor::where('status', 'pending')->count();
         $suspendedDoctors = Doctor::where('status', 'suspended')->count();
+        $pendingLaboratories = Laboratory::where('status', 'pending')->count();
+        $pendingPharmacies = Pharmacy::where('status', 'pending')->count();
 
         $totalPatients = User::where('role', 'patient')->where('status', 'active')->count();
         $ghostPatients = User::where('role', 'patient')->where('is_ghost', true)->count();
@@ -83,6 +93,30 @@ class AdminDashboardService
             'subscriptions' => [
                 'active' => $activeSubscriptions,
                 'expired' => $expiredSubscriptions,
+            ],
+            'laboratories' => [
+                'total' => Laboratory::count(),
+                'pending' => $pendingLaboratories,
+            ],
+            'pharmacies' => [
+                'total' => Pharmacy::count(),
+                'pending' => $pendingPharmacies,
+            ],
+            'laboratory_orders' => [
+                'total' => LaboratoryOrder::count(),
+                'active' => LaboratoryOrder::whereNotIn('status', [
+                    LaboratoryOrderStatus::Delivered->value,
+                    LaboratoryOrderStatus::Cancelled->value,
+                ])->count(),
+                'delivered' => LaboratoryOrder::where('status', LaboratoryOrderStatus::Delivered)->count(),
+            ],
+            'pharmacy_orders' => [
+                'total' => PharmacyOrder::count(),
+                'active' => PharmacyOrder::whereNotIn('status', [
+                    PharmacyOrderStatus::Completed->value,
+                    PharmacyOrderStatus::Cancelled->value,
+                ])->count(),
+                'completed' => PharmacyOrder::where('status', PharmacyOrderStatus::Completed)->count(),
             ],
         ];
     }
@@ -307,21 +341,25 @@ class AdminDashboardService
         $plans = Subscription::orderBy('sort_order')->get()->map(fn ($plan) => [
             'id' => $plan->id,
             'name' => $plan->name,
+            'type' => $plan->type ?? 'doctor',
             'price' => $plan->price,
             'duration_days' => $plan->duration_days,
             'status' => $plan->status,
-            'subscribers_count' => DoctorSubscription::where('subscription_id', $plan->id)->where('status', 'active')->count(),
+            'subscribers_count' => match ($plan->type ?? 'doctor') {
+                'laboratory' => LaboratorySubscription::where('subscription_id', $plan->id)->where('status', 'active')->count(),
+                'pharmacy' => PharmacySubscription::where('subscription_id', $plan->id)->where('status', 'active')->count(),
+                default => DoctorSubscription::where('subscription_id', $plan->id)->where('status', 'active')->count(),
+            },
         ])->values()->all();
 
-        $query = DoctorSubscription::with(['doctor.user', 'subscription'])->orderByDesc('created_at');
-
+        $doctorQuery = DoctorSubscription::with(['doctor.user', 'subscription'])->orderByDesc('created_at');
         if ($status) {
-            $query->where('status', $status);
+            $doctorQuery->where('status', $status);
         }
-
-        $paginator = $query->paginate($limit);
-        $subscriptions = $paginator->getCollection()->map(fn ($sub) => [
+        $doctorSubs = $doctorQuery->get()->map(fn ($sub) => [
             'id' => $sub->id,
+            'subscriber_type' => 'doctor',
+            'subscriber_name' => $sub->doctor?->user?->name,
             'doctor_name' => $sub->doctor?->user?->name,
             'plan_name' => $sub->subscription?->name,
             'amount_paid' => $sub->amount_paid,
@@ -333,22 +371,77 @@ class AdminDashboardService
             'start_date' => $sub->start_date?->format('Y-m-d'),
             'end_date' => $sub->end_date?->format('Y-m-d'),
             'created_at' => $sub->created_at?->format('Y-m-d'),
-        ])->values()->all();
+        ]);
+
+        $labQuery = LaboratorySubscription::with(['laboratory.user', 'subscription'])->orderByDesc('created_at');
+        if ($status) {
+            $labQuery->where('status', $status);
+        }
+        $labSubs = $labQuery->get()->map(fn ($sub) => [
+            'id' => $sub->id,
+            'subscriber_type' => 'laboratory',
+            'subscriber_name' => $sub->laboratory?->name,
+            'doctor_name' => $sub->laboratory?->name,
+            'plan_name' => $sub->subscription?->name,
+            'amount_paid' => $sub->amount_paid,
+            'submitted_amount' => $sub->submitted_amount,
+            'payment_method' => $sub->payment_method,
+            'payment_receipt' => storage_public_url($sub->payment_receipt),
+            'payment_reject_reason' => $sub->payment_reject_reason,
+            'status' => $sub->status,
+            'start_date' => $sub->start_date?->format('Y-m-d'),
+            'end_date' => $sub->end_date?->format('Y-m-d'),
+            'created_at' => $sub->created_at?->format('Y-m-d'),
+        ]);
+
+        $pharmacyQuery = PharmacySubscription::with(['pharmacy.user', 'subscription'])->orderByDesc('created_at');
+        if ($status) {
+            $pharmacyQuery->where('status', $status);
+        }
+        $pharmacySubs = $pharmacyQuery->get()->map(fn ($sub) => [
+            'id' => $sub->id,
+            'subscriber_type' => 'pharmacy',
+            'subscriber_name' => $sub->pharmacy?->name,
+            'doctor_name' => $sub->pharmacy?->name,
+            'plan_name' => $sub->subscription?->name,
+            'amount_paid' => $sub->amount_paid,
+            'submitted_amount' => $sub->submitted_amount,
+            'payment_method' => $sub->payment_method,
+            'payment_receipt' => storage_public_url($sub->payment_receipt),
+            'payment_reject_reason' => $sub->payment_reject_reason,
+            'status' => $sub->status,
+            'start_date' => $sub->start_date?->format('Y-m-d'),
+            'end_date' => $sub->end_date?->format('Y-m-d'),
+            'created_at' => $sub->created_at?->format('Y-m-d'),
+        ]);
+
+        $merged = $doctorSubs->concat($labSubs)->concat($pharmacySubs)->sortByDesc('created_at')->values();
+        $total = $merged->count();
+        $page = (int) ($filters['page'] ?? 1);
+        $subscriptions = $merged->slice(($page - 1) * $limit, $limit)->values()->all();
 
         return [
             'plans' => $plans,
             'subscriptions' => $subscriptions,
             'meta' => [
-                'page' => $paginator->currentPage(),
-                'limit' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'last_page' => $paginator->lastPage(),
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'last_page' => (int) max(1, ceil($total / $limit)),
             ],
             'summary' => [
-                'active' => DoctorSubscription::where('status', 'active')->count(),
-                'expired' => DoctorSubscription::where('status', 'expired')->count(),
-                'pending_payment' => DoctorSubscription::where('status', 'pending_payment')->count(),
-                'total_revenue' => DoctorSubscription::sum('amount_paid'),
+                'active' => DoctorSubscription::where('status', 'active')->count()
+                    + LaboratorySubscription::where('status', 'active')->count()
+                    + PharmacySubscription::where('status', 'active')->count(),
+                'expired' => DoctorSubscription::where('status', 'expired')->count()
+                    + LaboratorySubscription::where('status', 'expired')->count()
+                    + PharmacySubscription::where('status', 'expired')->count(),
+                'pending_payment' => DoctorSubscription::where('status', 'pending_payment')->count()
+                    + LaboratorySubscription::where('status', 'pending_payment')->count()
+                    + PharmacySubscription::where('status', 'pending_payment')->count(),
+                'total_revenue' => DoctorSubscription::sum('amount_paid')
+                    + LaboratorySubscription::sum('amount_paid')
+                    + PharmacySubscription::sum('amount_paid'),
             ],
         ];
     }
@@ -483,6 +576,165 @@ class AdminDashboardService
         return $doctor;
     }
 
+    public function getLaboratoriesStats($filters = [])
+    {
+        $limit = (int) ($filters['limit'] ?? 20);
+
+        $query = Laboratory::with(['user', 'governorate']);
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', '%' . $search . '%')
+                            ->orWhere('phone', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+
+        return $query->orderByDesc('created_at')->paginate($limit);
+    }
+
+    public function getLaboratoryDetails(int $laboratoryId): array
+    {
+        $laboratory = Laboratory::with(['user', 'governorate'])->findOrFail($laboratoryId);
+
+        return [
+            'id' => $laboratory->id,
+            'name' => $laboratory->name,
+            'owner_name' => $laboratory->user?->name,
+            'phone' => $laboratory->user?->phone,
+            'email' => $laboratory->user?->email,
+            'governorate' => $laboratory->governorate?->name_ar,
+            'district' => $laboratory->district,
+            'address' => $laboratory->address,
+            'latitude' => $laboratory->latitude,
+            'longitude' => $laboratory->longitude,
+            'description_ar' => $laboratory->description_ar,
+            'status' => $laboratory->status,
+            'reject_reason' => $laboratory->reject_reason,
+            'logo' => storage_public_url($laboratory->logo),
+            'commercial_register_document' => storage_public_url($laboratory->commercial_register_document),
+            'license_document' => storage_public_url($laboratory->license_document),
+            'owner_id_document' => storage_public_url($laboratory->owner_id_document),
+            'accreditation_document' => storage_public_url($laboratory->accreditation_document),
+            'created_at' => $laboratory->created_at,
+        ];
+    }
+
+    public function approveLaboratory($laboratoryId)
+    {
+        $laboratory = Laboratory::findOrFail($laboratoryId);
+        $laboratory->status = 'approved';
+        $laboratory->reject_reason = null;
+        $laboratory->save();
+
+        return $laboratory;
+    }
+
+    public function rejectLaboratory($laboratoryId, ?string $reason = null)
+    {
+        $laboratory = Laboratory::findOrFail($laboratoryId);
+        $laboratory->status = 'rejected';
+        $laboratory->reject_reason = $reason;
+        $laboratory->save();
+
+        return $laboratory;
+    }
+
+    public function suspendLaboratory($laboratoryId)
+    {
+        $laboratory = Laboratory::findOrFail($laboratoryId);
+        $laboratory->status = 'suspended';
+        $laboratory->save();
+
+        return $laboratory;
+    }
+
+    public function getPharmaciesStats($filters = [])
+    {
+        $limit = (int) ($filters['limit'] ?? 20);
+
+        $query = Pharmacy::with(['user', 'governorate']);
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', '%' . $search . '%')
+                            ->orWhere('phone', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+
+        return $query->orderByDesc('created_at')->paginate($limit);
+    }
+
+    public function getPharmacyDetails(int $pharmacyId): array
+    {
+        $pharmacy = Pharmacy::with(['user', 'governorate'])->findOrFail($pharmacyId);
+
+        return [
+            'id' => $pharmacy->id,
+            'name' => $pharmacy->name,
+            'owner_name' => $pharmacy->user?->name,
+            'phone' => $pharmacy->user?->phone,
+            'email' => $pharmacy->user?->email,
+            'governorate' => $pharmacy->governorate?->name_ar,
+            'district' => $pharmacy->district,
+            'address' => $pharmacy->address,
+            'latitude' => $pharmacy->latitude,
+            'longitude' => $pharmacy->longitude,
+            'description_ar' => $pharmacy->description_ar,
+            'status' => $pharmacy->status,
+            'reject_reason' => $pharmacy->reject_reason,
+            'logo' => storage_public_url($pharmacy->logo),
+            'commercial_register_document' => storage_public_url($pharmacy->commercial_register_document),
+            'license_document' => storage_public_url($pharmacy->license_document),
+            'owner_id_document' => storage_public_url($pharmacy->owner_id_document),
+            'created_at' => $pharmacy->created_at,
+        ];
+    }
+
+    public function approvePharmacy($pharmacyId)
+    {
+        $pharmacy = Pharmacy::findOrFail($pharmacyId);
+        $pharmacy->status = 'approved';
+        $pharmacy->reject_reason = null;
+        $pharmacy->save();
+
+        return $pharmacy;
+    }
+
+    public function rejectPharmacy($pharmacyId, ?string $reason = null)
+    {
+        $pharmacy = Pharmacy::findOrFail($pharmacyId);
+        $pharmacy->status = 'rejected';
+        $pharmacy->reject_reason = $reason;
+        $pharmacy->save();
+
+        return $pharmacy;
+    }
+
+    public function suspendPharmacy($pharmacyId)
+    {
+        $pharmacy = Pharmacy::findOrFail($pharmacyId);
+        $pharmacy->status = 'suspended';
+        $pharmacy->save();
+
+        return $pharmacy;
+    }
+
     protected function formatAppointment(Appointment $appointment): array
     {
         $time = $appointment->appointment_time;
@@ -545,7 +797,7 @@ class AdminDashboardService
     {
         $limit = (int) ($filters['limit'] ?? 20);
 
-        $query = Review::with(['patient', 'doctor.user', 'doctor.speciality', 'reviewer']);
+        $query = Review::with(['patient', 'doctor.user', 'doctor.speciality', 'pharmacy', 'laboratory', 'reviewer']);
 
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
@@ -560,6 +812,8 @@ class AdminDashboardService
             $query->where(function ($q) use ($search) {
                 $q->whereHas('patient', fn ($sub) => $sub->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('doctor.user', fn ($sub) => $sub->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('pharmacy', fn ($sub) => $sub->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('laboratory', fn ($sub) => $sub->where('name', 'like', "%{$search}%"))
                     ->orWhere('comment', 'like', "%{$search}%");
             });
         }
@@ -569,6 +823,20 @@ class AdminDashboardService
 
     public function formatReview(Review $review): array
     {
+        $providerType = 'doctor';
+        $providerName = $review->doctor?->user?->name;
+        $providerSubtitle = $review->doctor?->speciality?->name_ar;
+
+        if ($review->pharmacy_id) {
+            $providerType = 'pharmacy';
+            $providerName = $review->pharmacy?->name;
+            $providerSubtitle = 'صيدلية';
+        } elseif ($review->laboratory_id) {
+            $providerType = 'laboratory';
+            $providerName = $review->laboratory?->name;
+            $providerSubtitle = 'معمل تحاليل';
+        }
+
         return [
             'id' => $review->id,
             'rating' => $review->rating,
@@ -577,8 +845,15 @@ class AdminDashboardService
             'reject_reason' => $review->reject_reason,
             'patient_name' => $review->patient?->name,
             'patient_phone' => $review->patient?->phone,
+            'provider_type' => $providerType,
+            'provider_name' => $providerName,
+            'provider_subtitle' => $providerSubtitle,
             'doctor_id' => $review->doctor_id,
             'doctor_name' => $review->doctor?->user?->name,
+            'pharmacy_id' => $review->pharmacy_id,
+            'pharmacy_name' => $review->pharmacy?->name,
+            'laboratory_id' => $review->laboratory_id,
+            'laboratory_name' => $review->laboratory?->name,
             'speciality' => $review->doctor?->speciality?->name_ar,
             'reviewed_by' => $review->reviewer?->name,
             'reviewed_at' => $review->reviewed_at?->format('Y-m-d H:i'),

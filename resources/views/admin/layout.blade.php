@@ -58,6 +58,14 @@
                     <i class="fas fa-user-md w-5"></i>
                     <span>الأطباء</span>
                 </a>
+                <a href="/admin/dashboard/laboratories" class="{{ $navClass(request()->routeIs('admin.laboratories.*')) }}">
+                    <i class="fas fa-flask w-5"></i>
+                    <span>المعامل</span>
+                </a>
+                <a href="/admin/dashboard/pharmacies" class="{{ $navClass(request()->routeIs('admin.pharmacies.*')) }}">
+                    <i class="fas fa-pills w-5"></i>
+                    <span>الصيدليات</span>
+                </a>
                 <a href="/admin/dashboard/patients" class="{{ $navClass(request()->routeIs('admin.patients.*')) }}">
                     <i class="fas fa-users w-5"></i>
                     <span>المرضى</span>
@@ -89,6 +97,22 @@
                 <a href="/admin/dashboard/governorates" class="{{ $navClass(request()->routeIs('admin.governorates.*')) }}">
                     <i class="fas fa-map-marker-alt w-5"></i>
                     <span>المحافظات</span>
+                </a>
+                <a href="/admin/dashboard/lab-tests" class="{{ $navClass(request()->routeIs('admin.lab-tests.*')) }}">
+                    <i class="fas fa-vial w-5"></i>
+                    <span>كتالوج التحاليل</span>
+                </a>
+                <a href="/admin/dashboard/medicines" class="{{ $navClass(request()->routeIs('admin.medicines.*')) }}">
+                    <i class="fas fa-capsules w-5"></i>
+                    <span>كتالوج الأدوية</span>
+                </a>
+                <a href="/admin/dashboard/orders" class="{{ $navClass(request()->routeIs('admin.orders.*')) }}">
+                    <i class="fas fa-clipboard-list w-5"></i>
+                    <span>الطلبات</span>
+                </a>
+                <a href="/admin/dashboard/reports" class="{{ $navClass(request()->routeIs('admin.reports.*')) }}">
+                    <i class="fas fa-file-alt w-5"></i>
+                    <span>التقارير</span>
                 </a>
                 <a href="/admin/users" class="{{ $navClass(request()->routeIs('admin.users.*')) }}">
                     <i class="fas fa-user-cog w-5"></i>

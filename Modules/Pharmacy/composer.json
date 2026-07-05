@@ -1,0 +1,16 @@
+{
+    "name": "modules/Pharmacy",
+    "description": "Pharmacy module",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Pharmacy\\": "./"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Pharmacy\\Providers\\PharmacyServiceProvider"
+            ]
+        }
+    }
+}

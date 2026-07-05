@@ -5,11 +5,16 @@ use Modules\Auth\Http\Controllers\Web\AdminAuthController;
 use Modules\Admin\Http\Controllers\Api\AdminDashboardController;
 use Modules\Admin\Http\Controllers\Api\AdminDashboardApiController;
 use Modules\Admin\Http\Controllers\Api\AdminCatalogApiController;
+use Modules\Admin\Http\Controllers\Api\AdminLabTestApiController;
+use Modules\Admin\Http\Controllers\Api\AdminMedicineApiController;
+use Modules\Admin\Http\Controllers\Api\AdminOrdersApiController;
 use Modules\Admin\Http\Controllers\Web\AdminCsrfController;
 use Modules\Admin\Http\Controllers\Web\AdminDashboardWebController;
 use Modules\Auth\Http\Controllers\Admin\AdminUserController;
 
 Route::middleware(['session.scope:admin', 'web'])->group(function () {
+    Route::redirect('/admin', '/admin/login');
+
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/api/csrf-token', [AdminCsrfController::class, 'token']);
 
@@ -24,6 +29,10 @@ Route::middleware(['session.scope:admin', 'web'])->group(function () {
             Route::get('/dashboard', [AdminDashboardWebController::class, 'dashboard'])->name('dashboard');
             Route::get('/dashboard/doctors', [AdminDashboardWebController::class, 'doctors'])->name('doctors.index');
             Route::get('/dashboard/doctors/{id}', [AdminDashboardWebController::class, 'doctorShow'])->name('doctors.show');
+            Route::get('/dashboard/laboratories', [AdminDashboardWebController::class, 'laboratories'])->name('laboratories.index');
+            Route::get('/dashboard/laboratories/{id}', [AdminDashboardWebController::class, 'laboratoryShow'])->name('laboratories.show');
+            Route::get('/dashboard/pharmacies', [AdminDashboardWebController::class, 'pharmacies'])->name('pharmacies.index');
+            Route::get('/dashboard/pharmacies/{id}', [AdminDashboardWebController::class, 'pharmacyShow'])->name('pharmacies.show');
             Route::get('/dashboard/patients', [AdminDashboardWebController::class, 'patients'])->name('patients.index');
             Route::get('/dashboard/patients/{id}', [AdminDashboardWebController::class, 'patientShow'])->name('patients.show');
             Route::get('/dashboard/appointments', [AdminDashboardWebController::class, 'appointments'])->name('appointments.index');
@@ -33,6 +42,10 @@ Route::middleware(['session.scope:admin', 'web'])->group(function () {
             Route::get('/dashboard/analytics', [AdminDashboardWebController::class, 'analytics'])->name('analytics');
             Route::get('/dashboard/specialities', [AdminDashboardWebController::class, 'specialities'])->name('specialities.index');
             Route::get('/dashboard/governorates', [AdminDashboardWebController::class, 'governorates'])->name('governorates.index');
+            Route::get('/dashboard/lab-tests', [AdminDashboardWebController::class, 'labTests'])->name('lab-tests.index');
+            Route::get('/dashboard/medicines', [AdminDashboardWebController::class, 'medicines'])->name('medicines.index');
+            Route::get('/dashboard/orders', [AdminDashboardWebController::class, 'orders'])->name('orders.index');
+            Route::get('/dashboard/reports', [AdminDashboardWebController::class, 'reports'])->name('reports.index');
             Route::get('/users', [AdminDashboardWebController::class, 'users'])->name('users.index');
             Route::redirect('/subscriptions', '/admin/dashboard/subscriptions')->name('subscriptions');
 
@@ -53,6 +66,16 @@ Route::middleware(['session.scope:admin', 'web'])->group(function () {
                 Route::post('/doctors/{id}/reject', [AdminDashboardApiController::class, 'rejectDoctor']);
                 Route::post('/doctors/{id}/suspend', [AdminDashboardApiController::class, 'suspendDoctor']);
                 Route::post('/doctors/{id}/activate', [AdminDashboardApiController::class, 'activateDoctor']);
+                Route::get('/laboratories', [AdminDashboardApiController::class, 'laboratories']);
+                Route::get('/laboratories/{id}', [AdminDashboardApiController::class, 'laboratoryDetails']);
+                Route::post('/laboratories/{id}/approve', [AdminDashboardApiController::class, 'approveLaboratory']);
+                Route::post('/laboratories/{id}/reject', [AdminDashboardApiController::class, 'rejectLaboratory']);
+                Route::post('/laboratories/{id}/suspend', [AdminDashboardApiController::class, 'suspendLaboratory']);
+                Route::get('/pharmacies', [AdminDashboardApiController::class, 'pharmacies']);
+                Route::get('/pharmacies/{id}', [AdminDashboardApiController::class, 'pharmacyDetails']);
+                Route::post('/pharmacies/{id}/approve', [AdminDashboardApiController::class, 'approvePharmacy']);
+                Route::post('/pharmacies/{id}/reject', [AdminDashboardApiController::class, 'rejectPharmacy']);
+                Route::post('/pharmacies/{id}/suspend', [AdminDashboardApiController::class, 'suspendPharmacy']);
                 Route::get('/patients', [AdminDashboardApiController::class, 'patients']);
                 Route::get('/patients/{id}', [AdminDashboardApiController::class, 'patientDetails']);
                 Route::get('/appointments', [AdminDashboardApiController::class, 'appointments']);
@@ -90,6 +113,30 @@ Route::middleware(['session.scope:admin', 'web'])->group(function () {
                 Route::post('/governorates', [AdminCatalogApiController::class, 'storeGovernorate']);
                 Route::put('/governorates/{id}', [AdminCatalogApiController::class, 'updateGovernorate']);
                 Route::delete('/governorates/{id}', [AdminCatalogApiController::class, 'destroyGovernorate']);
+
+                Route::get('/lab-test-categories', [AdminLabTestApiController::class, 'categories']);
+                Route::post('/lab-test-categories', [AdminLabTestApiController::class, 'storeCategory']);
+                Route::put('/lab-test-categories/{id}', [AdminLabTestApiController::class, 'updateCategory']);
+                Route::delete('/lab-test-categories/{id}', [AdminLabTestApiController::class, 'destroyCategory']);
+                Route::get('/lab-tests', [AdminLabTestApiController::class, 'tests']);
+                Route::post('/lab-tests', [AdminLabTestApiController::class, 'storeTest']);
+                Route::put('/lab-tests/{id}', [AdminLabTestApiController::class, 'updateTest']);
+                Route::delete('/lab-tests/{id}', [AdminLabTestApiController::class, 'destroyTest']);
+
+                Route::get('/medicine-categories', [AdminMedicineApiController::class, 'categories']);
+                Route::post('/medicine-categories', [AdminMedicineApiController::class, 'storeCategory']);
+                Route::put('/medicine-categories/{id}', [AdminMedicineApiController::class, 'updateCategory']);
+                Route::delete('/medicine-categories/{id}', [AdminMedicineApiController::class, 'destroyCategory']);
+                Route::get('/medicines', [AdminMedicineApiController::class, 'medicines']);
+                Route::post('/medicines', [AdminMedicineApiController::class, 'storeMedicine']);
+                Route::put('/medicines/{id}', [AdminMedicineApiController::class, 'updateMedicine']);
+                Route::delete('/medicines/{id}', [AdminMedicineApiController::class, 'destroyMedicine']);
+
+                Route::get('/laboratory-orders', [AdminOrdersApiController::class, 'laboratoryOrders']);
+                Route::get('/laboratory-orders/{id}', [AdminOrdersApiController::class, 'laboratoryOrderDetails']);
+                Route::get('/pharmacy-orders', [AdminOrdersApiController::class, 'pharmacyOrders']);
+                Route::get('/pharmacy-orders/{id}', [AdminOrdersApiController::class, 'pharmacyOrderDetails']);
+                Route::get('/reports/orders', [AdminOrdersApiController::class, 'ordersReport']);
             });
         });
     });

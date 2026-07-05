@@ -24,7 +24,7 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">البحث</label>
-            <input type="text" id="searchInput" placeholder="مريض، طبيب، تعليق..."
+            <input type="text" id="searchInput" placeholder="مريض، مقدم خدمة، تعليق..."
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
         </div>
         <div>
@@ -50,7 +50,7 @@
             <thead class="bg-gray-50 border-b">
                 <tr>
                     <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">المريض</th>
-                    <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">الطبيب</th>
+                    <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">مقدم الخدمة</th>
                     <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">التقييم</th>
                     <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">التعليق</th>
                     <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">الحالة</th>
@@ -138,8 +138,8 @@ function renderReviewsTable(reviews) {
         <tr class="border-b hover:bg-gray-50">
             <td class="px-6 py-4 text-sm">${review.patient_name || '—'}</td>
             <td class="px-6 py-4 text-sm">
-                <div class="font-semibold">${review.doctor_name || '—'}</div>
-                <div class="text-xs text-gray-500">${review.speciality || ''}</div>
+                <div class="font-semibold">${review.provider_name || review.doctor_name || '—'}</div>
+                <div class="text-xs text-gray-500">${review.provider_subtitle || review.speciality || ''}</div>
             </td>
             <td class="px-6 py-4 text-sm text-amber-500">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</td>
             <td class="px-6 py-4 text-sm max-w-xs truncate" title="${review.comment || ''}">${review.comment || '—'}</td>
@@ -174,7 +174,7 @@ function applyFilters() {
 }
 
 async function approveReview(id) {
-    const confirmed = await confirmAction('الموافقة على التقييم', 'سيُعرض التقييم للمرضى ويُحدَّث متوسط تقييم الطبيب.');
+    const confirmed = await confirmAction('الموافقة على التقييم', 'سيُعرض التقييم للمرضى ويُحدَّث متوسط التقييم.');
     if (!confirmed) return;
 
     const data = await apiPost(`/admin/api/reviews/${id}/approve`);

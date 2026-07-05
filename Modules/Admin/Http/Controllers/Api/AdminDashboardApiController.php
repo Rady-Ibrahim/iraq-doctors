@@ -163,10 +163,25 @@ class AdminDashboardApiController extends Controller
         return $this->success($settings, 'تم حفظ إعدادات الدفع بنجاح');
     }
 
-    public function confirmSubscription($id): JsonResponse
+    public function confirmSubscription(Request $request, $id): JsonResponse
     {
+        $request->validate([
+            'subscriber_type' => 'nullable|in:doctor,laboratory,pharmacy',
+        ]);
+
         try {
-            $subscription = $this->subscriptionService->confirmPayment((int) $id, auth('web')->id());
+            $type = $request->input('subscriber_type', 'doctor');
+
+            if ($type === 'laboratory') {
+                $subscription = app(\Modules\Laboratory\Services\Web\LaboratorySubscriptionService::class)
+                    ->confirmPayment((int) $id, auth('web')->id());
+            } elseif ($type === 'pharmacy') {
+                $subscription = app(\Modules\Pharmacy\Services\Web\PharmacySubscriptionService::class)
+                    ->confirmPayment((int) $id, auth('web')->id());
+            } else {
+                $subscription = $this->subscriptionService->confirmPayment((int) $id, auth('web')->id());
+            }
+
             return $this->success($subscription, 'تم تأكيد الاشتراك بنجاح');
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء تأكيد الاشتراك');
@@ -175,14 +190,28 @@ class AdminDashboardApiController extends Controller
 
     public function rejectSubscription(Request $request, $id): JsonResponse
     {
-        $request->validate(['reason' => 'nullable|string|max:500']);
+        $request->validate([
+            'reason' => 'nullable|string|max:500',
+            'subscriber_type' => 'nullable|in:doctor,laboratory,pharmacy',
+        ]);
 
         try {
-            $subscription = $this->subscriptionService->rejectPayment(
-                (int) $id,
-                auth('web')->id(),
-                $request->reason
-            );
+            $type = $request->input('subscriber_type', 'doctor');
+
+            if ($type === 'laboratory') {
+                $subscription = app(\Modules\Laboratory\Services\Web\LaboratorySubscriptionService::class)
+                    ->rejectPayment((int) $id, auth('web')->id(), $request->reason);
+            } elseif ($type === 'pharmacy') {
+                $subscription = app(\Modules\Pharmacy\Services\Web\PharmacySubscriptionService::class)
+                    ->rejectPayment((int) $id, auth('web')->id(), $request->reason);
+            } else {
+                $subscription = $this->subscriptionService->rejectPayment(
+                    (int) $id,
+                    auth('web')->id(),
+                    $request->reason
+                );
+            }
+
             return $this->success($subscription, 'تم رفض طلب الاشتراك');
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء رفض الاشتراك');
@@ -213,6 +242,7 @@ class AdminDashboardApiController extends Controller
             'visibility_score' => 'nullable|integer|min:1|max:10',
             'features' => 'nullable|array',
             'status' => 'nullable|in:active,inactive',
+            'type' => 'nullable|in:doctor,laboratory,pharmacy',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
@@ -239,6 +269,7 @@ class AdminDashboardApiController extends Controller
             'visibility_score' => 'nullable|integer|min:1|max:10',
             'features' => 'nullable|array',
             'status' => 'nullable|in:active,inactive',
+            'type' => 'nullable|in:doctor,laboratory,pharmacy',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
@@ -310,6 +341,126 @@ class AdminDashboardApiController extends Controller
             return $this->success($doctor, 'تم تفعيل حساب الطبيب بنجاح');
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء تفعيل حساب الطبيب');
+        }
+    }
+
+    public function laboratories(Request $request): JsonResponse
+    {
+        try {
+            $paginator = $this->adminDashboardService->getLaboratoriesStats($request->all());
+            $paginator->getCollection()->transform(fn ($laboratory) => $this->formatLaboratory($laboratory));
+
+            if ($request->has('limit') && ! $request->has('page')) {
+                return $this->success($paginator->items());
+            }
+
+            return $this->paginated(
+                $paginator->items(),
+                $paginator->total(),
+                $paginator->currentPage(),
+                $paginator->perPage()
+            );
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب المعامل');
+        }
+    }
+
+    public function laboratoryDetails($id): JsonResponse
+    {
+        try {
+            return $this->success($this->adminDashboardService->getLaboratoryDetails((int) $id));
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب تفاصيل المعمل');
+        }
+    }
+
+    public function approveLaboratory($id): JsonResponse
+    {
+        try {
+            $laboratory = $this->adminDashboardService->approveLaboratory($id);
+            return $this->success($laboratory, 'تم تفعيل حساب المعمل بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تفعيل حساب المعمل');
+        }
+    }
+
+    public function rejectLaboratory(Request $request, $id): JsonResponse
+    {
+        try {
+            $laboratory = $this->adminDashboardService->rejectLaboratory($id, $request->input('reject_reason'));
+            return $this->success($laboratory, 'تم رفض حساب المعمل بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء رفض حساب المعمل');
+        }
+    }
+
+    public function suspendLaboratory($id): JsonResponse
+    {
+        try {
+            $laboratory = $this->adminDashboardService->suspendLaboratory($id);
+            return $this->success($laboratory, 'تم تعليق حساب المعمل بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تعليق حساب المعمل');
+        }
+    }
+
+    public function pharmacies(Request $request): JsonResponse
+    {
+        try {
+            $paginator = $this->adminDashboardService->getPharmaciesStats($request->all());
+            $paginator->getCollection()->transform(fn ($pharmacy) => $this->formatPharmacy($pharmacy));
+
+            if ($request->has('limit') && ! $request->has('page')) {
+                return $this->success($paginator->items());
+            }
+
+            return $this->paginated(
+                $paginator->items(),
+                $paginator->total(),
+                $paginator->currentPage(),
+                $paginator->perPage()
+            );
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب الصيدليات');
+        }
+    }
+
+    public function pharmacyDetails($id): JsonResponse
+    {
+        try {
+            return $this->success($this->adminDashboardService->getPharmacyDetails((int) $id));
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب تفاصيل الصيدلية');
+        }
+    }
+
+    public function approvePharmacy($id): JsonResponse
+    {
+        try {
+            $pharmacy = $this->adminDashboardService->approvePharmacy($id);
+            return $this->success($pharmacy, 'تم تفعيل حساب الصيدلية بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تفعيل حساب الصيدلية');
+        }
+    }
+
+    public function rejectPharmacy(Request $request, $id): JsonResponse
+    {
+        try {
+            $pharmacy = $this->adminDashboardService->rejectPharmacy($id, $request->input('reject_reason'));
+            return $this->success($pharmacy, 'تم رفض حساب الصيدلية بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء رفض حساب الصيدلية');
+        }
+    }
+
+    public function suspendPharmacy($id): JsonResponse
+    {
+        try {
+            $pharmacy = $this->adminDashboardService->suspendPharmacy($id);
+            return $this->success($pharmacy, 'تم تعليق حساب الصيدلية بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تعليق حساب الصيدلية');
         }
     }
 
@@ -525,6 +676,34 @@ class AdminDashboardApiController extends Controller
             'rating' => $doctor->rating,
             'experience_years' => $doctor->experience_years,
             'created_at' => $doctor->created_at,
+        ];
+    }
+
+    protected function formatLaboratory($laboratory): array
+    {
+        return [
+            'id' => $laboratory->id,
+            'name' => $laboratory->name,
+            'owner_name' => $laboratory->user?->name,
+            'phone' => $laboratory->user?->phone,
+            'email' => $laboratory->user?->email,
+            'governorate' => $laboratory->governorate?->name_ar,
+            'status' => $laboratory->status,
+            'created_at' => $laboratory->created_at,
+        ];
+    }
+
+    protected function formatPharmacy($pharmacy): array
+    {
+        return [
+            'id' => $pharmacy->id,
+            'name' => $pharmacy->name,
+            'owner_name' => $pharmacy->user?->name,
+            'phone' => $pharmacy->user?->phone,
+            'email' => $pharmacy->user?->email,
+            'governorate' => $pharmacy->governorate?->name_ar,
+            'status' => $pharmacy->status,
+            'created_at' => $pharmacy->created_at,
         ];
     }
 }

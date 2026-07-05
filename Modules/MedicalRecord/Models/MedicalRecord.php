@@ -29,6 +29,10 @@ class MedicalRecord extends Model
         'height',
         'blood_pressure',
         'allergies',
+        'laboratory_id',
+        'laboratory_order_id',
+        'pharmacy_id',
+        'pharmacy_order_id',
     ];
 
     protected $casts = [
@@ -54,6 +58,26 @@ class MedicalRecord extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function laboratory()
+    {
+        return $this->belongsTo(\Modules\Laboratory\Models\Laboratory::class);
+    }
+
+    public function laboratoryOrder()
+    {
+        return $this->belongsTo(\Modules\Laboratory\Models\LaboratoryOrder::class);
+    }
+
+    public function pharmacy()
+    {
+        return $this->belongsTo(\Modules\Pharmacy\Models\Pharmacy::class);
+    }
+
+    public function pharmacyOrder()
+    {
+        return $this->belongsTo(\Modules\Pharmacy\Models\PharmacyOrder::class);
     }
 
     public function scopeForDoctor($query, $doctorId)

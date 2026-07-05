@@ -19,14 +19,23 @@ class NewReviewSubmitted extends Notification
 
     public function toArray(object $notifiable): array
     {
-        $this->review->loadMissing('patient', 'doctor.user');
+        $this->review->loadMissing('patient', 'doctor.user', 'pharmacy', 'laboratory');
+
+        $providerLabel = 'د. ' . ($this->review->doctor?->user?->name ?? 'غير معروف');
+        if ($this->review->pharmacy_id) {
+            $providerLabel = 'صيدلية ' . ($this->review->pharmacy?->name ?? 'غير معروف');
+        } elseif ($this->review->laboratory_id) {
+            $providerLabel = 'معمل ' . ($this->review->laboratory?->name ?? 'غير معروف');
+        }
 
         return [
             'title' => 'تقييم جديد',
-            'message' => 'أضاف ' . ($this->review->patient?->name ?? 'مريض') . ' تقييماً لد. ' . ($this->review->doctor?->user?->name ?? 'غير معروف') . ' — بانتظار الموافقة',
+            'message' => 'أضاف ' . ($this->review->patient?->name ?? 'مريض') . ' تقييماً لـ' . $providerLabel . ' — بانتظار الموافقة',
             'type' => 'new_review',
             'review_id' => $this->review->id,
             'doctor_id' => $this->review->doctor_id,
+            'pharmacy_id' => $this->review->pharmacy_id,
+            'laboratory_id' => $this->review->laboratory_id,
             'rating' => $this->review->rating,
             'action_url' => '/admin/dashboard/reviews?status=pending',
         ];
