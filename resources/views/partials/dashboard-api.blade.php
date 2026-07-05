@@ -51,6 +51,42 @@
         setInterval(() => refreshCsrfToken(), intervalMs);
     }
 
+    function clearFieldErrors() {
+        document.querySelectorAll('[data-error-for]').forEach((el) => {
+            el.textContent = '';
+        });
+    }
+
+    function showFieldErrors(details) {
+        if (!details || typeof details !== 'object') {
+            return;
+        }
+
+        clearFieldErrors();
+
+        Object.entries(details).forEach(([field, messages]) => {
+            const el = document.querySelector(`[data-error-for="${field}"]`);
+            if (el && Array.isArray(messages) && messages.length > 0) {
+                el.textContent = messages[0];
+            }
+        });
+    }
+
+    function handleApiError(data) {
+        if (!data || data.success !== false || !data.error) {
+            return;
+        }
+
+        if (data.error.code === 'VALIDATION_ERROR' && data.error.details) {
+            showFieldErrors(data.error.details);
+            return;
+        }
+
+        if (typeof showError === 'function') {
+            showError(data.error.message || 'حدث خطأ');
+        }
+    }
+
     async function apiCall(endpoint, options = {}, retried = false) {
         const response = await fetch(endpoint, {
             ...options,
@@ -77,11 +113,7 @@
 
         const data = await response.json();
 
-        if (!data.success && data.error) {
-            if (typeof showError === 'function') {
-                showError(data.error.message || 'حدث خطأ');
-            }
-        }
+        handleApiError(data);
 
         return data;
     }
@@ -111,11 +143,7 @@
 
         const data = await response.json();
 
-        if (!data.success && data.error) {
-            if (typeof showError === 'function') {
-                showError(data.error.message || 'حدث خطأ');
-            }
-        }
+        handleApiError(data);
 
         return data;
     }

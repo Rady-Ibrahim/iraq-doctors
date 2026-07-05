@@ -12,6 +12,8 @@ class SetSessionCookie
         $cookie = match ($scope) {
             'admin' => env('ADMIN_SESSION_COOKIE', 'iraq_doctors_admin_session'),
             'doctor' => env('DOCTOR_SESSION_COOKIE', 'iraq_doctors_doctor_session'),
+            'laboratory' => env('LABORATORY_SESSION_COOKIE', 'iraq_doctors_laboratory_session'),
+            'pharmacy' => env('PHARMACY_SESSION_COOKIE', 'iraq_doctors_pharmacy_session'),
             default => config('session.cookie'),
         };
 

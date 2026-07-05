@@ -10,4 +10,6 @@ return [
     Modules\StaticPage\Providers\StaticPageServiceProvider::class,
     Modules\Subscription\Providers\SubscriptionServiceProvider::class,
     Modules\Admin\Providers\AdminServiceProvider::class,
+    Modules\Laboratory\Providers\LaboratoryServiceProvider::class,
+    Modules\Pharmacy\Providers\PharmacyServiceProvider::class,
 ];

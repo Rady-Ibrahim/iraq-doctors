@@ -9,7 +9,8 @@ class AuthServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->singleton(\Modules\Auth\Services\Api\PatientOrdersService::class);
+        $this->app->singleton(\Modules\Auth\Services\Api\PatientNotificationService::class);
     }
 
     public function boot(): void

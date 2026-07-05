@@ -1,0 +1,16 @@
+{
+    "name": "modules/Laboratory",
+    "description": "Laboratory module",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Laboratory\\": "./"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Laboratory\\Providers\\LaboratoryServiceProvider"
+            ]
+        }
+    }
+}

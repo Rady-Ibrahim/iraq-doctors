@@ -10,7 +10,7 @@ use Modules\Doctor\Http\Controllers\Web\DoctorSubscriptionController;
 use Modules\Doctor\Http\Controllers\Web\DoctorVerificationController;
 
 Route::middleware(['session.scope:doctor', 'web'])->group(function () {
-    Route::redirect('/', '/doctor/login');
+    Route::redirect('/doctor', '/doctor/login');
 
     Route::prefix('doctor')->name('doctor.')->group(function () {
         Route::get('/api/csrf-token', [DoctorCsrfController::class, 'token']);

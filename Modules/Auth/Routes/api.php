@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\Api\AuthController;
 use Modules\Auth\Http\Controllers\Api\DeviceController;
+use Modules\Auth\Http\Controllers\Api\PatientController;
 
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
@@ -23,4 +24,11 @@ Route::prefix('auth')->group(function () {
         Route::delete('devices/unregister', [DeviceController::class, 'unregister']);
         Route::delete('devices', [DeviceController::class, 'unregisterAll']);
     });
+});
+
+Route::middleware('auth:sanctum')->prefix('patient')->group(function () {
+    Route::get('/orders', [PatientController::class, 'orders']);
+    Route::get('/notifications', [PatientController::class, 'notifications']);
+    Route::post('/notifications/{id}/read', [PatientController::class, 'markNotificationRead']);
+    Route::post('/notifications/read-all', [PatientController::class, 'markAllNotificationsRead']);
 });

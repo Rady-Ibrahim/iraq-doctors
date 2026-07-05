@@ -1,8 +1,8 @@
 @extends('admin.layout')
 
 @section('title', 'الاشتراكات')
-@section('page-title', 'اشتراكات الأطباء')
-@section('page-description', 'إدارة خطط الاشتراك واشتراكات الأطباء وإعدادات الدفع')
+@section('page-title', 'اشتراكات')
+@section('page-description', 'إدارة خطط الاشتراك واشتراكات الأطباء والمعامل وإعدادات الدفع')
 
 @section('content')
 <!-- Payment Settings -->
@@ -122,7 +122,7 @@
 
 <div class="bg-white rounded-xl shadow-sm overflow-hidden">
     <div class="px-6 py-4 border-b flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-800">اشتراكات الأطباء</h3>
+        <h3 class="text-lg font-semibold text-gray-800">طلبات الاشتراك</h3>
         <select id="statusFilter" onchange="loadSubscriptions()" class="px-3 py-2 border rounded-lg text-sm">
             <option value="">جميع الحالات</option>
             <option value="active">نشط</option>
@@ -134,7 +134,8 @@
     <table class="w-full">
         <thead class="bg-gray-50 border-b">
             <tr>
-                <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">الطبيب</th>
+                <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">المشترك</th>
+                <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">النوع</th>
                 <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">الخطة</th>
                 <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">المبلغ</th>
                 <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700">الإيصال</th>
@@ -143,7 +144,7 @@
             </tr>
         </thead>
         <tbody id="subscriptionsTableBody">
-            <tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>
+            <tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">جاري التحميل...</td></tr>
         </tbody>
     </table>
 </div>
@@ -190,7 +191,7 @@ async function loadSubscriptions() {
         const data = await apiCall(`/admin/api/subscriptions?${params}`);
         if (!data?.success) {
             document.getElementById('subscriptionsTableBody').innerHTML =
-                '<tr><td colspan="6" class="px-6 py-8 text-center text-red-600">تعذر تحميل البيانات</td></tr>';
+                '<tr><td colspan="7" class="px-6 py-8 text-center text-red-600">تعذر تحميل البيانات</td></tr>';
             return;
         }
 
@@ -301,39 +302,56 @@ async function deletePlan(id) {
     }
 }
 
+function subscriberTypeBadge(type) {
+    const map = {
+        doctor: { class: 'bg-teal-100 text-teal-800', label: 'طبيب' },
+        laboratory: { class: 'bg-indigo-100 text-indigo-800', label: 'معمل' },
+        pharmacy: { class: 'bg-purple-100 text-purple-800', label: 'صيدلية' },
+    };
+    const item = map[type] || map.doctor;
+    return `<span class="px-2 py-1 rounded-full text-xs ${item.class}">${item.label}</span>`;
+}
+
 function renderSubscriptions(items) {
     const tbody = document.getElementById('subscriptionsTableBody');
     if (!items.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">لا توجد اشتراكات</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">لا توجد اشتراكات</td></tr>';
         return;
     }
     tbody.innerHTML = items.map(sub => `
         <tr class="border-b hover:bg-gray-50">
-            <td class="px-6 py-4 font-semibold">${sub.doctor_name || '-'}</td>
+            <td class="px-6 py-4 font-semibold">${sub.subscriber_name || sub.doctor_name || '-'}</td>
+            <td class="px-6 py-4">${subscriberTypeBadge(sub.subscriber_type || 'doctor')}</td>
             <td class="px-6 py-4">${sub.plan_name || '-'}</td>
             <td class="px-6 py-4">${formatCurrency(sub.submitted_amount || sub.amount_paid || 0)}</td>
             <td class="px-6 py-4">${sub.payment_receipt ? `<a href="${sub.payment_receipt}" target="_blank" class="text-blue-600 text-sm">عرض الإيصال</a>` : '-'}</td>
             <td class="px-6 py-4"><span class="px-2 py-1 rounded-full text-xs ${statusClass(sub.status)}">${statusText(sub.status)}</span></td>
             <td class="px-6 py-4">
                 ${sub.status === 'pending_payment' ? `
-                    <button onclick="confirmSub(${sub.id})" class="px-3 py-1 bg-green-600 text-white text-xs rounded-lg ml-1">تأكيد</button>
-                    <button onclick="rejectSub(${sub.id})" class="px-3 py-1 bg-red-600 text-white text-xs rounded-lg">رفض</button>
+                    <button onclick="confirmSub(${sub.id}, '${sub.subscriber_type || 'doctor'}')" class="px-3 py-1 bg-green-600 text-white text-xs rounded-lg ml-1">تأكيد</button>
+                    <button onclick="rejectSub(${sub.id}, '${sub.subscriber_type || 'doctor'}')" class="px-3 py-1 bg-red-600 text-white text-xs rounded-lg">رفض</button>
                 ` : '-'}
             </td>
         </tr>
     `).join('');
 }
 
-async function confirmSub(id) {
+async function confirmSub(id, subscriberType) {
     if (!await confirmAction('تأكيد هذا الاشتراك؟')) return;
-    const data = await apiCall(`/admin/api/subscriptions/${id}/confirm`, { method: 'POST', body: '{}' });
+    const data = await apiCall(`/admin/api/subscriptions/${id}/confirm`, {
+        method: 'POST',
+        body: JSON.stringify({ subscriber_type: subscriberType }),
+    });
     if (data?.success) { alert(data.message); loadSubscriptions(); }
 }
 
-async function rejectSub(id) {
+async function rejectSub(id, subscriberType) {
     const reason = prompt('سبب الرفض (اختياري):');
     if (reason === null) return;
-    const data = await apiCall(`/admin/api/subscriptions/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
+    const data = await apiCall(`/admin/api/subscriptions/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason, subscriber_type: subscriberType }),
+    });
     if (data?.success) { alert(data.message); loadSubscriptions(); }
 }
 

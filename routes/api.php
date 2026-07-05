@@ -29,4 +29,6 @@ Route::prefix('v1')->group(function () {
     require __DIR__.'/../Modules/MedicalRecord/Routes/api.php';
     require __DIR__.'/../Modules/StaticPage/Routes/api.php';
     require __DIR__.'/../Modules/Subscription/Routes/api.php';
+    require __DIR__.'/../Modules/Laboratory/Routes/api.php';
+    require __DIR__.'/../Modules/Pharmacy/Routes/api.php';
 });

@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Doctor\Models\Doctor;
 use Modules\Auth\Models\User;
 use Modules\Appointment\Models\Appointment;
+use Modules\Pharmacy\Models\Pharmacy;
+use Modules\Pharmacy\Models\PharmacyOrder;
+use Modules\Laboratory\Models\Laboratory;
+use Modules\Laboratory\Models\LaboratoryOrder;
 
 class Review extends Model
 {
@@ -22,6 +26,10 @@ class Review extends Model
     protected $fillable = [
         'appointment_id',
         'doctor_id',
+        'pharmacy_order_id',
+        'laboratory_order_id',
+        'pharmacy_id',
+        'laboratory_id',
         'patient_id',
         'rating',
         'comment',
@@ -73,8 +81,28 @@ class Review extends Model
         return $this->belongsTo(Doctor::class);
     }
 
+    public function pharmacy()
+    {
+        return $this->belongsTo(Pharmacy::class);
+    }
+
+    public function laboratory()
+    {
+        return $this->belongsTo(Laboratory::class);
+    }
+
+    public function pharmacyOrder()
+    {
+        return $this->belongsTo(PharmacyOrder::class);
+    }
+
+    public function laboratoryOrder()
+    {
+        return $this->belongsTo(LaboratoryOrder::class);
+    }
+
     public function patient()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'patient_id');
     }
 }

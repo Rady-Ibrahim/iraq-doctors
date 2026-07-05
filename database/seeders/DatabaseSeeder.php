@@ -15,5 +15,6 @@ class DatabaseSeeder extends Seeder
         $this->call(StaticPageSeeder::class);
         $this->call(SubscriptionPlanSeeder::class);
         $this->call(DemoDataSeeder::class);
+        $this->call(LaboratoryPharmacyDemoSeeder::class);
     }
 }

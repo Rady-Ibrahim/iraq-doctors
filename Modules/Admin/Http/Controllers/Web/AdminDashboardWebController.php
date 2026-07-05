@@ -22,6 +22,26 @@ class AdminDashboardWebController extends Controller
         return view('admin.doctors.show', ['doctorId' => $id]);
     }
 
+    public function laboratories(): View
+    {
+        return view('admin.laboratories.index');
+    }
+
+    public function laboratoryShow(int $id): View
+    {
+        return view('admin.laboratories.show', ['laboratoryId' => $id]);
+    }
+
+    public function pharmacies(): View
+    {
+        return view('admin.pharmacies.index');
+    }
+
+    public function pharmacyShow(int $id): View
+    {
+        return view('admin.pharmacies.show', ['pharmacyId' => $id]);
+    }
+
     public function patients(): View
     {
         return view('admin.patients.index');
@@ -65,6 +85,26 @@ class AdminDashboardWebController extends Controller
     public function governorates(): View
     {
         return view('admin.governorates.index');
+    }
+
+    public function labTests(): View
+    {
+        return view('admin.lab-tests.index');
+    }
+
+    public function medicines(): View
+    {
+        return view('admin.medicines.index');
+    }
+
+    public function orders(): View
+    {
+        return view('admin.orders.index');
+    }
+
+    public function reports(): View
+    {
+        return view('admin.reports.index');
     }
 
     public function users(): View

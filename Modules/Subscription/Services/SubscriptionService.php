@@ -28,6 +28,7 @@ class SubscriptionService
     {
         return DB::transaction(function () use ($data) {
             return Subscription::create([
+                'type' => $data['type'] ?? 'doctor',
                 'name' => $data['name'],
                 'description_ar' => $data['description_ar'] ?? null,
                 'description_en' => $data['description_en'] ?? null,

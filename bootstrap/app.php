@@ -7,6 +7,18 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Validation\ValidationException;
+use Throwable;
+
+function expectsStructuredJson(Request $request): bool
+{
+    return $request->expectsJson()
+        || $request->is('api/*')
+        || $request->is('admin/api/*')
+        || $request->is('doctor/api/*')
+        || $request->is('laboratory/api/*')
+        || $request->is('pharmacy/api/*');
+}
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -28,27 +40,38 @@ return Application::configure(basePath: dirname(__DIR__))
                 return route('admin.login');
             }
 
-            return '/login';
+            if ($request->is('laboratory/*')) {
+                return route('laboratory.login');
+            }
+
+            if ($request->is('pharmacy/*')) {
+                return route('pharmacy.login');
+            }
+
+            return '/doctor/login';
         });
 
-        // تسجيل الـ Middleware الـ Aliases الخاصة بالسيستم
         $middleware->alias([
             'admin'            => \App\Http\Middleware\AdminMiddleware::class,
             'doctor'           => \App\Http\Middleware\DoctorMiddleware::class,
             'doctor.approved'  => \App\Http\Middleware\DoctorApprovedMiddleware::class,
             'doctor.email.verified' => \App\Http\Middleware\DoctorEmailVerifiedMiddleware::class,
             'doctor.phone.verified' => \App\Http\Middleware\DoctorPhoneVerifiedMiddleware::class,
+            'laboratory'           => \App\Http\Middleware\LaboratoryMiddleware::class,
+            'laboratory.approved'  => \App\Http\Middleware\LaboratoryApprovedMiddleware::class,
+            'laboratory.phone.verified' => \App\Http\Middleware\LaboratoryPhoneVerifiedMiddleware::class,
+            'pharmacy'             => \App\Http\Middleware\PharmacyMiddleware::class,
+            'pharmacy.approved'    => \App\Http\Middleware\PharmacyApprovedMiddleware::class,
+            'pharmacy.phone.verified' => \App\Http\Middleware\PharmacyPhoneVerifiedMiddleware::class,
             'session.scope'       => \App\Http\Middleware\SetSessionCookie::class,
-            'role'             => \App\Http\Middleware\RoleMiddleware::class, // 🌟 تم إضافة الرول ميدل وير هنا
+            'role'             => \App\Http\Middleware\RoleMiddleware::class,
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
-        // تطبيق حماية الـ Security Headers على كل مسارات الـ API أوتوماتيك
         $middleware->api(append: [
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
-        // جلسات admin/doctor منفصلة — SetSessionCookie قبل StartSession
         $middleware->priority([
             \App\Http\Middleware\SetSessionCookie::class,
             \Illuminate\Cookie\Middleware\EncryptCookies::class,
@@ -60,10 +83,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        
-        // 🎯 الفصل الذكي والمستقر في معالجة الأخطاء
+
         $exceptions->render(function (Throwable $e, Request $request) {
-            
+
             if ($e instanceof TokenMismatchException) {
                 if ($request->expectsJson() || $request->is('*/api/*') || $request->ajax()) {
                     return response()->json(['success' => false], 419);
@@ -77,6 +99,14 @@ return Application::configure(basePath: dirname(__DIR__))
                     return redirect()->route('doctor.login');
                 }
 
+                if ($request->is('laboratory/*')) {
+                    return redirect()->route('laboratory.login');
+                }
+
+                if ($request->is('pharmacy/*')) {
+                    return redirect()->route('pharmacy.login');
+                }
+
                 return redirect('/');
             }
 
@@ -86,10 +116,20 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
             }
 
-            // 1️⃣ لو الطلب جاي من الـ API (بوست مان / الموبايل) -> رجع JSON دايماً بنظافة
-            if ($request->expectsJson() || $request->is('api/*')) {
+            if ($e instanceof ValidationException && expectsStructuredJson($request)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => [
+                        'code' => 'VALIDATION_ERROR',
+                        'message' => 'يرجى تصحيح الحقول المحددة',
+                        'details' => $e->errors(),
+                    ],
+                ], 422);
+            }
+
+            if (expectsStructuredJson($request)) {
                 $statusCode = 500;
-                
+
                 if (method_exists($e, 'getStatusCode')) {
                     $statusCode = $e->getStatusCode();
                 } elseif ($e instanceof AuthenticationException) {
@@ -99,13 +139,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'error' => [
-                        'code'    => class_basename($e),
+                        'code' => 'SERVER_ERROR',
                         'message' => config('app.debug') ? $e->getMessage() : 'حدث خطأ في الخادم',
                     ],
                 ], $statusCode);
             }
 
-            // 2️⃣ لو طلب ويب عادي (المتصفح) -> اترك لارافيل يكمل الـ Redirects وصفحات الـ HTML العادية
             return null;
         });
     })->create();

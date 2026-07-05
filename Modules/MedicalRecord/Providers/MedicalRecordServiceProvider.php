@@ -7,7 +7,10 @@ use Illuminate\Support\ServiceProvider;
 
 class MedicalRecordServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->singleton(\Modules\MedicalRecord\Services\Api\MedicalRecordService::class);
+    }
 
     public function boot(): void
     {
