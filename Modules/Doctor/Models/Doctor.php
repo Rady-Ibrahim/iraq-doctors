@@ -94,6 +94,16 @@ class Doctor extends Model
         return $this->hasMany(\Modules\Subscription\Models\DoctorSubscription::class);
     }
 
+    public function staffMembers()
+    {
+        return $this->hasMany(DoctorStaffMember::class);
+    }
+
+    public function activeStaffMembers()
+    {
+        return $this->hasMany(DoctorStaffMember::class)->where('status', 'active');
+    }
+
     public function activeSubscription()
     {
         return $this->doctorSubscriptions()->active()->with('subscription')->first();

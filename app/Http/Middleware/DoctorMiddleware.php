@@ -15,11 +15,11 @@ class DoctorMiddleware
         }
 
         $user = auth('web')->user();
-        
-        // التأكد من أن المستخدم دكتور فعلاً
-        if (!$user || $user->role !== 'doctor') {
+
+        if (! $user || (! $user->isDoctor() && ! $user->isDoctorStaff())) {
             auth('web')->logout();
-            return redirect()->route('doctor.login')->withErrors(['phone' => 'غير مصرح لك بالدخول كدكتور.']);
+
+            return redirect()->route('doctor.login')->withErrors(['phone' => 'غير مصرح لك بالدخول إلى لوحة الطبيب.']);
         }
 
         return $next($request);

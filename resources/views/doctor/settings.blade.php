@@ -5,18 +5,26 @@
 @section('page-description', 'إدارة إعدادات حسابك والاشتراك')
 
 @section('content')
+@php
+    $isOwner = $isDoctorOwner ?? auth('web')->user()?->isDoctor() ?? false;
+@endphp
 <!-- Settings Tabs -->
 <div class="mb-6">
-    <div class="flex gap-4 border-b">
+    <div class="flex gap-4 border-b flex-wrap">
         <button onclick="showTab('profile')" id="tab-profile" class="px-4 py-3 border-b-2 border-teal-600 text-teal-600 font-semibold">
             الملف الشخصي
         </button>
+        @if ($isOwner)
+        <a href="/doctor/dashboard/staff" id="tab-staff" class="px-4 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-800">
+            فريق العيادة
+        </a>
         <button onclick="showTab('schedule')" id="tab-schedule" class="px-4 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-800">
             الجدول الزمني
         </button>
         <button onclick="showTab('subscription')" id="tab-subscription" class="px-4 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-800">
             الاشتراك
         </button>
+        @endif
         <button onclick="showTab('security')" id="tab-security" class="px-4 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-800">
             الأمان
         </button>
@@ -58,6 +66,7 @@
             </form>
         </div>
 
+        @if ($isOwner)
         <!-- Professional Info -->
         <div class="bg-white rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-6">معلومات مهنية</h3>
@@ -89,6 +98,7 @@
                 </div>
             </form>
         </div>
+        @endif
     </div>
 </div>
 

@@ -9,22 +9,22 @@ class AppointmentPolicy
 {
     public function view(User $authUser, Appointment $appointment): bool
     {
-        return $authUser->isAdmin() || 
-               ($authUser->isPatient() && $appointment->patient_id === $authUser->id) ||
-               ($authUser->isDoctor() && $appointment->doctor_id === $authUser->doctor->id);
+        return $authUser->isAdmin()
+            || ($authUser->isPatient() && $appointment->patient_id === $authUser->id)
+            || $authUser->canManageDoctor($appointment->doctor_id);
     }
 
     public function update(User $authUser, Appointment $appointment): bool
     {
-        return $authUser->isAdmin() || 
-               ($authUser->isDoctor() && $appointment->doctor_id === $authUser->doctor->id);
+        return $authUser->isAdmin()
+            || ($authUser->canManageDoctor($appointment->doctor_id) && $authUser->hasDoctorPermission('appointments.manage'));
     }
 
     public function delete(User $authUser, Appointment $appointment): bool
     {
-        return $authUser->isAdmin() || 
-               ($authUser->isDoctor() && $appointment->doctor_id === $authUser->doctor->id) ||
-               ($authUser->isPatient() && $appointment->patient_id === $authUser->id);
+        return $authUser->isAdmin()
+            || ($authUser->canManageDoctor($appointment->doctor_id) && $authUser->hasDoctorPermission('appointments.manage'))
+            || ($authUser->isPatient() && $appointment->patient_id === $authUser->id);
     }
 
     public function book(User $authUser): bool
@@ -34,14 +34,14 @@ class AppointmentPolicy
 
     public function confirm(User $authUser, Appointment $appointment): bool
     {
-        return $authUser->isAdmin() || 
-               ($authUser->isDoctor() && $appointment->doctor_id === $authUser->doctor->id);
+        return $authUser->isAdmin()
+            || ($authUser->canManageDoctor($appointment->doctor_id) && $authUser->hasDoctorPermission('appointments.manage'));
     }
 
     public function cancel(User $authUser, Appointment $appointment): bool
     {
-        return $authUser->isAdmin() || 
-               ($authUser->isDoctor() && $appointment->doctor_id === $authUser->doctor->id) ||
-               ($authUser->isPatient() && $appointment->patient_id === $authUser->id);
+        return $authUser->isAdmin()
+            || ($authUser->canManageDoctor($appointment->doctor_id) && $authUser->hasDoctorPermission('appointments.manage'))
+            || ($authUser->isPatient() && $appointment->patient_id === $authUser->id);
     }
 }

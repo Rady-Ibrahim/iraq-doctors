@@ -55,6 +55,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin'            => \App\Http\Middleware\AdminMiddleware::class,
             'doctor'           => \App\Http\Middleware\DoctorMiddleware::class,
             'doctor.approved'  => \App\Http\Middleware\DoctorApprovedMiddleware::class,
+            'doctor.context'   => \App\Http\Middleware\ShareDoctorDashboardContext::class,
+            'doctor.permission'=> \App\Http\Middleware\DoctorPermissionMiddleware::class,
+            'doctor.owner'     => \App\Http\Middleware\DoctorOwnerMiddleware::class,
             'doctor.email.verified' => \App\Http\Middleware\DoctorEmailVerifiedMiddleware::class,
             'doctor.phone.verified' => \App\Http\Middleware\DoctorPhoneVerifiedMiddleware::class,
             'laboratory'           => \App\Http\Middleware\LaboratoryMiddleware::class,
@@ -84,7 +87,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
 
-        $exceptions->render(function (Throwable $e, Request $request) {
+        $exceptions->render(function (\Throwable $e, Request $request) {
 
             if ($e instanceof TokenMismatchException) {
                 if ($request->expectsJson() || $request->is('*/api/*') || $request->ajax()) {
