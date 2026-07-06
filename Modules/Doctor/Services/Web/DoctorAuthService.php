@@ -14,6 +14,7 @@ use App\Services\AdminNotificationService;
 use Modules\Auth\Models\User;
 use Modules\Doctor\Models\Doctor;
 use Modules\Doctor\Models\DoctorBranch;
+use Modules\Doctor\Models\DoctorStaffMember;
 use Modules\Doctor\Models\Governorate;
 
 class DoctorAuthService
@@ -131,11 +132,24 @@ class DoctorAuthService
             return null;
         }
 
-        if (!$user->isDoctor() || !$user->isActive()) {
-            return null;
+        if ($user->isDoctor()) {
+            return $user->isActive() ? $user : null;
         }
 
-        return $user;
+        if ($user->isDoctorStaff()) {
+            if (! $user->isActive()) {
+                return null;
+            }
+
+            $isActiveStaff = DoctorStaffMember::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->exists();
+
+            return $isActiveStaff ? $user : null;
+        }
+
+        return null;
     }
 
     public function resubmitDocuments(int $userId, ?UploadedFile $licenseDocument = null, ?UploadedFile $clinicImage = null): Doctor
@@ -164,6 +178,17 @@ class DoctorAuthService
 
     public function getPostLoginRoute(User $user): string
     {
+        if ($user->isDoctorStaff()) {
+            $staffMember = DoctorStaffMember::with('doctor')->where('user_id', $user->id)->first();
+            $doctor = $staffMember?->doctor;
+
+            if (! $doctor) {
+                return 'doctor.login';
+            }
+
+            return $doctor->status === 'approved' ? 'doctor.dashboard' : 'doctor.pending';
+        }
+
         if ($this->needsPhoneVerification($user)) {
             return 'doctor.verify-phone';
         }

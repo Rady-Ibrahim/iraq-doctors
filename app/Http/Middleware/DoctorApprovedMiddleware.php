@@ -2,17 +2,45 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\DoctorDashboardContext;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
 use Modules\Doctor\Models\Doctor;
+use Modules\Doctor\Models\DoctorStaffMember;
 
 class DoctorApprovedMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        $doctor = Doctor::where('user_id', auth('web')->id())->first();
+        $user = auth('web')->user();
 
-        if (!$doctor) {
+        if ($user?->isDoctorStaff()) {
+            $staffMember = DoctorStaffMember::with(['doctor.user'])
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->first();
+
+            if (! $staffMember) {
+                if ($request->expectsJson() || $request->is('doctor/api/*')) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => ['code' => 'STAFF_INACTIVE', 'message' => 'حساب السكرتير غير نشط'],
+                    ], 403);
+                }
+
+                auth('web')->logout();
+
+                return redirect()->route('doctor.login')
+                    ->withErrors(['phone' => 'حساب السكرتير غير نشط. يرجى التواصل مع الطبيب.']);
+            }
+
+            $doctor = $staffMember->doctor;
+        } else {
+            $doctor = Doctor::where('user_id', auth('web')->id())->first();
+        }
+
+        if (! $doctor) {
             if ($request->expectsJson() || $request->is('doctor/api/*')) {
                 return response()->json([
                     'success' => false,
@@ -27,6 +55,15 @@ class DoctorApprovedMiddleware
         }
 
         if ($doctor->status === 'approved') {
+            try {
+                $context = DoctorDashboardContext::make();
+                app()->instance(DoctorDashboardContext::class, $context);
+                View::share('doctorDashboard', $context);
+                View::share('isDoctorOwner', auth('web')->user()?->isDoctor() ?? false);
+            } catch (\Throwable) {
+                // Fallback: doctor record is still valid for approved access.
+            }
+
             return $next($request);
         }
 

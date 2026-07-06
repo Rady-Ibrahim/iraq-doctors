@@ -48,41 +48,64 @@
                 $navClass = fn (bool $active) => $active
                     ? 'sidebar-link active flex items-center gap-3 px-4 py-3 rounded-lg transition'
                     : 'sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg transition text-gray-700';
+                $webUser = auth('web')->user();
+                $isDoctorOwner = $isDoctorOwner ?? (bool) $webUser?->isDoctor();
+                $can = $canDoctor ?? fn (string $permission) => $isDoctorOwner || ($doctorDashboard?->hasPermission($permission) ?? false);
             @endphp
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
                 <a href="/doctor/dashboard" class="{{ $navClass(request()->routeIs('doctor.dashboard')) }}">
                     <i class="fas fa-home w-5"></i>
                     <span>الرئيسية</span>
                 </a>
+                @if ($isDoctorOwner)
+                <a href="/doctor/dashboard/staff" class="{{ $navClass(request()->routeIs('doctor.staff.*')) }}">
+                    <i class="fas fa-user-nurse w-5"></i>
+                    <span>فريق العيادة</span>
+                </a>
+                @endif
+                @if ($can('patients.view'))
                 <a href="/doctor/dashboard/patients" class="{{ $navClass(request()->routeIs('doctor.patients.*')) }}">
                     <i class="fas fa-users w-5"></i>
                     <span>المرضى</span>
                 </a>
+                @endif
+                @if ($can('appointments.view'))
                 <a href="/doctor/dashboard/requests" class="{{ $navClass(request()->routeIs('doctor.requests')) }}">
                     <i class="fas fa-inbox w-5"></i>
                     <span class="flex-1">طلبات المواعيد</span>
                     <span id="pendingRequestsBadge" class="hidden bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
                 </a>
+                @endif
+                @if ($isDoctorOwner)
                 <a href="/doctor/dashboard/subscription/plans" class="{{ $navClass(request()->routeIs('doctor.subscription.*')) }}">
                     <i class="fas fa-crown w-5"></i>
                     <span>الاشتراكات</span>
                 </a>
+                @endif
+                @if ($can('prescriptions.view'))
                 <a href="/doctor/dashboard/prescriptions" class="{{ $navClass(request()->routeIs('doctor.prescriptions.*')) }}">
                     <i class="fas fa-prescription w-5"></i>
                     <span>الوصفات</span>
                 </a>
+                @endif
+                @if ($can('records.view'))
                 <a href="/doctor/dashboard/records" class="{{ $navClass(request()->routeIs('doctor.records.*')) }}">
                     <i class="fas fa-file-medical w-5"></i>
                     <span>السجلات الطبية</span>
                 </a>
+                @endif
+                @if ($can('calendar.view'))
                 <a href="/doctor/dashboard/calendar" class="{{ $navClass(request()->routeIs('doctor.calendar')) }}">
                     <i class="fas fa-calendar-alt w-5"></i>
                     <span>التقويم</span>
                 </a>
+                @endif
+                @if ($can('settings.view'))
                 <a href="/doctor/dashboard/settings" class="{{ $navClass(request()->routeIs('doctor.settings')) }}">
                     <i class="fas fa-cog w-5"></i>
                     <span>الإعدادات</span>
                 </a>
+                @endif
             </nav>
 
             <!-- User Info -->
@@ -92,8 +115,14 @@
                         <i class="fas fa-user text-teal-600"></i>
                     </div>
                     <div class="flex-1">
-                        <p class="font-semibold text-gray-800 text-sm" id="doctorName">د. {{ auth()->user()->name ?? 'الاسم' }}</p>
-                        <p class="text-xs text-gray-500">طبيب</p>
+                        <p class="font-semibold text-gray-800 text-sm" id="doctorName">{{ auth()->user()->name ?? 'الاسم' }}</p>
+                        <p class="text-xs text-gray-500" id="userRoleLabel">
+                            @if ($isDoctorOwner)
+                                طبيب
+                            @else
+                                سكرتير@if (($doctorDashboard ?? null)?->doctor?->user?->name) — د. {{ $doctorDashboard->doctor->user->name }}@endif
+                            @endif
+                        </p>
                     </div>
                 </div>
                 <form id="logoutForm" method="POST" action="{{ route('doctor.logout') }}" class="w-full">

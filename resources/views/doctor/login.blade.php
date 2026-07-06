@@ -21,7 +21,7 @@
                 <i class="fas fa-user-md text-white text-2xl"></i>
             </div>
             <h1 class="text-2xl font-bold text-gray-800">لوحة تحكم الطبيب</h1>
-            <p class="text-gray-500 mt-2">قم بتسجيل الدخول للمتابعة</p>
+            <p class="text-gray-500 mt-2">للأطباء وفريق العيادة (السكرتارية)</p>
         </div>
 
         @if ($errors->any())

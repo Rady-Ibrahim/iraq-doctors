@@ -4,21 +4,17 @@ namespace Modules\Doctor\Http\Controllers\Web;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
-use Modules\Doctor\Http\Requests\Api\CreateBranchRequest;
-use Modules\Doctor\Models\Doctor;
-use Modules\Doctor\Services\Api\DoctorBranchService;
 use App\Traits\ApiResponse;
+use App\Traits\ResolvesDoctorDashboard;
+use Modules\Doctor\Http\Requests\Api\CreateBranchRequest;
+use Modules\Doctor\Services\Api\DoctorBranchService;
 
 class DoctorBranchController extends Controller
 {
     use ApiResponse;
+    use ResolvesDoctorDashboard;
 
     public function __construct(private DoctorBranchService $branchService) {}
-
-    protected function resolveDoctor(): Doctor
-    {
-        return Doctor::where('user_id', auth('web')->id())->firstOrFail();
-    }
 
     public function index(): JsonResponse
     {

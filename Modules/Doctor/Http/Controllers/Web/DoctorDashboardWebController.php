@@ -4,14 +4,11 @@ namespace Modules\Doctor\Http\Controllers\Web;
 
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
-use Modules\Doctor\Models\Doctor;
+use App\Traits\ResolvesDoctorDashboard;
 
 class DoctorDashboardWebController extends Controller
 {
-    protected function resolveDoctor(): Doctor
-    {
-        return Doctor::where('user_id', auth('web')->id())->firstOrFail();
-    }
+    use ResolvesDoctorDashboard;
 
     public function dashboard(): View
     {
@@ -91,5 +88,10 @@ class DoctorDashboardWebController extends Controller
     public function requests(): View
     {
         return view('doctor.requests.index');
+    }
+
+    public function staff(): View
+    {
+        return view('doctor.staff.index', ['doctor' => $this->resolveDoctor()]);
     }
 }

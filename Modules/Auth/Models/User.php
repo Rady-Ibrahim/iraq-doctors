@@ -73,6 +73,16 @@ class User extends Authenticatable
         return $this->role === 'pharmacy';
     }
 
+    public function isDoctorStaff(): bool
+    {
+        return $this->role === 'doctor_staff';
+    }
+
+    public function canAccessDoctorDashboard(): bool
+    {
+        return $this->isDoctor() || $this->isDoctorStaff();
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';
@@ -81,6 +91,52 @@ class User extends Authenticatable
     public function doctor()
     {
         return $this->hasOne(\Modules\Doctor\Models\Doctor::class);
+    }
+
+    public function doctorStaffMembership()
+    {
+        return $this->hasOne(\Modules\Doctor\Models\DoctorStaffMember::class);
+    }
+
+    public function activeDoctorStaffMembership()
+    {
+        return $this->hasOne(\Modules\Doctor\Models\DoctorStaffMember::class)->where('status', 'active');
+    }
+
+    public function managedDoctor(): ?\Modules\Doctor\Models\Doctor
+    {
+        if ($this->isDoctor()) {
+            return $this->doctor;
+        }
+
+        if ($this->isDoctorStaff()) {
+            return $this->activeDoctorStaffMembership?->doctor
+                ?? $this->doctorStaffMembership?->doctor;
+        }
+
+        return null;
+    }
+
+    public function hasDoctorPermission(string $permission): bool
+    {
+        if ($this->isDoctor()) {
+            return true;
+        }
+
+        if ($this->isDoctorStaff()) {
+            $membership = $this->activeDoctorStaffMembership ?? $this->doctorStaffMembership;
+
+            return $membership?->hasPermission($permission) ?? false;
+        }
+
+        return false;
+    }
+
+    public function canManageDoctor(int $doctorId): bool
+    {
+        $doctor = $this->managedDoctor();
+
+        return $doctor && (int) $doctor->id === $doctorId;
     }
 
     public function laboratory()

@@ -11,20 +11,17 @@ use Modules\Doctor\Models\Doctor;
 use Modules\Doctor\Services\DoctorDashboardService;
 use Modules\Appointment\Services\Api\AppointmentService;
 use App\Traits\ApiResponse;
+use App\Traits\ResolvesDoctorDashboard;
 
 class DoctorDashboardController extends Controller
 {
     use ApiResponse;
+    use ResolvesDoctorDashboard;
 
     public function __construct(
         private DoctorDashboardService $doctorDashboardService,
         private AppointmentService $appointmentService
     ) {}
-
-    protected function resolveDoctor(): Doctor
-    {
-        return Doctor::where('user_id', auth('web')->id())->firstOrFail();
-    }
 
     public function metrics(): JsonResponse
     {
@@ -383,7 +380,7 @@ class DoctorDashboardController extends Controller
     {
         try {
             $patient = $this->doctorDashboardService->createGhostPatient(
-                auth('web')->id(),
+                $this->dashboardContext()->doctorUserId(),
                 $request->validated()
             );
 

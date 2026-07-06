@@ -4,23 +4,19 @@ namespace Modules\Doctor\Http\Controllers\Web;
 
 use App\Models\AppSetting;
 use App\Traits\ApiResponse;
+use App\Traits\ResolvesDoctorDashboard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Modules\Doctor\Models\Doctor;
 use Modules\Subscription\Models\Subscription;
 use Modules\Subscription\Services\SubscriptionService;
 
 class DoctorSubscriptionController extends Controller
 {
     use ApiResponse;
+    use ResolvesDoctorDashboard;
 
     public function __construct(private SubscriptionService $subscriptionService) {}
-
-    protected function resolveDoctor(): Doctor
-    {
-        return Doctor::where('user_id', auth('web')->id())->firstOrFail();
-    }
 
     public function plans(): JsonResponse
     {
