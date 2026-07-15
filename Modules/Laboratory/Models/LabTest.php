@@ -19,6 +19,7 @@ class LabTest extends Model
         'sample_type',
         'sort_order',
         'is_active',
+        'created_by_laboratory_id',
     ];
 
     protected $casts = [

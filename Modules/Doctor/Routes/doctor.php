@@ -99,6 +99,7 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
                         });
 
                         Route::middleware('doctor.permission:prescriptions.manage')->group(function () {
+                            Route::get('/referral-options', [DoctorDashboardController::class, 'referralOptions']);
                             Route::post('/prescriptions', [DoctorDashboardController::class, 'storePrescription']);
                             Route::put('/prescriptions/{id}', [DoctorDashboardController::class, 'updatePrescription']);
                             Route::delete('/prescriptions/{id}', [DoctorDashboardController::class, 'destroyPrescription']);

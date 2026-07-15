@@ -10,6 +10,8 @@ use Modules\Auth\Models\User;
 use Modules\Doctor\Models\Doctor;
 use Modules\Doctor\Services\DoctorDashboardService;
 use Modules\Appointment\Services\Api\AppointmentService;
+use Modules\Laboratory\Models\Laboratory;
+use Modules\Pharmacy\Models\Pharmacy;
 use App\Traits\ApiResponse;
 use App\Traits\ResolvesDoctorDashboard;
 
@@ -395,6 +397,30 @@ class DoctorDashboardController extends Controller
         }
     }
 
+    public function referralOptions(): JsonResponse
+    {
+        try {
+            $pharmacies = Pharmacy::where('status', 'approved')
+                ->whereHas('activeSubscription')
+                ->orderBy('name')
+                ->get(['id', 'name', 'governorate_id'])
+                ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name]);
+
+            $laboratories = Laboratory::where('status', 'approved')
+                ->whereHas('activeSubscription')
+                ->orderBy('name')
+                ->get(['id', 'name', 'governorate_id'])
+                ->map(fn ($l) => ['id' => $l->id, 'name' => $l->name]);
+
+            return $this->success([
+                'pharmacies' => $pharmacies,
+                'laboratories' => $laboratories,
+            ]);
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء جلب خيارات الإحالة');
+        }
+    }
+
     public function storePrescription(Request $request): JsonResponse
     {
         $request->validate([
@@ -406,6 +432,10 @@ class DoctorDashboardController extends Controller
             'medicines.*.frequency' => 'required',
             'medicines.*.duration' => 'required|string',
             'notes' => 'nullable|string',
+            'recommended_pharmacy_id' => 'nullable|integer|exists:pharmacies,id',
+            'recommended_laboratory_id' => 'nullable|integer|exists:laboratories,id',
+            'lab_tests' => 'nullable|array',
+            'lab_tests.*' => 'string|max:255',
         ]);
 
         try {

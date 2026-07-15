@@ -77,17 +77,39 @@ async function loadPharmacy() {
     const actions = document.getElementById('actionButtons');
     if (pharmacy.status === 'pending' || pharmacy.status === 'rejected') {
         actions.innerHTML = `
-            <button onclick="approvePharmacy()" class="px-4 py-2 bg-green-600 text-white rounded-lg">موافقة</button>
-            <button onclick="rejectPharmacy()" class="px-4 py-2 bg-red-600 text-white rounded-lg">رفض</button>
+            <button onclick="approvePharmacy()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                <i class="fas fa-check ml-1"></i> موافقة
+            </button>
+            <button onclick="rejectPharmacy()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                <i class="fas fa-times ml-1"></i> رفض
+            </button>
         `;
     } else if (pharmacy.status === 'approved') {
-        actions.innerHTML = `<button onclick="suspendPharmacy()" class="px-4 py-2 bg-gray-600 text-white rounded-lg">تعليق</button>`;
+        actions.innerHTML = `
+            <button onclick="suspendPharmacy()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                <i class="fas fa-pause ml-1"></i> تعليق
+            </button>
+        `;
+    } else if (pharmacy.status === 'suspended') {
+        actions.innerHTML = `
+            <button onclick="reactivatePharmacy()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                <i class="fas fa-play ml-1"></i> إعادة التفعيل
+            </button>
+        `;
+    } else {
+        actions.innerHTML = '';
     }
 }
 
 async function approvePharmacy() {
     const data = await apiCall(`/admin/api/pharmacies/${pharmacyId}/approve`, { method: 'POST', body: '{}' });
-    if (data?.success) { showSuccess('تمت الموافقة'); loadPharmacy(); }
+    if (data?.success) { showSuccess('تمت الموافقة على الصيدلية'); loadPharmacy(); }
+}
+
+async function reactivatePharmacy() {
+    if (!confirm('إعادة تفعيل هذه الصيدلية؟ سيتمكن من الدخول واستخدام الداشبورد مرة أخرى.')) return;
+    const data = await apiCall(`/admin/api/pharmacies/${pharmacyId}/approve`, { method: 'POST', body: '{}' });
+    if (data?.success) { showSuccess('تم إعادة تفعيل الصيدلية'); loadPharmacy(); }
 }
 
 async function rejectPharmacy() {

@@ -2,6 +2,7 @@
 
 namespace Modules\Doctor\Services;
 
+use App\Notifications\DoctorReferralSent;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -458,7 +459,10 @@ class DoctorDashboardService
         return DB::transaction(function () use ($doctorId, $userId, $data) {
             $appointment = $this->ensureWalkInAppointment($doctorId, (int) $data['patient_id']);
 
-            return MedicalRecord::create([
+            $hasReferral = ! empty($data['recommended_pharmacy_id']) || ! empty($data['recommended_laboratory_id']);
+            $labTests = array_values(array_filter($data['lab_tests'] ?? [], fn ($t) => is_string($t) && trim($t) !== ''));
+
+            $record = MedicalRecord::create([
                 'appointment_id' => $appointment->id,
                 'doctor_id' => $doctorId,
                 'patient_id' => $data['patient_id'],
@@ -467,7 +471,20 @@ class DoctorDashboardService
                 'prescription' => $data['medicines'] ?? [],
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $userId,
+                'recommended_pharmacy_id' => $data['recommended_pharmacy_id'] ?? null,
+                'recommended_laboratory_id' => $data['recommended_laboratory_id'] ?? null,
+                'lab_tests_requested' => $labTests !== [] ? $labTests : null,
+                'referral_status' => $hasReferral || $labTests !== [] ? 'pending' : null,
             ]);
+
+            if ($hasReferral || $labTests !== []) {
+                $patient = User::find($data['patient_id']);
+                if ($patient) {
+                    $patient->notify(new DoctorReferralSent($record->load(['doctor.user', 'recommendedPharmacy', 'recommendedLaboratory'])));
+                }
+            }
+
+            return $record;
         });
     }
 
@@ -475,7 +492,7 @@ class DoctorDashboardService
     {
         $record = MedicalRecord::where('doctor_id', $doctorId)
             ->where('record_type', 'prescription')
-            ->with('patient')
+            ->with(['patient', 'recommendedPharmacy', 'recommendedLaboratory'])
             ->findOrFail($recordId);
 
         return $this->formatPrescription($record, true);
@@ -491,6 +508,11 @@ class DoctorDashboardService
             'diagnosis' => $data['diagnosis'] ?? $record->diagnosis,
             'prescription' => $data['medicines'] ?? $record->prescription,
             'notes' => $data['notes'] ?? $record->notes,
+            'recommended_pharmacy_id' => $data['recommended_pharmacy_id'] ?? $record->recommended_pharmacy_id,
+            'recommended_laboratory_id' => $data['recommended_laboratory_id'] ?? $record->recommended_laboratory_id,
+            'lab_tests_requested' => array_key_exists('lab_tests', $data)
+                ? array_values(array_filter($data['lab_tests'] ?? [], fn ($t) => is_string($t) && trim($t) !== ''))
+                : $record->lab_tests_requested,
         ]);
 
         return $record->fresh(['patient']);
@@ -617,6 +639,12 @@ class DoctorDashboardService
         if ($detailed) {
             $data['diagnosis'] = $record->diagnosis;
             $data['medicines'] = $medicines;
+            $data['recommended_pharmacy_id'] = $record->recommended_pharmacy_id;
+            $data['recommended_pharmacy_name'] = $record->recommendedPharmacy?->name;
+            $data['recommended_laboratory_id'] = $record->recommended_laboratory_id;
+            $data['recommended_laboratory_name'] = $record->recommendedLaboratory?->name;
+            $data['lab_tests_requested'] = $record->lab_tests_requested ?? [];
+            $data['referral_status'] = $record->referral_status;
         }
 
         return $data;

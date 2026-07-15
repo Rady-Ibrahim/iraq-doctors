@@ -34,6 +34,7 @@ class CreateLaboratoryOrderRequest extends ApiFormRequest
             'items.*.laboratory_test_item_id' => 'required_with:items|integer|exists:laboratory_test_items,id',
             'items.*.quantity' => 'nullable|integer|min:1|max:99',
             'prescription_image' => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:' . $maxKb,
+            'prescription_id' => 'nullable|integer|exists:medical_records,id',
             'patient_notes' => 'nullable|string|max:2000',
         ];
     }
@@ -43,9 +44,10 @@ class CreateLaboratoryOrderRequest extends ApiFormRequest
         $validator->after(function ($validator) {
             $hasItems = is_array($this->items) && count($this->items) > 0;
             $hasImage = $this->hasFile('prescription_image');
+            $hasPrescription = $this->filled('prescription_id');
 
-            if (! $hasItems && ! $hasImage) {
-                $validator->errors()->add('items', 'يجب اختيار تحليل واحد على الأقل أو إرفاق صورة روشتة');
+            if (! $hasItems && ! $hasImage && ! $hasPrescription) {
+                $validator->errors()->add('items', 'يجب اختيار تحليل واحد على الأقل أو إرفاق صورة روشتة أو ربط روشتة الطبيب');
             }
         });
     }

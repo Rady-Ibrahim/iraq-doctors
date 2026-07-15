@@ -62,8 +62,11 @@ Route::middleware(['session.scope:laboratory', 'web'])->group(function () {
                         Route::post('/subscription/subscribe', [LaboratorySubscriptionDataController::class, 'subscribe']);
 
                         Route::get('/tests', [LaboratoryTestDataController::class, 'index']);
+                        Route::get('/tests/suggest', [LaboratoryTestDataController::class, 'suggest']);
                         Route::get('/tests/catalog', [LaboratoryTestDataController::class, 'catalog']);
                         Route::get('/tests/categories', [LaboratoryTestDataController::class, 'categories']);
+                        Route::post('/tests/categories', [LaboratoryTestDataController::class, 'storeCategory']);
+                        Route::put('/tests/categories/{categoryId}', [LaboratoryTestDataController::class, 'updateCategory']);
                         Route::post('/tests', [LaboratoryTestDataController::class, 'store']);
                         Route::put('/tests/{itemId}', [LaboratoryTestDataController::class, 'update']);
                         Route::delete('/tests/{itemId}', [LaboratoryTestDataController::class, 'destroy']);

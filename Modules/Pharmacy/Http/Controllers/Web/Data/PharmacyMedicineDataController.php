@@ -6,8 +6,10 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\Pharmacy\Http\Requests\Web\StoreMedicineCategoryRequest;
 use Modules\Pharmacy\Http\Requests\Web\StorePharmacyMedicineRequest;
 use Modules\Pharmacy\Http\Requests\Web\UpdatePharmacyMedicineRequest;
+use Modules\Pharmacy\Models\MedicineCategory;
 use Modules\Pharmacy\Models\Pharmacy;
 use Modules\Pharmacy\Services\Web\PharmacyMedicineService;
 
@@ -36,17 +38,57 @@ class PharmacyMedicineDataController extends Controller
 
     public function catalog(Request $request): JsonResponse
     {
-        $medicines = $this->medicineService->catalog(
-            $request->integer('category_id') ?: null,
-            $request->input('search')
+        $pharmacy = $this->resolvePharmacy();
+        $medicines = $this->medicineService->suggest(
+            $pharmacy->id,
+            $request->input('search'),
+            $request->integer('category_id') ?: null
         );
 
         return $this->success($medicines);
     }
 
-    public function categories(): JsonResponse
+    public function suggest(Request $request): JsonResponse
     {
-        return $this->success($this->medicineService->activeCategories());
+        $pharmacy = $this->resolvePharmacy();
+
+        return $this->success(
+            $this->medicineService->suggest(
+                $pharmacy->id,
+                $request->input('q', $request->input('search')),
+                $request->integer('category_id') ?: null
+            )
+        );
+    }
+
+    public function categories(Request $request): JsonResponse
+    {
+        $activeOnly = $request->boolean('active_only');
+
+        return $this->success($this->medicineService->listCategories($activeOnly));
+    }
+
+    public function storeCategory(StoreMedicineCategoryRequest $request): JsonResponse
+    {
+        $this->resolvePharmacy();
+        $category = $this->medicineService->createCategory($request->validated());
+
+        return $this->created(
+            $this->medicineService->formatCategory($category->loadCount('medicines')),
+            'تم إضافة التصنيف بنجاح'
+        );
+    }
+
+    public function updateCategory(StoreMedicineCategoryRequest $request, string $categoryId): JsonResponse
+    {
+        $this->resolvePharmacy();
+        $category = MedicineCategory::findOrFail((int) $categoryId);
+        $updated = $this->medicineService->updateCategory($category, $request->validated());
+
+        return $this->success(
+            $this->medicineService->formatCategory($updated),
+            'تم تحديث التصنيف بنجاح'
+        );
     }
 
     public function store(StorePharmacyMedicineRequest $request): JsonResponse
