@@ -3,7 +3,6 @@
 namespace Modules\Laboratory\Http\Requests\Web;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreLaboratoryTestItemRequest extends FormRequest
 {
@@ -14,17 +13,14 @@ class StoreLaboratoryTestItemRequest extends FormRequest
 
     public function rules(): array
     {
-        $laboratoryId = optional(
-            \Modules\Laboratory\Models\Laboratory::where('user_id', auth('web')->id())->first()
-        )->id;
-
         return [
-            'lab_test_id' => [
-                'required',
-                'integer',
-                'exists:lab_tests,id',
-                Rule::unique('laboratory_test_items', 'lab_test_id')->where('laboratory_id', $laboratoryId),
-            ],
+            'lab_test_id' => 'nullable|integer|exists:lab_tests,id',
+            'lab_test_category_id' => 'required_without:lab_test_id|integer|exists:lab_test_categories,id',
+            'name_ar' => 'required_without:lab_test_id|string|max:255',
+            'name_en' => 'nullable|string|max:255',
+            'code' => 'nullable|string|max:64',
+            'sample_type' => 'nullable|string|max:100',
+            'description_ar' => 'nullable|string|max:2000',
             'price' => 'required|numeric|min:0',
             'result_hours' => 'required|integer|min:1|max:720',
             'is_available' => 'nullable|boolean',
@@ -32,10 +28,21 @@ class StoreLaboratoryTestItemRequest extends FormRequest
         ];
     }
 
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if (! $this->filled('lab_test_id') && ! $this->filled('name_ar')) {
+                $validator->errors()->add('name_ar', 'اسم التحليل مطلوب');
+            }
+        });
+    }
+
     public function attributes(): array
     {
         return [
             'lab_test_id' => 'التحليل',
+            'lab_test_category_id' => 'التصنيف',
+            'name_ar' => 'اسم التحليل',
             'price' => 'السعر',
             'result_hours' => 'مدة النتيجة',
             'notes' => 'ملاحظات',
@@ -45,15 +52,10 @@ class StoreLaboratoryTestItemRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'lab_test_id.required' => 'يجب اختيار تحليل',
-            'lab_test_id.exists' => 'التحليل غير صالح',
-            'lab_test_id.unique' => 'هذا التحليل مُضاف بالفعل لمعملك',
+            'lab_test_category_id.required_without' => 'التصنيف مطلوب عند إضافة تحليل جديد',
+            'name_ar.required_without' => 'اسم التحليل مطلوب',
             'price.required' => 'السعر مطلوب',
-            'price.numeric' => 'السعر يجب أن يكون رقماً',
-            'price.min' => 'السعر لا يمكن أن يكون سالباً',
             'result_hours.required' => 'مدة النتيجة مطلوبة',
-            'result_hours.min' => 'مدة النتيجة يجب أن تكون ساعة واحدة على الأقل',
-            'result_hours.max' => 'مدة النتيجة طويلة جداً',
         ];
     }
 }

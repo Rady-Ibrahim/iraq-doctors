@@ -5,6 +5,7 @@ namespace Modules\Pharmacy\Services\Web;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Notifications\PharmacyOrderStatusChanged;
+use App\Support\LinkedPrescription;
 use Modules\MedicalRecord\Models\MedicalRecord;
 use Modules\Pharmacy\Enums\PharmacyOrderStatus;
 use Modules\Pharmacy\Models\PharmacyMedicine;
@@ -232,7 +233,7 @@ class PharmacyOrderWebService
 
     public function findOrderForPharmacy(int $pharmacyId, int $orderId): PharmacyOrder
     {
-        return PharmacyOrder::with(['patient', 'items.medicine', 'branch'])
+        return PharmacyOrder::with(['patient', 'items.medicine', 'branch', 'prescriptionRecord.doctor.user'])
             ->where('pharmacy_id', $pharmacyId)
             ->findOrFail($orderId);
     }
@@ -267,6 +268,7 @@ class PharmacyOrderWebService
 
         return array_merge($summary, [
             'prescription_image' => storage_public_url($order->prescription_image),
+            'doctor_prescription' => LinkedPrescription::format($order->prescriptionRecord),
             'patient_notes' => $order->patient_notes,
             'quote_notes' => $order->quote_notes,
             'pharmacy_notes' => $order->pharmacy_notes,

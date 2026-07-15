@@ -50,6 +50,29 @@
                     </div>
 
                     <!-- Notes -->
+                    <div class="border-t pt-6">
+                        <h3 class="text-md font-semibold text-gray-800 mb-4">إحالة المريض (اختياري)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">صيدلية مرشّحة</label>
+                                <select id="recommendedPharmacyId" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    <option value="">— بدون —</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">معمل مرشّح</label>
+                                <select id="recommendedLaboratoryId" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                    <option value="">— بدون —</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">تحاليل مطلوبة (سطر لكل تحليل)</label>
+                            <textarea id="labTests" rows="3" placeholder="مثال: CBC&#10;سكر صائم&#10;وظائف كلى"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">ملاحظات</label>
                         <textarea id="notes" rows="3"
@@ -104,8 +127,28 @@ let medicineCounter = 0;
 window.addEventListener('load', async function() {
     await loadPatients();
     await loadRecentPrescriptions();
-    addMedicine(); // Add first medicine field
+    await loadReferralOptions();
+    addMedicine();
 });
+
+async function loadReferralOptions() {
+    try {
+        const data = await apiCall('/doctor/api/referral-options');
+        if (!data?.success) return;
+        const phSel = document.getElementById('recommendedPharmacyId');
+        const labSel = document.getElementById('recommendedLaboratoryId');
+        (data.data.pharmacies || []).forEach(p => {
+            const o = document.createElement('option');
+            o.value = p.id; o.textContent = p.name;
+            phSel.appendChild(o);
+        });
+        (data.data.laboratories || []).forEach(l => {
+            const o = document.createElement('option');
+            o.value = l.id; o.textContent = l.name;
+            labSel.appendChild(o);
+        });
+    } catch (e) {}
+}
 
 async function loadPatients() {
     try {
@@ -238,14 +281,24 @@ async function createPrescription(event) {
             return;
         }
 
+        const labTests = document.getElementById('labTests').value
+            .split('\n').map(s => s.trim()).filter(Boolean);
+
+        const payload = {
+            patient_id: document.getElementById('patientId').value,
+            diagnosis: document.getElementById('diagnosis').value,
+            medicines: medicines,
+            notes: document.getElementById('notes').value,
+        };
+        const phId = document.getElementById('recommendedPharmacyId').value;
+        const labId = document.getElementById('recommendedLaboratoryId').value;
+        if (phId) payload.recommended_pharmacy_id = parseInt(phId);
+        if (labId) payload.recommended_laboratory_id = parseInt(labId);
+        if (labTests.length) payload.lab_tests = labTests;
+
         const data = await apiCall('/doctor/api/prescriptions', {
             method: 'POST',
-            body: JSON.stringify({
-                patient_id: document.getElementById('patientId').value,
-                diagnosis: document.getElementById('diagnosis').value,
-                medicines: medicines,
-                notes: document.getElementById('notes').value,
-            })
+            body: JSON.stringify(payload)
         });
 
         if (data.success) {

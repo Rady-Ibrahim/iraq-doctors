@@ -61,8 +61,11 @@ Route::middleware(['session.scope:pharmacy', 'web'])->group(function () {
                         Route::post('/subscription/subscribe', [PharmacySubscriptionDataController::class, 'subscribe']);
 
                         Route::get('/medicines', [PharmacyMedicineDataController::class, 'index']);
+                        Route::get('/medicines/suggest', [PharmacyMedicineDataController::class, 'suggest']);
                         Route::get('/medicines/catalog', [PharmacyMedicineDataController::class, 'catalog']);
                         Route::get('/medicines/categories', [PharmacyMedicineDataController::class, 'categories']);
+                        Route::post('/medicines/categories', [PharmacyMedicineDataController::class, 'storeCategory']);
+                        Route::put('/medicines/categories/{categoryId}', [PharmacyMedicineDataController::class, 'updateCategory']);
                         Route::post('/medicines', [PharmacyMedicineDataController::class, 'store']);
                         Route::put('/medicines/{itemId}', [PharmacyMedicineDataController::class, 'update']);
                         Route::delete('/medicines/{itemId}', [PharmacyMedicineDataController::class, 'destroy']);

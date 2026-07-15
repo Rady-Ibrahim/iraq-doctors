@@ -2,16 +2,20 @@
 
 @section('title', 'كتالوج التحاليل')
 @section('page-title', 'كتالوج التحاليل')
-@section('page-description', 'إدارة تصنيفات وتحاليل النظام المرجعية — يختار منها المعامل')
+@section('page-description', 'عرض قاموس التحاليل المشترك — الإضافة من المعامل')
 
 @section('content')
+<div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-6 text-sm">
+    <i class="fas fa-info-circle ml-1"></i>
+    التحاليل تُضاف من <strong>المعامل</strong>. هنا عرض وتقارير فقط.
+</div>
 <div class="mb-6 flex gap-4 border-b">
     <button onclick="showTab('categories')" id="tab-categories" class="px-4 py-3 border-b-2 border-blue-600 text-blue-600 font-semibold">التصنيفات</button>
     <button onclick="showTab('tests')" id="tab-tests" class="px-4 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-800">التحاليل</button>
 </div>
 
 <div id="panel-categories">
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-6 hidden" id="categoryAddPanel">
         <h3 class="text-lg font-semibold mb-4">إضافة تصنيف</h3>
         <form id="categoryForm" class="grid grid-cols-1 md:grid-cols-4 gap-4" onsubmit="saveCategory(event)">
             <input type="hidden" id="categoryId">
@@ -49,7 +53,7 @@
 </div>
 
 <div id="panel-tests" class="hidden">
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-6 hidden" id="testAddPanel">
         <h3 class="text-lg font-semibold mb-4">إضافة تحليل</h3>
         <form id="testForm" class="grid grid-cols-1 md:grid-cols-3 gap-4" onsubmit="saveTest(event)">
             <input type="hidden" id="testId">
@@ -140,11 +144,7 @@ async function loadCategories() {
             <td class="px-6 py-4 font-semibold">${c.name_ar}</td>
             <td class="px-6 py-4">${c.tests_count || 0}</td>
             <td class="px-6 py-4"><span class="px-2 py-1 text-xs rounded-full ${c.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100'}">${c.is_active ? 'نشط' : 'معطّل'}</span></td>
-            <td class="px-6 py-4">
-                <button onclick='editCategory(${JSON.stringify(c)})' class="text-blue-600 text-sm ml-2">تعديل</button>
-                <button onclick="toggleCategory(${c.id}, ${!c.is_active})" class="text-amber-600 text-sm ml-2">${c.is_active ? 'تعطيل' : 'تفعيل'}</button>
-                <button onclick="deleteCategory(${c.id})" class="text-red-600 text-sm">حذف</button>
-            </td>
+            <td class="px-6 py-4 text-gray-400 text-sm">عرض فقط</td>
         </tr>
     `).join('');
 }
@@ -219,11 +219,7 @@ async function loadTests() {
             <td class="px-6 py-4">${t.code || '-'}</td>
             <td class="px-6 py-4">${t.sample_type || '-'}</td>
             <td class="px-6 py-4"><span class="px-2 py-1 text-xs rounded-full ${t.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100'}">${t.is_active ? 'نشط' : 'معطّل'}</span></td>
-            <td class="px-6 py-4">
-                <button onclick='editTest(${JSON.stringify(t)})' class="text-blue-600 text-sm ml-2">تعديل</button>
-                <button onclick="toggleTest(${t.id}, ${!t.is_active})" class="text-amber-600 text-sm ml-2">${t.is_active ? 'تعطيل' : 'تفعيل'}</button>
-                <button onclick="deleteTest(${t.id})" class="text-red-600 text-sm">حذف</button>
-            </td>
+            <td class="px-6 py-4 text-gray-400 text-sm">عرض فقط</td>
         </tr>
     `).join('');
 }

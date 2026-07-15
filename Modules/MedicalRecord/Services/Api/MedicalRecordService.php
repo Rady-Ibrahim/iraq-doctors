@@ -59,6 +59,8 @@ class MedicalRecordService
             'laboratoryOrder.items',
             'pharmacy',
             'pharmacyOrder.items',
+            'recommendedPharmacy',
+            'recommendedLaboratory',
         ])
             ->where('patient_id', $patientId)
             ->find($recordId);
@@ -85,7 +87,13 @@ class MedicalRecordService
 
     public function getPatientPrescriptions(int $patientId)
     {
-        return MedicalRecord::with(['doctor.user', 'doctor.speciality', 'appointment'])
+        return MedicalRecord::with([
+            'doctor.user',
+            'doctor.speciality',
+            'appointment',
+            'recommendedPharmacy',
+            'recommendedLaboratory',
+        ])
             ->where('patient_id', $patientId)
             ->where('record_type', 'prescription')
             ->orderByDesc('created_at')
@@ -157,6 +165,12 @@ class MedicalRecordService
             'pharmacy_id' => $record->pharmacy_id,
             'pharmacy_name' => $record->pharmacy?->name,
             'pharmacy_order_id' => $record->pharmacy_order_id,
+            'recommended_pharmacy_id' => $record->recommended_pharmacy_id,
+            'recommended_pharmacy_name' => $record->recommendedPharmacy?->name,
+            'recommended_laboratory_id' => $record->recommended_laboratory_id,
+            'recommended_laboratory_name' => $record->recommendedLaboratory?->name,
+            'lab_tests_requested' => $record->lab_tests_requested ?? [],
+            'referral_status' => $record->referral_status,
             'diagnosis' => $record->diagnosis,
             'prescription' => $record->prescription,
             'notes' => $this->decodeNotes($record->notes),

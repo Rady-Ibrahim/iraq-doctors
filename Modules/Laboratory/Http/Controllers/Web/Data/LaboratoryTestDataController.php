@@ -6,8 +6,10 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\Laboratory\Http\Requests\Web\StoreLabTestCategoryRequest;
 use Modules\Laboratory\Http\Requests\Web\StoreLaboratoryTestItemRequest;
 use Modules\Laboratory\Http\Requests\Web\UpdateLaboratoryTestItemRequest;
+use Modules\Laboratory\Models\LabTestCategory;
 use Modules\Laboratory\Models\Laboratory;
 use Modules\Laboratory\Services\Web\LaboratoryTestService;
 
@@ -36,17 +38,57 @@ class LaboratoryTestDataController extends Controller
 
     public function catalog(Request $request): JsonResponse
     {
-        $tests = $this->testService->catalog(
-            $request->integer('category_id') ?: null,
-            $request->input('search')
+        $laboratory = $this->resolveLaboratory();
+        $tests = $this->testService->suggest(
+            $laboratory->id,
+            $request->input('search'),
+            $request->integer('category_id') ?: null
         );
 
         return $this->success($tests);
     }
 
-    public function categories(): JsonResponse
+    public function suggest(Request $request): JsonResponse
     {
-        return $this->success($this->testService->activeCategories());
+        $laboratory = $this->resolveLaboratory();
+
+        return $this->success(
+            $this->testService->suggest(
+                $laboratory->id,
+                $request->input('q', $request->input('search')),
+                $request->integer('category_id') ?: null
+            )
+        );
+    }
+
+    public function categories(Request $request): JsonResponse
+    {
+        $activeOnly = $request->boolean('active_only');
+
+        return $this->success($this->testService->listCategories($activeOnly));
+    }
+
+    public function storeCategory(StoreLabTestCategoryRequest $request): JsonResponse
+    {
+        $this->resolveLaboratory();
+        $category = $this->testService->createCategory($request->validated());
+
+        return $this->created(
+            $this->testService->formatCategory($category->loadCount('tests')),
+            'تم إضافة التصنيف بنجاح'
+        );
+    }
+
+    public function updateCategory(StoreLabTestCategoryRequest $request, string $categoryId): JsonResponse
+    {
+        $this->resolveLaboratory();
+        $category = LabTestCategory::findOrFail((int) $categoryId);
+        $updated = $this->testService->updateCategory($category, $request->validated());
+
+        return $this->success(
+            $this->testService->formatCategory($updated),
+            'تم تحديث التصنيف بنجاح'
+        );
     }
 
     public function store(StoreLaboratoryTestItemRequest $request): JsonResponse

@@ -3,9 +3,11 @@
 namespace Modules\Pharmacy\Services\Api;
 
 use App\Notifications\ProviderPharmacyOrderNotification;
+use App\Support\LinkedPrescription;
 use App\Support\OrderTimelineBuilder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Modules\MedicalRecord\Models\MedicalRecord;
 use Modules\Pharmacy\Enums\PharmacyOrderStatus;
 use Modules\Pharmacy\Models\Pharmacy;
 use Modules\Pharmacy\Models\PharmacyMedicine;
@@ -38,14 +40,30 @@ class PharmacyOrderService
             $items = $data['items'] ?? [];
             $hasItems = is_array($items) && count($items) > 0;
             $hasImage = $prescriptionImage !== null;
+            $prescriptionRecord = null;
 
-            if (! $hasItems && ! $hasImage) {
-                throw new \InvalidArgumentException('يجب اختيار أدوية أو إرفاق صورة روشتة');
+            if (! empty($data['prescription_id'])) {
+                $prescriptionRecord = MedicalRecord::query()
+                    ->where('id', (int) $data['prescription_id'])
+                    ->where('patient_id', $patientId)
+                    ->where('record_type', 'prescription')
+                    ->first();
+
+                if (! $prescriptionRecord) {
+                    throw new \InvalidArgumentException('الروشتة غير موجودة أو غير مرتبطة بك');
+                }
+            }
+
+            if (! $hasItems && ! $hasImage && ! $prescriptionRecord) {
+                throw new \InvalidArgumentException('يجب اختيار أدوية أو إرفاق صورة روشتة أو ربط روشتة الطبيب');
             }
 
             $source = $hasImage && ! $hasItems ? 'prescription' : 'catalog';
             if ($hasImage && $hasItems) {
                 $source = 'mixed';
+            }
+            if ($prescriptionRecord && ! $hasItems && ! $hasImage) {
+                $source = 'doctor_referral';
             }
 
             $prescriptionPath = $prescriptionImage
@@ -57,6 +75,7 @@ class PharmacyOrderService
                 'pharmacy_id' => $pharmacy->id,
                 'patient_id' => $patientId,
                 'pharmacy_branch_id' => $data['pharmacy_branch_id'] ?? null,
+                'prescription_id' => $prescriptionRecord?->id,
                 'prescription_image' => $prescriptionPath,
                 'fulfillment_type' => $fulfillmentType,
                 'delivery_address' => $fulfillmentType === 'delivery' ? ($data['delivery_address'] ?? null) : null,
@@ -102,7 +121,14 @@ class PharmacyOrderService
                 }
             }
 
-            return $order->fresh(['pharmacy.governorate', 'items', 'patient']);
+            if ($prescriptionRecord) {
+                $prescriptionRecord->update([
+                    'referral_status' => 'ordered',
+                    'pharmacy_id' => $pharmacy->id,
+                ]);
+            }
+
+            return $order->fresh(['pharmacy.governorate', 'items', 'patient', 'prescriptionRecord.doctor.user']);
         });
     }
 
@@ -128,7 +154,7 @@ class PharmacyOrderService
 
     public function getPatientOrder(int $patientId, int $orderId): ?PharmacyOrder
     {
-        return PharmacyOrder::with(['pharmacy.governorate', 'items', 'branch'])
+        return PharmacyOrder::with(['pharmacy.governorate', 'items', 'branch', 'prescriptionRecord.doctor.user'])
             ->where('patient_id', $patientId)
             ->find($orderId);
     }
@@ -196,6 +222,7 @@ class PharmacyOrderService
             'status' => $order->status->value,
             'status_label' => $order->status->label(),
             'source' => $order->source,
+            'prescription_id' => $order->prescription_id,
             'fulfillment_type' => $order->fulfillment_type,
             'fulfillment_label' => $order->isDelivery() ? 'توصيل' : 'استلام من الفرع',
             'items_count' => $order->items->count(),
@@ -206,6 +233,7 @@ class PharmacyOrderService
         if ($detailed) {
             $data += [
                 'prescription_image' => storage_public_url($order->prescription_image),
+                'doctor_prescription' => LinkedPrescription::format($order->prescriptionRecord),
                 'patient_notes' => $order->patient_notes,
                 'quote_notes' => $order->quote_notes,
                 'subtotal' => $order->subtotal,

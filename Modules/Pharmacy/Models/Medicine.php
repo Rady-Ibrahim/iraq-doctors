@@ -22,6 +22,7 @@ class Medicine extends Model
         'description_ar',
         'sort_order',
         'is_active',
+        'created_by_pharmacy_id',
     ];
 
     protected $casts = [

@@ -114,6 +114,27 @@ function renderOrder() {
                     <a href="${o.prescription_image}" target="_blank">
                         <img src="${o.prescription_image}" alt="روشتة" class="max-h-80 rounded-lg border">
                     </a>
+                </div>` : (o.source === 'doctor_referral' && o.doctor_prescription ? `
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                    <h4 class="font-semibold text-blue-800 mb-3"><i class="fas fa-user-md ml-1"></i> روشتة الطبيب — ${o.doctor_prescription.doctor_name || 'طبيب'}</h4>
+                    ${o.doctor_prescription.diagnosis ? `<p class="text-sm mb-3"><strong>التشخيص:</strong> ${o.doctor_prescription.diagnosis}</p>` : ''}
+                    ${(o.doctor_prescription.medicines || []).length ? `
+                    <table class="w-full text-sm mb-3">
+                        <thead class="bg-blue-100"><tr>
+                            <th class="px-3 py-2 text-right">الدواء</th>
+                            <th class="px-3 py-2 text-right">الجرعة</th>
+                            <th class="px-3 py-2 text-right">التكرار</th>
+                            <th class="px-3 py-2 text-right">المدة</th>
+                        </tr></thead>
+                        <tbody>${o.doctor_prescription.medicines.map(m => `
+                            <tr class="border-b border-blue-100">
+                                <td class="px-3 py-2">${m.name || ''}</td>
+                                <td class="px-3 py-2">${m.dosage || ''}</td>
+                                <td class="px-3 py-2">${m.frequency || ''}</td>
+                                <td class="px-3 py-2">${m.duration || ''}</td>
+                            </tr>`).join('')}</tbody>
+                    </table>` : '<p class="text-sm text-blue-700">طلب مرتبط بروشتة الطبيب — حدد الأدوية عند عرض السعر</p>'}
+                    ${o.doctor_prescription.notes ? `<p class="text-sm text-gray-600"><strong>ملاحظات:</strong> ${o.doctor_prescription.notes}</p>` : ''}
                 </div>` : (o.source === 'prescription' ? `
                 <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
                     طلب بروشتة — لم تُرفع صورة بعد أو بانتظار تحديد الأدوية من الصيدلية.

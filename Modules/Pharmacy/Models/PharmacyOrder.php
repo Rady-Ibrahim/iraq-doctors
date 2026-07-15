@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Auth\Models\User;
+use Modules\MedicalRecord\Models\MedicalRecord;
 use Modules\Pharmacy\Enums\PharmacyOrderStatus;
 
 class PharmacyOrder extends Model
@@ -70,6 +71,11 @@ class PharmacyOrder extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PharmacyOrderItem::class);
+    }
+
+    public function prescriptionRecord(): BelongsTo
+    {
+        return $this->belongsTo(MedicalRecord::class, 'prescription_id');
     }
 
     public function isDelivery(): bool

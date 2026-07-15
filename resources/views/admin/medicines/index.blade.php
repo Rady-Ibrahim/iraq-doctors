@@ -2,16 +2,20 @@
 
 @section('title', 'كتالوج الأدوية')
 @section('page-title', 'كتالوج الأدوية')
-@section('page-description', 'إدارة تصنيفات وأدوية النظام المرجعية — يختار منها الصيدليات')
+@section('page-description', 'عرض قاموس الأدوية المشترك — الإضافة من الصيدليات')
 
 @section('content')
+<div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-6 text-sm">
+    <i class="fas fa-info-circle ml-1"></i>
+    الأدوية تُضاف من <strong>الصيدليات</strong>. هنا عرض وتقارير فقط.
+</div>
 <div class="mb-6 flex gap-4 border-b">
     <button onclick="showTab('categories')" id="tab-categories" class="px-4 py-3 border-b-2 border-blue-600 text-blue-600 font-semibold">التصنيفات</button>
     <button onclick="showTab('medicines')" id="tab-medicines" class="px-4 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-800">الأدوية</button>
 </div>
 
 <div id="panel-categories">
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-6 hidden" id="categoryAddPanel">
         <h3 class="text-lg font-semibold mb-4">إضافة تصنيف</h3>
         <form id="categoryForm" class="grid grid-cols-1 md:grid-cols-4 gap-4" onsubmit="saveCategory(event)">
             <input type="hidden" id="categoryId">
@@ -49,7 +53,7 @@
 </div>
 
 <div id="panel-medicines" class="hidden">
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-6 hidden" id="medicineAddPanel">
         <h3 class="text-lg font-semibold mb-4">إضافة دواء</h3>
         <form id="medicineForm" class="grid grid-cols-1 md:grid-cols-3 gap-4" onsubmit="saveMedicine(event)">
             <input type="hidden" id="medicineId">
@@ -152,11 +156,7 @@ async function loadCategories() {
             <td class="px-6 py-4 font-semibold">${c.name_ar}</td>
             <td class="px-6 py-4">${c.medicines_count || 0}</td>
             <td class="px-6 py-4"><span class="px-2 py-1 text-xs rounded-full ${c.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100'}">${c.is_active ? 'نشط' : 'معطّل'}</span></td>
-            <td class="px-6 py-4">
-                <button onclick='editCategory(${JSON.stringify(c)})' class="text-blue-600 text-sm ml-2">تعديل</button>
-                <button onclick="toggleCategory(${c.id}, ${!c.is_active})" class="text-amber-600 text-sm ml-2">${c.is_active ? 'تعطيل' : 'تفعيل'}</button>
-                <button onclick="deleteCategory(${c.id})" class="text-red-600 text-sm">حذف</button>
-            </td>
+            <td class="px-6 py-4 text-gray-400 text-sm">عرض فقط</td>
         </tr>
     `).join('');
 }
@@ -235,11 +235,7 @@ async function loadMedicines() {
             <td class="px-6 py-4">${m.barcode || '-'}</td>
             <td class="px-6 py-4">${m.dosage_form || '-'}</td>
             <td class="px-6 py-4"><span class="px-2 py-1 text-xs rounded-full ${m.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100'}">${m.is_active ? 'نشط' : 'معطّل'}</span></td>
-            <td class="px-6 py-4">
-                <button onclick='editMedicine(${JSON.stringify(m)})' class="text-blue-600 text-sm ml-2">تعديل</button>
-                <button onclick="toggleMedicine(${m.id}, ${!m.is_active})" class="text-amber-600 text-sm ml-2">${m.is_active ? 'تعطيل' : 'تفعيل'}</button>
-                <button onclick="deleteMedicine(${m.id})" class="text-red-600 text-sm">حذف</button>
-            </td>
+            <td class="px-6 py-4 text-gray-400 text-sm">عرض فقط</td>
         </tr>
     `).join('');
 }

@@ -33,11 +33,16 @@ class MedicalRecord extends Model
         'laboratory_order_id',
         'pharmacy_id',
         'pharmacy_order_id',
+        'recommended_pharmacy_id',
+        'recommended_laboratory_id',
+        'lab_tests_requested',
+        'referral_status',
     ];
 
     protected $casts = [
         'prescription' => 'array',
         'attachments' => 'array',
+        'lab_tests_requested' => 'array',
     ];
 
     public function appointment()
@@ -73,6 +78,16 @@ class MedicalRecord extends Model
     public function pharmacy()
     {
         return $this->belongsTo(\Modules\Pharmacy\Models\Pharmacy::class);
+    }
+
+    public function recommendedPharmacy()
+    {
+        return $this->belongsTo(\Modules\Pharmacy\Models\Pharmacy::class, 'recommended_pharmacy_id');
+    }
+
+    public function recommendedLaboratory()
+    {
+        return $this->belongsTo(\Modules\Laboratory\Models\Laboratory::class, 'recommended_laboratory_id');
     }
 
     public function pharmacyOrder()
