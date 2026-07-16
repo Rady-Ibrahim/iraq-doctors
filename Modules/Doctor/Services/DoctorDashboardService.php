@@ -145,6 +145,8 @@ class DoctorDashboardService
                 'phone' => $patient->phone,
                 'email' => $patient->email,
                 'is_ghost' => (bool) $patient->is_ghost,
+                'age' => $patient->birthdate ? Carbon::parse($patient->birthdate)->age : null,
+                'gender' => $patient->gender,
                 'total_appointments' => $patient->total_appointments,
                 'last_appointment_date' => $lastAppointment?->appointment_date?->format('Y-m-d'),
                 'last_visit' => $lastAppointment?->appointment_date?->format('Y-m-d'),
@@ -309,7 +311,9 @@ class DoctorDashboardService
             'name' => $user->name,
             'phone' => $user->phone,
             'email' => $user->email,
-            'address' => $user->address ?? $doctor->address,
+            'address' => $doctor->address ?? $user->address,
+            'latitude' => $doctor->latitude,
+            'longitude' => $doctor->longitude,
             'bio_ar' => $doctor->bio_ar,
             'bio_en' => $doctor->bio_en,
             'experience_years' => $doctor->experience_years,
@@ -322,12 +326,46 @@ class DoctorDashboardService
     public function updateProfile(int $userId, array $data): User
     {
         $user = User::findOrFail($userId);
+        $doctor = Doctor::where('user_id', $userId)->with('primaryBranch')->firstOrFail();
+
         $user->update([
             'name' => $data['name'] ?? $user->name,
             'phone' => $data['phone'] ?? $user->phone,
             'email' => $data['email'] ?? $user->email,
             'address' => $data['address'] ?? $user->address,
         ]);
+
+        $doctorPayload = [];
+        if (array_key_exists('address', $data)) {
+            $doctorPayload['address'] = $data['address'];
+        }
+        if (array_key_exists('latitude', $data) && $data['latitude'] !== null && $data['latitude'] !== '') {
+            $doctorPayload['latitude'] = $data['latitude'];
+        }
+        if (array_key_exists('longitude', $data) && $data['longitude'] !== null && $data['longitude'] !== '') {
+            $doctorPayload['longitude'] = $data['longitude'];
+        }
+
+        if ($doctorPayload !== []) {
+            $doctor->update($doctorPayload);
+
+            $primaryBranch = $doctor->primaryBranch;
+            if ($primaryBranch) {
+                $branchPayload = [];
+                if (array_key_exists('address', $doctorPayload)) {
+                    $branchPayload['address'] = $doctorPayload['address'];
+                }
+                if (array_key_exists('latitude', $doctorPayload)) {
+                    $branchPayload['latitude'] = $doctorPayload['latitude'];
+                }
+                if (array_key_exists('longitude', $doctorPayload)) {
+                    $branchPayload['longitude'] = $doctorPayload['longitude'];
+                }
+                if ($branchPayload !== []) {
+                    $primaryBranch->update($branchPayload);
+                }
+            }
+        }
 
         return $user->fresh();
     }
@@ -440,6 +478,11 @@ class DoctorDashboardService
     public function createGhostPatient(int $doctorUserId, array $data): User
     {
         return DB::transaction(function () use ($doctorUserId, $data) {
+            $birthdate = null;
+            if (isset($data['age']) && $data['age'] !== '' && $data['age'] !== null) {
+                $birthdate = Carbon::now()->subYears((int) $data['age'])->startOfYear()->toDateString();
+            }
+
             return User::create([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
@@ -450,6 +493,7 @@ class DoctorDashboardService
                 'is_ghost' => true,
                 'created_by_doctor_id' => $doctorUserId,
                 'gender' => $data['gender'] ?? null,
+                'birthdate' => $birthdate,
             ]);
         });
     }

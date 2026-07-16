@@ -1,13 +1,13 @@
 @extends('admin.layout')
 
-@section('title', 'إدارة المعامل')
-@section('page-title', 'المعامل')
-@section('page-description', 'مراجعة طلبات تسجيل المعامل والموافقة عليها')
+@section('title', 'إدارة المختبرات')
+@section('page-title', 'المختبرات')
+@section('page-description', 'مراجعة طلبات تسجيل المختبرات والموافقة عليها')
 
 @section('content')
 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <input type="text" id="searchInput" placeholder="ابحث عن معمل..." class="w-full px-4 py-2 border rounded-lg">
+        <input type="text" id="searchInput" placeholder="ابحث عن مختبر..." class="w-full px-4 py-2 border rounded-lg">
         <select id="statusFilter" class="w-full px-4 py-2 border rounded-lg">
             <option value="">جميع الحالات</option>
             <option value="pending">معلق</option>
@@ -23,7 +23,7 @@
     <table class="w-full">
         <thead class="bg-gray-50 border-b">
             <tr>
-                <th class="px-6 py-3 text-right text-sm font-semibold">المعمل</th>
+                <th class="px-6 py-3 text-right text-sm font-semibold">المختبر</th>
                 <th class="px-6 py-3 text-right text-sm font-semibold">المسؤول</th>
                 <th class="px-6 py-3 text-right text-sm font-semibold">المحافظة</th>
                 <th class="px-6 py-3 text-right text-sm font-semibold">الحالة</th>

@@ -28,7 +28,7 @@ class DoctorReferralSent extends Notification
             $parts[] = 'صيدلية ' . ($this->record->recommendedPharmacy?->name ?? '');
         }
         if ($this->record->recommended_laboratory_id) {
-            $parts[] = 'معمل ' . ($this->record->recommendedLaboratory?->name ?? '');
+            $parts[] = 'مختبر ' . ($this->record->recommendedLaboratory?->name ?? '');
         }
 
         $target = $parts !== [] ? implode(' و', $parts) : 'مقدم الخدمة';

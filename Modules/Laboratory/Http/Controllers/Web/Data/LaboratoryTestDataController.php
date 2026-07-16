@@ -98,7 +98,7 @@ class LaboratoryTestDataController extends Controller
 
         return $this->created(
             $this->testService->formatItem($item->load(['labTest.category'])),
-            'تم إضافة التحليل لمعملك بنجاح'
+            'تم إضافة التحليل لمختبرك بنجاح'
         );
     }
 
@@ -120,6 +120,6 @@ class LaboratoryTestDataController extends Controller
         $item = $this->testService->findItemForLaboratory((int) $itemId, $laboratory->id);
         $this->testService->deleteItem($item, $laboratory->id);
 
-        return $this->success(null, 'تم حذف التحليل من معملك');
+        return $this->success(null, 'تم حذف التحليل من مختبرك');
     }
 }

@@ -26,7 +26,7 @@ class LaboratoryOrderResultReady extends Notification
         return [
             'title' => 'نتائج التحاليل جاهزة',
             'message' => 'نتائج طلبك رقم ' . $this->order->order_number
-                . ' من ' . ($this->order->laboratory?->name ?? 'المعمل') . ' متاحة الآن.',
+                . ' من ' . ($this->order->laboratory?->name ?? 'المختبر') . ' متاحة الآن.',
             'type' => 'laboratory_result_ready',
             'order_id' => $this->order->id,
             'order_number' => $this->order->order_number,

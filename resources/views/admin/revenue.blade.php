@@ -118,7 +118,7 @@
 
 <!-- Recent Transactions -->
 <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
-    <h3 class="text-lg font-semibold text-gray-800 mb-4">المعاملات الأخيرة</h3>
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">المختبراتات الأخيرة</h3>
     <div class="overflow-x-auto">
         <table class="w-full">
             <thead class="bg-gray-50 border-b">
@@ -247,7 +247,7 @@ function renderTransactions(transactions) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="4" class="px-6 py-8 text-center text-gray-500">
-                    لا توجد معاملات
+                    لا توجد مختبراتات
                 </td>
             </tr>
         `;

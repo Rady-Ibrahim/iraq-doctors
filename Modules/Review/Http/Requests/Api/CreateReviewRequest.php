@@ -27,10 +27,10 @@ class CreateReviewRequest extends ApiFormRequest
         return [
             'appointment_id.exists' => 'الموعد غير موجود',
             'pharmacy_order_id.exists' => 'طلب الصيدلية غير موجود',
-            'laboratory_order_id.exists' => 'طلب المعمل غير موجود',
-            'appointment_id.required_without_all' => 'يجب تحديد موعد أو طلب صيدلية أو طلب معمل',
-            'pharmacy_order_id.required_without_all' => 'يجب تحديد موعد أو طلب صيدلية أو طلب معمل',
-            'laboratory_order_id.required_without_all' => 'يجب تحديد موعد أو طلب صيدلية أو طلب معمل',
+            'laboratory_order_id.exists' => 'طلب المختبر غير موجود',
+            'appointment_id.required_without_all' => 'يجب تحديد موعد أو طلب صيدلية أو طلب مختبر',
+            'pharmacy_order_id.required_without_all' => 'يجب تحديد موعد أو طلب صيدلية أو طلب مختبر',
+            'laboratory_order_id.required_without_all' => 'يجب تحديد موعد أو طلب صيدلية أو طلب مختبر',
             'rating.min' => 'التقييم يجب أن يكون 1 على الأقل',
             'rating.max' => 'التقييم يجب أن يكون 5 على الأكثر',
         ];

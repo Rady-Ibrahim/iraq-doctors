@@ -102,7 +102,7 @@ class AdminLabTestApiController extends Controller
         $test = LabTest::findOrFail($id);
 
         if ($test->laboratoryItems()->exists()) {
-            return $this->error('لا يمكن حذف تحليل مُستخدم في معامل', 'CONFLICT', 409);
+            return $this->error('لا يمكن حذف تحليل مُستخدم في مختبرات', 'CONFLICT', 409);
         }
 
         $test->delete();

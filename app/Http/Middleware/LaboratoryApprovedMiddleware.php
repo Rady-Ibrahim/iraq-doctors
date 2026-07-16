@@ -16,14 +16,14 @@ class LaboratoryApprovedMiddleware
             if ($this->expectsDashboardJson($request)) {
                 return response()->json([
                     'success' => false,
-                    'error' => ['code' => 'LABORATORY_NOT_FOUND', 'message' => 'ملف المعمل غير موجود'],
+                    'error' => ['code' => 'LABORATORY_NOT_FOUND', 'message' => 'ملف المختبر غير موجود'],
                 ], 403);
             }
 
             auth('web')->logout();
 
             return redirect()->route('laboratory.login')
-                ->withErrors(['phone' => 'ملف المعمل غير موجود. يرجى التواصل مع الإدارة.']);
+                ->withErrors(['phone' => 'ملف المختبر غير موجود. يرجى التواصل مع الإدارة.']);
         }
 
         if ($laboratory->status === 'approved') {

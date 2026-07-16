@@ -7,6 +7,7 @@
     <title>@yield('title', 'لوحة تحكم الطبيب')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     @include('partials.dashboard-ui', ['confirmColor' => '#14b8a6'])
     @include('partials.dashboard-api', [
         'loginUrl' => route('doctor.login'),
@@ -23,6 +24,11 @@
         }
         .sidebar-link:hover:not(.active) {
             background-color: #f3f4f6;
+        }
+        #clinic-map {
+            height: 280px;
+            border-radius: 0.5rem;
+            z-index: 0;
         }
     </style>
 </head>
@@ -404,6 +410,7 @@
             } catch (e) {}
         });
     </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     @yield('scripts')
 </body>
 </html>

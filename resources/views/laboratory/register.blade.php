@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل معمل - أطباء العراق</title>
+    <title>تسجيل مختبر - أطباء العراق</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -19,7 +19,7 @@
             <div class="w-16 h-16 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fas fa-flask text-white text-2xl"></i>
             </div>
-            <h1 class="text-2xl font-bold text-gray-800">تسجيل معمل تحاليل</h1>
+            <h1 class="text-2xl font-bold text-gray-800">تسجيل مختبر تحاليل</h1>
             <p class="text-gray-500 mt-2">أكمل البيانات وسيتم مراجعة حسابك من قبل الإدارة</p>
         </div>
 
@@ -37,7 +37,7 @@
             @csrf
 
             <div>
-                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">بيانات المسؤول والمعمل</h2>
+                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">بيانات المسؤول والمختبر</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-gray-700 text-sm font-semibold mb-2">اسم المسؤول</label>
@@ -45,7 +45,7 @@
                         @error('name')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">اسم المعمل</label>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">اسم المختبر</label>
                         <input type="text" name="laboratory_name" value="{{ old('laboratory_name') }}" required class="w-full px-4 py-3 border rounded-lg">
                         @error('laboratory_name')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -70,13 +70,13 @@
                     </div>
                 </div>
                 <div class="mt-5">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">نبذة عن المعمل (اختياري)</label>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2">نبذة عن المختبر (اختياري)</label>
                     <textarea name="description_ar" rows="3" class="w-full px-4 py-3 border rounded-lg">{{ old('description_ar') }}</textarea>
                 </div>
             </div>
 
             <div>
-                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">موقع المعمل</h2>
+                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">موقع المختبر</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-gray-700 text-sm font-semibold mb-2">المحافظة</label>
@@ -99,7 +99,7 @@
                     <input type="text" name="address" value="{{ old('address') }}" required class="w-full px-4 py-3 border rounded-lg">
                     @error('address')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
-                <p class="text-sm text-gray-500 mt-4 mb-2">اضغط على الخريطة لتحديد موقع المعمل</p>
+                <p class="text-sm text-gray-500 mt-4 mb-2">اضغط على الخريطة لتحديد موقع المختبر</p>
                 <div id="lab-map" class="border border-gray-300"></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
                     <input type="number" step="any" name="latitude" id="latitude" value="{{ old('latitude', '33.3152') }}" required readonly class="w-full px-4 py-3 border rounded-lg bg-gray-50">
@@ -111,7 +111,7 @@
                 <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">المستندات</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">شعار المعمل *</label>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">شعار المختبر *</label>
                         <input type="file" name="logo" accept=".jpg,.jpeg,.png" required class="w-full px-4 py-3 border rounded-lg">
                         @error('logo')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -121,7 +121,7 @@
                         @error('commercial_register_document')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">ترخيص المعمل *</label>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">ترخيص المختبر *</label>
                         <input type="file" name="license_document" accept=".pdf,.jpg,.jpeg,.png" required class="w-full px-4 py-3 border rounded-lg">
                         @error('license_document')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -138,7 +138,7 @@
             </div>
 
             <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-3 rounded-lg font-semibold">
-                إنشاء حساب المعمل
+                إنشاء حساب المختبر
             </button>
         </form>
 

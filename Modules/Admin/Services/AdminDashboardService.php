@@ -834,7 +834,7 @@ class AdminDashboardService
         } elseif ($review->laboratory_id) {
             $providerType = 'laboratory';
             $providerName = $review->laboratory?->name;
-            $providerSubtitle = 'معمل تحاليل';
+            $providerSubtitle = 'مختبر تحاليل';
         }
 
         return [

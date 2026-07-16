@@ -22,8 +22,8 @@ class LaboratorySubscriptionRequested extends Notification
         $this->subscription->loadMissing(['laboratory.user', 'subscription']);
 
         return [
-            'title' => 'طلب اشتراك معمل جديد',
-            'message' => ($this->subscription->laboratory?->name ?? 'معمل')
+            'title' => 'طلب اشتراك مختبر جديد',
+            'message' => ($this->subscription->laboratory?->name ?? 'مختبر')
                 . ' طلب الاشتراك في باقة ' . ($this->subscription->subscription?->name ?? ''),
             'type' => 'laboratory_subscription_request',
             'subscription_id' => $this->subscription->id,

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @include('partials.web-auth-csrf', ['csrfRefreshUrl' => '/laboratory/api/csrf-token'])
-    <title>تسجيل الدخول - لوحة تحكم المعمل</title>
+    <title>تسجيل الدخول - لوحة تحكم المختبر</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -18,7 +18,7 @@
             <div class="w-16 h-16 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fas fa-flask text-white text-2xl"></i>
             </div>
-            <h1 class="text-2xl font-bold text-gray-800">لوحة تحكم المعمل</h1>
+            <h1 class="text-2xl font-bold text-gray-800">لوحة تحكم المختبر</h1>
             <p class="text-gray-500 mt-2">قم بتسجيل الدخول للمتابعة</p>
         </div>
 
@@ -54,7 +54,7 @@
 
         <div class="mt-6 text-center text-sm">
             <span class="text-gray-500">ليس لديك حساب؟</span>
-            <a href="{{ route('laboratory.register') }}" class="text-indigo-600 font-semibold">سجّل معملك</a>
+            <a href="{{ route('laboratory.register') }}" class="text-indigo-600 font-semibold">سجّل مختبرك</a>
         </div>
     </div>
 </body>

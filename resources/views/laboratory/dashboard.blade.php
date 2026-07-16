@@ -1,6 +1,6 @@
 @extends('laboratory.layout')
 
-@section('title', 'لوحة تحكم المعمل')
+@section('title', 'لوحة تحكم المختبر')
 @section('page-title')
 مرحباً، {{ $laboratory->name }}
 @endsection

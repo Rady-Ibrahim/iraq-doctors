@@ -35,7 +35,7 @@ class LaboratoryOrderStatusChanged extends Notification
         $data = [
             'title' => $isQuoted ? 'عرض سعر جاهز للموافقة' : 'تحديث طلب التحاليل',
             'message' => $isQuoted
-                ? 'المعمل ' . ($this->order->laboratory?->name ?? '') . ' أرسل عرض سعر' . ($total ? ' بقيمة ' . $total : '') . '. راجع التفاصيل ووافق أو ارفض.'
+                ? 'المختبر ' . ($this->order->laboratory?->name ?? '') . ' أرسل عرض سعر' . ($total ? ' بقيمة ' . $total : '') . '. راجع التفاصيل ووافق أو ارفض.'
                 : $this->message,
             'type' => $isQuoted ? 'laboratory_order_quote_ready' : 'laboratory_order_status',
             'order_id' => $this->order->id,

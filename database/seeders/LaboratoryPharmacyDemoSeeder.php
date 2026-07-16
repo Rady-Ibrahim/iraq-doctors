@@ -42,7 +42,7 @@ class LaboratoryPharmacyDemoSeeder extends Seeder
         $labPlan = Subscription::firstOrCreate(
             ['name' => 'Laboratory Monthly', 'type' => 'laboratory'],
             [
-                'description_ar' => 'اشتراك شهري للمعامل',
+                'description_ar' => 'اشتراك شهري للمختبرات',
                 'description_en' => 'Monthly laboratory subscription',
                 'price' => 75000,
                 'duration_days' => 30,
@@ -102,7 +102,7 @@ class LaboratoryPharmacyDemoSeeder extends Seeder
         $labUser = User::updateOrCreate(
             ['phone' => '07708888002'],
             [
-                'name' => 'مسؤول معمل تجريبي',
+                'name' => 'مسؤول مختبر تجريبي',
                 'email' => 'laboratory@iraq-doctors.test',
                 'password' => Hash::make('password123'),
                 'role' => 'laboratory',
@@ -115,13 +115,13 @@ class LaboratoryPharmacyDemoSeeder extends Seeder
         $laboratory = Laboratory::updateOrCreate(
             ['user_id' => $labUser->id],
             [
-                'name' => 'معمل بغداد التجريبي',
+                'name' => 'مختبر بغداد التجريبي',
                 'governorate_id' => $governorate->id,
                 'district' => 'الكرادة',
                 'address' => 'بغداد — الكرادة — شارع 62',
                 'latitude' => 33.3152,
                 'longitude' => 44.3661,
-                'description_ar' => 'معمل تحاليل تجريبي للاختبار',
+                'description_ar' => 'مختبر تحاليل تجريبي للاختبار',
                 'status' => 'approved',
                 'contact_phone' => '07708888002',
                 'home_collection_enabled' => true,

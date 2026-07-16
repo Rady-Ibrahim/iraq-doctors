@@ -60,7 +60,7 @@
                 </a>
                 <a href="/admin/dashboard/laboratories" class="{{ $navClass(request()->routeIs('admin.laboratories.*')) }}">
                     <i class="fas fa-flask w-5"></i>
-                    <span>المعامل</span>
+                    <span>المختبرات</span>
                 </a>
                 <a href="/admin/dashboard/pharmacies" class="{{ $navClass(request()->routeIs('admin.pharmacies.*')) }}">
                     <i class="fas fa-pills w-5"></i>

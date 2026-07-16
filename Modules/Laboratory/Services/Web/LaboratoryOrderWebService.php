@@ -90,7 +90,7 @@ class LaboratoryOrderWebService
                 ->keyBy('id');
 
             if ($catalogItems->count() !== count($catalogIds)) {
-                throw new \InvalidArgumentException('بعض التحاليل المختارة غير تابعة لمعملك');
+                throw new \InvalidArgumentException('بعض التحاليل المختارة غير تابعة لمختبرك');
             }
 
             $isPrescriptionOrder = $order->hasPrescriptionImage() || $order->source === 'prescription';

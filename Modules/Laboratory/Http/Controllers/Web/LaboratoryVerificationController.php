@@ -78,6 +78,6 @@ class LaboratoryVerificationController extends Controller
 
         return redirect()
             ->route('laboratory.pending')
-            ->with('success', 'تم إرسال مستنداتك مجدداً. حساب المعمل قيد المراجعة.');
+            ->with('success', 'تم إرسال مستنداتك مجدداً. حساب المختبر قيد المراجعة.');
     }
 }

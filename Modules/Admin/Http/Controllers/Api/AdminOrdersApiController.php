@@ -29,7 +29,7 @@ class AdminOrdersApiController extends Controller
                 $paginator->perPage()
             );
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء جلب طلبات المعامل');
+            return $this->serverError('حدث خطأ أثناء جلب طلبات المختبرات');
         }
     }
 

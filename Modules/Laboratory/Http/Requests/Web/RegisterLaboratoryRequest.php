@@ -67,21 +67,21 @@ class RegisterLaboratoryRequest extends FormRequest
 
         return [
             'name.required' => 'اسم المسؤول مطلوب',
-            'laboratory_name.required' => 'اسم المعمل مطلوب',
+            'laboratory_name.required' => 'اسم المختبر مطلوب',
             'phone.unique' => 'رقم الهاتف مسجل بالفعل',
             'email.unique' => 'البريد الإلكتروني مسجل بالفعل',
             'password.confirmed' => 'كلمات المرور غير متطابقة',
             'password.min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
             'governorate_id.required' => 'المحافظة مطلوبة',
             'area.required' => 'المنطقة مطلوبة',
-            'address.required' => 'عنوان المعمل مطلوب',
-            'latitude.required' => 'موقع المعمل (خط العرض) مطلوب',
-            'longitude.required' => 'موقع المعمل (خط الطول) مطلوب',
-            'logo.required' => 'شعار المعمل مطلوب',
-            'logo.image' => 'شعار المعمل يجب أن يكون صورة',
+            'address.required' => 'عنوان المختبر مطلوب',
+            'latitude.required' => 'موقع المختبر (خط العرض) مطلوب',
+            'longitude.required' => 'موقع المختبر (خط الطول) مطلوب',
+            'logo.required' => 'شعار المختبر مطلوب',
+            'logo.image' => 'شعار المختبر يجب أن يكون صورة',
             'logo.max' => "حجم الشعار يجب أن يكون أقل من {$maxMb} ميجا",
             'commercial_register_document.required' => 'السجل التجاري مطلوب',
-            'license_document.required' => 'ترخيص المعمل مطلوب',
+            'license_document.required' => 'ترخيص المختبر مطلوب',
             'owner_id_document.required' => 'هوية المالك مطلوبة',
         ];
     }
@@ -90,16 +90,16 @@ class RegisterLaboratoryRequest extends FormRequest
     {
         return [
             'name' => 'اسم المسؤول',
-            'laboratory_name' => 'اسم المعمل',
+            'laboratory_name' => 'اسم المختبر',
             'phone' => 'رقم الهاتف',
             'email' => 'البريد الإلكتروني',
             'password' => 'كلمة المرور',
             'governorate_id' => 'المحافظة',
             'area' => 'المنطقة',
             'address' => 'العنوان',
-            'logo' => 'شعار المعمل',
+            'logo' => 'شعار المختبر',
             'commercial_register_document' => 'السجل التجاري',
-            'license_document' => 'ترخيص المعمل',
+            'license_document' => 'ترخيص المختبر',
             'owner_id_document' => 'هوية المالك',
             'accreditation_document' => 'شهادة الاعتماد',
         ];

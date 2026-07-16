@@ -29,7 +29,7 @@ class ResubmitLaboratoryDocumentsRequest extends FormRequest
     {
         return [
             'commercial_register_document.required' => 'يجب رفع السجل التجاري',
-            'license_document.required' => 'يجب رفع ترخيص المعمل',
+            'license_document.required' => 'يجب رفع ترخيص المختبر',
             'owner_id_document.required' => 'يجب رفع هوية المالك',
         ];
     }
@@ -38,9 +38,9 @@ class ResubmitLaboratoryDocumentsRequest extends FormRequest
     {
         return [
             'commercial_register_document' => 'السجل التجاري',
-            'license_document' => 'ترخيص المعمل',
+            'license_document' => 'ترخيص المختبر',
             'owner_id_document' => 'هوية المالك',
-            'logo' => 'شعار المعمل',
+            'logo' => 'شعار المختبر',
             'accreditation_document' => 'شهادة الاعتماد',
         ];
     }

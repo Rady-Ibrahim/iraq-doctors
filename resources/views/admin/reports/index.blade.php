@@ -2,7 +2,7 @@
 
 @section('title', 'تقارير الطلبات')
 @section('page-title', 'التقارير')
-@section('page-description', 'إحصائيات طلبات المعامل والصيدليات')
+@section('page-description', 'إحصائيات طلبات المختبرات والصيدليات')
 
 @section('content')
 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -15,7 +15,7 @@
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
     <div class="bg-white rounded-xl shadow-sm p-6 border-r-4 border-cyan-500">
-        <p class="text-gray-500 text-sm">طلبات المعامل</p>
+        <p class="text-gray-500 text-sm">طلبات المختبرات</p>
         <h3 class="text-3xl font-bold mt-2" id="labTotal">-</h3>
         <p class="text-sm text-cyan-600 mt-2">مكتملة: <span id="labDelivered">-</span></p>
     </div>
@@ -27,13 +27,13 @@
     <div class="bg-white rounded-xl shadow-sm p-6 border-r-4 border-amber-500">
         <p class="text-gray-500 text-sm">إجمالي قيمة الطلبات المكتملة</p>
         <h3 class="text-3xl font-bold mt-2" id="combinedRevenue">-</h3>
-        <p class="text-sm text-gray-500 mt-2">معمل + صيدلية</p>
+        <p class="text-sm text-gray-500 mt-2">مختبر + صيدلية</p>
     </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <h3 class="font-bold text-gray-800 mb-4">توزيع طلبات المعامل</h3>
+        <h3 class="font-bold text-gray-800 mb-4">توزيع طلبات المختبرات</h3>
         <div id="labStatusBreakdown" class="space-y-2 text-sm"></div>
     </div>
     <div class="bg-white rounded-xl shadow-sm p-6">

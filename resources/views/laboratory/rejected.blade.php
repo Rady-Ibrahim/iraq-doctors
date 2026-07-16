@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تم رفض الحساب - المعمل</title>
+    <title>تم رفض الحساب - المختبر</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -13,7 +13,7 @@
             <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fas fa-times-circle text-red-600 text-3xl"></i>
             </div>
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">تم رفض طلب تسجيل المعمل</h1>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">تم رفض طلب تسجيل المختبر</h1>
             <p class="text-gray-600">يرجى مراجعة سبب الرفض وإعادة رفع المستندات المطلوبة.</p>
         </div>
 
@@ -40,7 +40,7 @@
                 @error('commercial_register_document')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">ترخيص المعمل *</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">ترخيص المختبر *</label>
                 <input type="file" name="license_document" required accept=".pdf,.jpg,.jpeg,.png" class="w-full px-4 py-2 border rounded-lg">
                 @error('license_document')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
@@ -50,7 +50,7 @@
                 @error('owner_id_document')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">شعار المعمل (اختياري)</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">شعار المختبر (اختياري)</label>
                 <input type="file" name="logo" accept=".jpg,.jpeg,.png" class="w-full px-4 py-2 border rounded-lg">
             </div>
             <button type="submit" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">إعادة إرسال المستندات</button>

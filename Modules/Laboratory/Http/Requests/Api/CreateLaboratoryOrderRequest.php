@@ -55,7 +55,7 @@ class CreateLaboratoryOrderRequest extends ApiFormRequest
     public function attributes(): array
     {
         return [
-            'laboratory_id' => 'المعمل',
+            'laboratory_id' => 'المختبر',
             'laboratory_branch_id' => 'الفرع',
             'items' => 'التحاليل',
             'items.*.laboratory_test_item_id' => 'التحليل',
@@ -67,8 +67,8 @@ class CreateLaboratoryOrderRequest extends ApiFormRequest
     public function messages(): array
     {
         return [
-            'laboratory_id.required' => 'يجب اختيار المعمل',
-            'laboratory_id.exists' => 'المعمل غير موجود',
+            'laboratory_id.required' => 'يجب اختيار المختبر',
+            'laboratory_id.exists' => 'المختبر غير موجود',
             'prescription_image.mimes' => 'صورة الروشتة يجب أن تكون صورة أو PDF',
             'prescription_image.max' => 'حجم صورة الروشتة كبير جداً',
         ];

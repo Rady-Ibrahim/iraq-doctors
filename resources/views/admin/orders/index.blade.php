@@ -7,7 +7,7 @@
 @section('content')
 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
     <div class="flex flex-wrap gap-2 mb-4">
-        <button id="tabLab" onclick="switchTab('laboratory')" class="px-4 py-2 rounded-lg bg-blue-600 text-white">طلبات المعامل</button>
+        <button id="tabLab" onclick="switchTab('laboratory')" class="px-4 py-2 rounded-lg bg-blue-600 text-white">طلبات المختبرات</button>
         <button id="tabPharmacy" onclick="switchTab('pharmacy')" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700">طلبات الصيدليات</button>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -27,7 +27,7 @@
             <tr id="tableHead">
                 <th class="px-6 py-3 text-right text-sm font-semibold">رقم الطلب</th>
                 <th class="px-6 py-3 text-right text-sm font-semibold">المريض</th>
-                <th class="px-6 py-3 text-right text-sm font-semibold provider-col">المعمل</th>
+                <th class="px-6 py-3 text-right text-sm font-semibold provider-col">المختبر</th>
                 <th class="px-6 py-3 text-right text-sm font-semibold">الحالة</th>
                 <th class="px-6 py-3 text-right text-sm font-semibold">المبلغ</th>
                 <th class="px-6 py-3 text-right text-sm font-semibold">التاريخ</th>
@@ -76,7 +76,7 @@ function switchTab(tab) {
     document.getElementById('tabPharmacy').className = tab === 'pharmacy'
         ? 'px-4 py-2 rounded-lg bg-blue-600 text-white'
         : 'px-4 py-2 rounded-lg bg-gray-100 text-gray-700';
-    document.querySelector('.provider-col').textContent = tab === 'laboratory' ? 'المعمل' : 'الصيدلية';
+    document.querySelector('.provider-col').textContent = tab === 'laboratory' ? 'المختبر' : 'الصيدلية';
     fillStatusFilter();
     loadOrders();
 }
@@ -149,7 +149,7 @@ async function showOrder(id) {
     document.getElementById('modalTitle').textContent = 'طلب ' + o.order_number;
     document.getElementById('modalContent').innerHTML = `
         <p><strong>المريض:</strong> ${o.patient_name} (${o.patient_phone || '-'})</p>
-        <p><strong>${currentTab === 'laboratory' ? 'المعمل' : 'الصيدلية'}:</strong> ${o.laboratory_name || o.pharmacy_name || '-'}</p>
+        <p><strong>${currentTab === 'laboratory' ? 'المختبر' : 'الصيدلية'}:</strong> ${o.laboratory_name || o.pharmacy_name || '-'}</p>
         <p><strong>الحالة:</strong> ${o.status_label}</p>
         <p><strong>المبلغ:</strong> ${o.total_amount ? formatCurrency(o.total_amount) : '-'}</p>
         ${o.fulfillment_type ? `<p><strong>الاستلام:</strong> ${o.fulfillment_type === 'delivery' ? 'توصيل' : 'استلام'}</p>` : ''}

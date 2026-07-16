@@ -56,7 +56,7 @@ class UpdateLaboratoryProfileRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'name' => 'اسم المعمل',
+            'name' => 'اسم المختبر',
             'description_ar' => 'الوصف',
             'governorate_id' => 'المحافظة',
             'district' => 'المنطقة',
@@ -77,7 +77,7 @@ class UpdateLaboratoryProfileRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'اسم المعمل مطلوب',
+            'name.required' => 'اسم المختبر مطلوب',
             'governorate_id.required' => 'المحافظة مطلوبة',
             'governorate_id.exists' => 'المحافظة غير صالحة',
             'latitude.between' => 'خط العرض غير صحيح',
