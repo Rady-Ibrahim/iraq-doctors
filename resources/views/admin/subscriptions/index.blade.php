@@ -2,7 +2,7 @@
 
 @section('title', 'الاشتراكات')
 @section('page-title', 'اشتراكات')
-@section('page-description', 'إدارة خطط الاشتراك واشتراكات الأطباء والمعامل وإعدادات الدفع')
+@section('page-description', 'إدارة خطط الاشتراك واشتراكات الأطباء والمختبرات وإعدادات الدفع')
 
 @section('content')
 <!-- Payment Settings -->
@@ -305,7 +305,7 @@ async function deletePlan(id) {
 function subscriberTypeBadge(type) {
     const map = {
         doctor: { class: 'bg-teal-100 text-teal-800', label: 'طبيب' },
-        laboratory: { class: 'bg-indigo-100 text-indigo-800', label: 'معمل' },
+        laboratory: { class: 'bg-indigo-100 text-indigo-800', label: 'مختبر' },
         pharmacy: { class: 'bg-purple-100 text-purple-800', label: 'صيدلية' },
     };
     const item = map[type] || map.doctor;

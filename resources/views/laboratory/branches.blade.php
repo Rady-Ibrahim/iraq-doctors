@@ -1,12 +1,12 @@
 @extends('laboratory.layout')
 
-@section('title', 'فروع المعمل')
-@section('page-title', 'فروع المعمل')
-@section('page-description', 'إدارة فروع المعمل وعناوينها')
+@section('title', 'فروع المختبر')
+@section('page-title', 'فروع المختبر')
+@section('page-description', 'إدارة فروع المختبر وعناوينها')
 
 @section('content')
 <div class="flex justify-between items-center mb-6">
-    <p class="text-gray-600">أضف فروع المعمل لتظهر للمرضى عند طلب التحاليل.</p>
+    <p class="text-gray-600">أضف فروع المختبر لتظهر للمرضى عند طلب التحاليل.</p>
     <button onclick="openBranchModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
         <i class="fas fa-plus ml-1"></i> إضافة فرع
     </button>

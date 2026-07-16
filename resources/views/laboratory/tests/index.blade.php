@@ -1,8 +1,8 @@
 @extends('laboratory.layout')
 
-@section('title', 'تحاليل المعمل')
-@section('page-title', 'تحاليل المعمل')
-@section('page-description', 'إدارة تصنيفات وتحاليل معملك — الأسماء تُشارك بين المعامل بدون أسعار')
+@section('title', 'تحاليل المختبر')
+@section('page-title', 'تحاليل المختبر')
+@section('page-description', 'إدارة تصنيفات وتحاليل مختبرك — الأسماء تُشارك بين المختبرات بدون أسعار')
 
 @section('content')
 <div class="mb-6 flex gap-1 border-b border-gray-200">
@@ -51,7 +51,7 @@
 
 <div id="panel-categories" class="hidden">
     <div class="flex justify-between items-center mb-6">
-        <p class="text-sm text-gray-600">التصنيفات مشتركة بين كل المعامل — أضف تصنيفاً قبل إدخال تحليل جديد.</p>
+        <p class="text-sm text-gray-600">التصنيفات مشتركة بين كل المختبرات — أضف تصنيفاً قبل إدخال تحليل جديد.</p>
         <button type="button" onclick="openCategoryModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
             <i class="fas fa-plus ml-1"></i> تصنيف جديد
         </button>
@@ -320,7 +320,7 @@ async function loadSuggestions() {
 }
 
 function pickSuggestion(test) {
-    if (test.already_in_laboratory) { showError('هذا التحليل مُضاف بالفعل لمعملك'); return; }
+    if (test.already_in_laboratory) { showError('هذا التحليل مُضاف بالفعل لمختبرك'); return; }
     document.getElementById('lab_test_id').value = test.id;
     document.getElementById('name_ar').value = test.name_ar;
     document.getElementById('code').value = test.code || '';
@@ -427,7 +427,7 @@ async function saveItem(e) {
 }
 
 async function deleteItem(id) {
-    if (!await confirmAction('حذف هذا التحليل من معملك؟')) return;
+    if (!await confirmAction('حذف هذا التحليل من مختبرك؟')) return;
     const data = await apiCall(`/laboratory/api/tests/${id}`, { method: 'DELETE' });
     if (data?.success) loadItems();
 }

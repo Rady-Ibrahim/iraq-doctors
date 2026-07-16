@@ -64,7 +64,7 @@ class LaboratoryController extends Controller
         $laboratory = $this->laboratoryService->getProfile((int) $id);
 
         if (! $laboratory) {
-            return $this->notFound('المعمل غير موجود');
+            return $this->notFound('المختبر غير موجود');
         }
 
         return $this->success($this->laboratoryService->formatLaboratory($laboratory, true));
@@ -75,7 +75,7 @@ class LaboratoryController extends Controller
         $laboratory = $this->laboratoryService->getProfile((int) $id);
 
         if (! $laboratory) {
-            return $this->notFound('المعمل غير موجود');
+            return $this->notFound('المختبر غير موجود');
         }
 
         $categoryId = request('category_id') ? (int) request('category_id') : null;

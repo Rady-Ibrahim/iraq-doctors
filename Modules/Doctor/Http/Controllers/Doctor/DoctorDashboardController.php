@@ -145,11 +145,16 @@ class DoctorDashboardController extends Controller
             'phone' => 'sometimes|string|regex:/^[0-9]{10,15}$/',
             'email' => 'sometimes|email',
             'address' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         try {
-            $user = $this->doctorDashboardService->updateProfile(auth('web')->id(), $request->all());
-            return $this->success($user, 'تم تحديث الملف الشخصي بنجاح');
+            $this->doctorDashboardService->updateProfile(auth('web')->id(), $request->all());
+            return $this->success(
+                $this->doctorDashboardService->getProfile(auth('web')->id()),
+                'تم تحديث الملف الشخصي بنجاح'
+            );
         } catch (\Exception $e) {
             return $this->serverError('حدث خطأ أثناء تحديث الملف الشخصي');
         }
@@ -390,6 +395,7 @@ class DoctorDashboardController extends Controller
                 'id' => $patient->id,
                 'name' => $patient->name,
                 'phone' => $patient->phone,
+                'age' => $patient->birthdate ? \Carbon\Carbon::parse($patient->birthdate)->age : null,
                 'is_ghost' => $patient->is_ghost,
             ], 'تم إضافة المريض بنجاح');
         } catch (\Exception $e) {
@@ -426,7 +432,7 @@ class DoctorDashboardController extends Controller
         $request->validate([
             'patient_id' => 'required|integer|exists:users,id',
             'diagnosis' => 'nullable|string',
-            'medicines' => 'required|array|min:1',
+            'medicines' => 'nullable|array',
             'medicines.*.name' => 'required|string',
             'medicines.*.dosage' => 'required|string',
             'medicines.*.frequency' => 'required',
@@ -438,12 +444,32 @@ class DoctorDashboardController extends Controller
             'lab_tests.*' => 'string|max:255',
         ]);
 
+        $medicines = collect($request->input('medicines', []))->filter(function ($row) {
+            return is_array($row) && filled($row['name'] ?? null);
+        })->values()->all();
+
+        $labTests = collect($request->input('lab_tests', []))->filter(fn ($t) => is_string($t) && trim($t) !== '')->values()->all();
+        $hasPharmacy = $request->filled('recommended_pharmacy_id');
+        $hasLaboratory = $request->filled('recommended_laboratory_id');
+
+        if ($medicines === [] && ! $hasPharmacy && ! $hasLaboratory && $labTests === []) {
+            return $this->error(
+                'أضف دواء واحداً على الأقل، أو اختر صيدلية/مختبر مرشّح، أو اكتب تحاليل مطلوبة',
+                'VALIDATION_ERROR',
+                422
+            );
+        }
+
         try {
             $doctor = $this->resolveDoctor();
+            $payload = $request->all();
+            $payload['medicines'] = $medicines;
+            $payload['lab_tests'] = $labTests;
+
             $record = $this->doctorDashboardService->createPrescription(
                 $doctor->id,
                 auth('web')->id(),
-                $request->all()
+                $payload
             );
 
             return $this->created($this->doctorDashboardService->getPrescription($doctor->id, $record->id), 'تم إنشاء الوصفة بنجاح');

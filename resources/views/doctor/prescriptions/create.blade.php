@@ -39,7 +39,7 @@
                     <!-- Medicines -->
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-semibold text-gray-700">الأدوية *</label>
+                            <label class="block text-sm font-semibold text-gray-700">الأدوية <span class="text-gray-400 font-normal">(اختياري إذا وُجدت إحالة)</span></label>
                             <button type="button" onclick="addMedicine()" class="text-teal-600 hover:text-teal-700 text-sm">
                                 <i class="fas fa-plus ml-1"></i>إضافة دواء
                             </button>
@@ -49,9 +49,10 @@
                         </div>
                     </div>
 
-                    <!-- Notes -->
+                    <!-- Referral -->
                     <div class="border-t pt-6">
-                        <h3 class="text-md font-semibold text-gray-800 mb-4">إحالة المريض (اختياري)</h3>
+                        <h3 class="text-md font-semibold text-gray-800 mb-1">إحالة المريض</h3>
+                        <p class="text-xs text-gray-500 mb-4">اختياري — يمكن اختيار صيدلية فقط أو مختبر فقط أو الاثنين، بدون أدوية إذا أردت</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">صيدلية مرشّحة</label>
@@ -60,7 +61,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">معمل مرشّح</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">مختبر مرشّح</label>
                                 <select id="recommendedLaboratoryId" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                                     <option value="">— بدون —</option>
                                 </select>
@@ -128,7 +129,6 @@ window.addEventListener('load', async function() {
     await loadPatients();
     await loadRecentPrescriptions();
     await loadReferralOptions();
-    addMedicine();
 });
 
 async function loadReferralOptions() {
@@ -215,26 +215,26 @@ function addMedicine() {
     medicineDiv.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">اسم الدواء *</label>
-                <input type="text" name="medicines[${medicineCounter}][name]" required
+                <label class="block text-sm font-semibold text-gray-700 mb-1">اسم الدواء</label>
+                <input type="text" name="medicines[${medicineCounter}][name]"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                     placeholder="اسم الدواء">
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">الجرعة *</label>
-                <input type="text" name="medicines[${medicineCounter}][dosage]" required
+                <label class="block text-sm font-semibold text-gray-700 mb-1">الجرعة</label>
+                <input type="text" name="medicines[${medicineCounter}][dosage]"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                     placeholder="مثال: 500mg">
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">عدد المرات *</label>
-                <input type="number" name="medicines[${medicineCounter}][frequency]" required min="1"
+                <label class="block text-sm font-semibold text-gray-700 mb-1">عدد المرات</label>
+                <input type="number" name="medicines[${medicineCounter}][frequency]" min="1"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                     placeholder="مثال: 3">
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">المدة *</label>
-                <input type="text" name="medicines[${medicineCounter}][duration]" required
+                <label class="block text-sm font-semibold text-gray-700 mb-1">المدة</label>
+                <input type="text" name="medicines[${medicineCounter}][duration]"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                     placeholder="مثال: 7 أيام">
             </div>
@@ -275,14 +275,32 @@ async function createPrescription(event) {
             }
         });
 
-        if (medicines.length === 0) {
-            alert('يجب إضافة دواء واحد على الأقل');
+        const labTests = document.getElementById('labTests').value
+            .split('\n').map(s => s.trim()).filter(Boolean);
+        const phId = document.getElementById('recommendedPharmacyId').value;
+        const labId = document.getElementById('recommendedLaboratoryId').value;
+
+        if (medicines.length === 0 && !phId && !labId && labTests.length === 0) {
+            alert('أضف دواء واحداً على الأقل، أو اختر صيدلية/مختبر مرشّح، أو اكتب تحاليل مطلوبة');
             hideLoading();
             return;
         }
 
-        const labTests = document.getElementById('labTests').value
-            .split('\n').map(s => s.trim()).filter(Boolean);
+        // أدوية ناقصة الحقول (بدأ يملأها ولم يكمل)
+        const incompleteMedicine = Array.from(medicineItems).some(item => {
+            const name = item.querySelector('[name*="[name]"]').value.trim();
+            const dosage = item.querySelector('[name*="[dosage]"]').value.trim();
+            const frequency = item.querySelector('[name*="[frequency]"]').value.trim();
+            const duration = item.querySelector('[name*="[duration]"]').value.trim();
+            const any = name || dosage || frequency || duration;
+            const all = name && dosage && frequency && duration;
+            return any && !all;
+        });
+        if (incompleteMedicine) {
+            alert('أكمل بيانات الدواء (الاسم والجرعة والتكرار والمدة) أو احذف الصف الفارغ');
+            hideLoading();
+            return;
+        }
 
         const payload = {
             patient_id: document.getElementById('patientId').value,
@@ -290,8 +308,6 @@ async function createPrescription(event) {
             medicines: medicines,
             notes: document.getElementById('notes').value,
         };
-        const phId = document.getElementById('recommendedPharmacyId').value;
-        const labId = document.getElementById('recommendedLaboratoryId').value;
         if (phId) payload.recommended_pharmacy_id = parseInt(phId);
         if (labId) payload.recommended_laboratory_id = parseInt(labId);
         if (labTests.length) payload.lab_tests = labTests;

@@ -30,7 +30,7 @@
                 <option value="">جميع الأنواع</option>
                 <option value="diagnosis">التشخيص</option>
                 <option value="treatment">العلاج</option>
-                <option value="lab_test">اختبار معملي</option>
+                <option value="lab_test">اختبار مختبري</option>
                 <option value="imaging">تصوير</option>
             </select>
         </div>
@@ -249,7 +249,7 @@ function getTypeText(type) {
     const texts = {
         'diagnosis': 'تشخيص',
         'treatment': 'علاج',
-        'lab_test': 'اختبار معملي',
+        'lab_test': 'اختبار مختبري',
         'imaging': 'تصوير',
     };
     return texts[type] || type;

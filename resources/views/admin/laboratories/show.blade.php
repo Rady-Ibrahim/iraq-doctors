@@ -1,12 +1,12 @@
 @extends('admin.layout')
 
-@section('title', 'تفاصيل المعمل')
-@section('page-title', 'تفاصيل المعمل')
+@section('title', 'تفاصيل المختبر')
+@section('page-title', 'تفاصيل المختبر')
 
 @section('content')
 <div class="mb-6">
     <a href="/admin/dashboard/laboratories" class="text-blue-600 hover:text-blue-700 flex items-center gap-2">
-        <i class="fas fa-arrow-right"></i><span>العودة إلى المعامل</span>
+        <i class="fas fa-arrow-right"></i><span>العودة إلى المختبرات</span>
     </a>
 </div>
 
@@ -104,13 +104,13 @@ async function loadLaboratory() {
 
 async function approveLab() {
     const data = await apiCall(`/admin/api/laboratories/${laboratoryId}/approve`, { method: 'POST', body: '{}' });
-    if (data?.success) { showSuccess('تمت الموافقة على المعمل'); loadLaboratory(); }
+    if (data?.success) { showSuccess('تمت الموافقة على المختبر'); loadLaboratory(); }
 }
 
 async function reactivateLab() {
-    if (!confirm('إعادة تفعيل هذا المعمل؟ سيتمكن من الدخول واستخدام الداشبورد مرة أخرى.')) return;
+    if (!confirm('إعادة تفعيل هذا المختبر؟ سيتمكن من الدخول واستخدام الداشبورد مرة أخرى.')) return;
     const data = await apiCall(`/admin/api/laboratories/${laboratoryId}/approve`, { method: 'POST', body: '{}' });
-    if (data?.success) { showSuccess('تم إعادة تفعيل المعمل'); loadLaboratory(); }
+    if (data?.success) { showSuccess('تم إعادة تفعيل المختبر'); loadLaboratory(); }
 }
 
 async function rejectLab() {
@@ -124,7 +124,7 @@ async function rejectLab() {
 }
 
 async function suspendLab() {
-    if (!confirm('تعليق هذا المعمل؟')) return;
+    if (!confirm('تعليق هذا المختبر؟')) return;
     const data = await apiCall(`/admin/api/laboratories/${laboratoryId}/suspend`, { method: 'POST', body: '{}' });
     if (data?.success) { showSuccess('تم التعليق'); loadLaboratory(); }
 }

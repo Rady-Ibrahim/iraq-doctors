@@ -361,7 +361,7 @@ class AdminDashboardApiController extends Controller
                 $paginator->perPage()
             );
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء جلب المعامل');
+            return $this->serverError('حدث خطأ أثناء جلب المختبرات');
         }
     }
 
@@ -370,7 +370,7 @@ class AdminDashboardApiController extends Controller
         try {
             return $this->success($this->adminDashboardService->getLaboratoryDetails((int) $id));
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء جلب تفاصيل المعمل');
+            return $this->serverError('حدث خطأ أثناء جلب تفاصيل المختبر');
         }
     }
 
@@ -378,9 +378,9 @@ class AdminDashboardApiController extends Controller
     {
         try {
             $laboratory = $this->adminDashboardService->approveLaboratory($id);
-            return $this->success($laboratory, 'تم تفعيل حساب المعمل بنجاح');
+            return $this->success($laboratory, 'تم تفعيل حساب المختبر بنجاح');
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء تفعيل حساب المعمل');
+            return $this->serverError('حدث خطأ أثناء تفعيل حساب المختبر');
         }
     }
 
@@ -388,9 +388,9 @@ class AdminDashboardApiController extends Controller
     {
         try {
             $laboratory = $this->adminDashboardService->rejectLaboratory($id, $request->input('reject_reason'));
-            return $this->success($laboratory, 'تم رفض حساب المعمل بنجاح');
+            return $this->success($laboratory, 'تم رفض حساب المختبر بنجاح');
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء رفض حساب المعمل');
+            return $this->serverError('حدث خطأ أثناء رفض حساب المختبر');
         }
     }
 
@@ -398,9 +398,9 @@ class AdminDashboardApiController extends Controller
     {
         try {
             $laboratory = $this->adminDashboardService->suspendLaboratory($id);
-            return $this->success($laboratory, 'تم تعليق حساب المعمل بنجاح');
+            return $this->success($laboratory, 'تم تعليق حساب المختبر بنجاح');
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء تعليق حساب المعمل');
+            return $this->serverError('حدث خطأ أثناء تعليق حساب المختبر');
         }
     }
 

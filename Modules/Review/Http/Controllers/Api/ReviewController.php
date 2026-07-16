@@ -86,7 +86,7 @@ class ReviewController extends Controller
                     'type' => 'laboratory',
                     'id' => $review->laboratory_id,
                     'name' => $review->laboratory?->name,
-                    'subtitle' => 'معمل تحاليل',
+                    'subtitle' => 'مختبر تحاليل',
                 ];
             }
 

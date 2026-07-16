@@ -18,6 +18,7 @@ class CreateGhostPatientRequest extends FormRequest
             'phone' => 'required|string|max:20',
             'email' => 'nullable|email',
             'gender' => 'nullable|in:male,female',
+            'age' => 'nullable|integer|min:0|max:120',
         ];
     }
 
@@ -27,6 +28,9 @@ class CreateGhostPatientRequest extends FormRequest
             'name.required' => 'الاسم مطلوب',
             'phone.required' => 'رقم الهاتف مطلوب',
             'gender.in' => 'الجنس يجب أن يكون ذكر أو أنثى',
+            'age.integer' => 'العمر يجب أن يكون رقماً',
+            'age.min' => 'العمر غير صالح',
+            'age.max' => 'العمر غير صالح',
         ];
     }
 }

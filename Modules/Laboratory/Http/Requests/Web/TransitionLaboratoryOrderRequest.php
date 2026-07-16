@@ -31,7 +31,7 @@ class TransitionLaboratoryOrderRequest extends FormRequest
             'status' => 'الحالة',
             'cancel_reason' => 'سبب الإلغاء',
             'scheduled_at' => 'موعد السحب',
-            'lab_notes' => 'ملاحظات المعمل',
+            'lab_notes' => 'ملاحظات المختبر',
         ];
     }
 

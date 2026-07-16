@@ -70,7 +70,7 @@ class LaboratoryAuthController extends Controller
 
         return redirect()
             ->route('laboratory.verify-phone')
-            ->with('success', 'تم إنشاء حساب المعمل بنجاح. فعّل رقم هاتفك عبر كود SMS من Firebase.');
+            ->with('success', 'تم إنشاء حساب المختبر بنجاح. فعّل رقم هاتفك عبر كود SMS من Firebase.');
     }
 
     public function showVerifyPhone(): View|RedirectResponse
@@ -114,7 +114,7 @@ class LaboratoryAuthController extends Controller
 
         return redirect()
             ->route('laboratory.pending')
-            ->with('success', 'تم تفعيل رقم هاتفك. حساب المعمل قيد المراجعة من قبل الإدارة.');
+            ->with('success', 'تم تفعيل رقم هاتفك. حساب المختبر قيد المراجعة من قبل الإدارة.');
     }
 
     public function logout(): RedirectResponse

@@ -88,7 +88,7 @@ async function loadPlans() {
         return;
     }
     if (!data.data.length) {
-        grid.innerHTML = '<p class="text-gray-500 col-span-3">لا توجد باقات معامل متاحة حالياً. تواصل مع الإدارة.</p>';
+        grid.innerHTML = '<p class="text-gray-500 col-span-3">لا توجد باقات مختبرات متاحة حالياً. تواصل مع الإدارة.</p>';
         return;
     }
 

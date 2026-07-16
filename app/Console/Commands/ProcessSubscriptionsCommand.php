@@ -90,8 +90,8 @@ class ProcessSubscriptionsCommand extends Command
             if ($email) {
                 try {
                     Mail::raw(
-                        "تنبيه: اشتراك معملك في باقة \"{$planName}\" سينتهي بتاريخ {$endDate}. يرجى التجديد من لوحة تحكم المعمل.",
-                        fn ($message) => $message->to($email)->subject('تنبيه: اشتراك المعمل على وشك الانتهاء — أطباء العراق')
+                        "تنبيه: اشتراك مختبرك في باقة \"{$planName}\" سينتهي بتاريخ {$endDate}. يرجى التجديد من لوحة تحكم المختبر.",
+                        fn ($message) => $message->to($email)->subject('تنبيه: اشتراك المختبر على وشك الانتهاء — أطباء العراق')
                     );
                 } catch (\Throwable $e) {
                     $this->warn("Failed to email {$email}: {$e->getMessage()}");

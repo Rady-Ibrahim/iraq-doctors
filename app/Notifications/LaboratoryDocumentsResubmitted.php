@@ -22,8 +22,8 @@ class LaboratoryDocumentsResubmitted extends Notification
         $this->laboratory->loadMissing('user');
 
         return [
-            'title' => 'إعادة رفع مستندات معمل',
-            'message' => 'أعاد معمل ' . ($this->laboratory->name ?? '') . ' رفع المستندات للمراجعة',
+            'title' => 'إعادة رفع مستندات مختبر',
+            'message' => 'أعاد مختبر ' . ($this->laboratory->name ?? '') . ' رفع المستندات للمراجعة',
             'type' => 'laboratory_resubmit',
             'laboratory_id' => $this->laboratory->id,
             'laboratory_name' => $this->laboratory->name,

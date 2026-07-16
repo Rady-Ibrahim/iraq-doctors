@@ -25,7 +25,7 @@ class NewReviewSubmitted extends Notification
         if ($this->review->pharmacy_id) {
             $providerLabel = 'صيدلية ' . ($this->review->pharmacy?->name ?? 'غير معروف');
         } elseif ($this->review->laboratory_id) {
-            $providerLabel = 'معمل ' . ($this->review->laboratory?->name ?? 'غير معروف');
+            $providerLabel = 'مختبر ' . ($this->review->laboratory?->name ?? 'غير معروف');
         }
 
         return [

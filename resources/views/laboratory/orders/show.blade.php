@@ -22,7 +22,7 @@
             <button onclick="closeQuoteModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
         </div>
         <form id="quoteForm" onsubmit="submitQuote(event)" class="p-6 space-y-4">
-            <p class="text-sm text-gray-600">اختر التحاليل من كتالوج معملك (خاصة عند وجود صورة روشتة):</p>
+            <p class="text-sm text-gray-600">اختر التحاليل من كتالوج مختبرك (خاصة عند وجود صورة روشتة):</p>
             <div id="catalogCheckboxes" class="max-h-60 overflow-y-auto border rounded-lg p-3 space-y-2"></div>
             <span class="text-red-500 text-sm" data-error-for="items"></span>
             <div>
@@ -96,12 +96,14 @@ function renderOrder() {
                 ${o.prescription_image ? `
                 <div class="bg-white rounded-xl shadow-sm p-6">
                     <h4 class="font-semibold mb-3"><i class="fas fa-image text-amber-600 ml-1"></i> صورة الروشتة</h4>
-                    <a href="${o.prescription_image}" target="_blank">
-                        <img src="${o.prescription_image}" alt="روشتة" class="max-h-80 rounded-lg border">
+                    <a href="${o.prescription_image}" target="_blank" class="block">
+                        <img src="${o.prescription_image}" alt="روشتة"
+                            class="w-full max-w-md max-h-96 object-contain rounded-lg border bg-gray-50 mx-auto">
                     </a>
+                    <p class="text-xs text-gray-500 mt-2 text-center">اضغط لفتح الصورة بالحجم الكامل</p>
                 </div>` : (o.source === 'prescription' ? `
                 <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-                    طلب بروشتة — لم تُرفع صورة بعد أو بانتظار تحديد التحاليل من المعمل.
+                    طلب بروشتة — لم تُرفع صورة بعد أو بانتظار تحديد التحاليل من المختبر.
                 </div>` : '')}
 
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -127,16 +129,30 @@ function renderOrder() {
                 <div class="bg-white rounded-xl shadow-sm p-6">
                     <h4 class="font-semibold mb-4"><i class="fas fa-file-medical text-green-600 ml-1"></i> نتائج التحاليل (${o.results_count || 0})</h4>
                     ${(o.results || []).length ? `
-                        <div class="space-y-3 mb-4">
-                            ${o.results.map(r => `
-                                <div class="flex items-center justify-between border rounded-lg p-3">
-                                    <div>
-                                        <a href="${r.file_url}" target="_blank" class="text-indigo-600 font-semibold text-sm">${r.file_name}</a>
-                                        <p class="text-xs text-gray-500">${r.created_at}${r.notes ? ' — ' + r.notes : ''}</p>
+                        <div class="space-y-4 mb-4">
+                            ${o.results.map(r => {
+                                const isImage = (r.mime_type || '').startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(r.file_name || '');
+                                return `
+                                <div class="border rounded-lg p-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div>
+                                            <a href="${r.file_url}" target="_blank" class="text-indigo-600 font-semibold text-sm">${r.file_name}</a>
+                                            <p class="text-xs text-gray-500">${r.created_at}${r.notes ? ' — ' + r.notes : ''}</p>
+                                        </div>
+                                        ${o.can_upload_results ? `<button onclick="deleteResult(${r.id})" class="text-red-600 text-xs">حذف</button>` : ''}
                                     </div>
-                                    ${o.can_upload_results ? `<button onclick="deleteResult(${r.id})" class="text-red-600 text-xs">حذف</button>` : ''}
-                                </div>
-                            `).join('')}
+                                    ${isImage ? `
+                                        <a href="${r.file_url}" target="_blank" class="block">
+                                            <img src="${r.file_url}" alt="${r.file_name}"
+                                                class="w-full max-w-md max-h-80 object-contain rounded-lg border bg-gray-50 mx-auto">
+                                        </a>
+                                    ` : `
+                                        <a href="${r.file_url}" target="_blank" class="inline-flex items-center gap-2 text-sm text-indigo-700 bg-indigo-50 px-3 py-2 rounded-lg">
+                                            <i class="fas fa-file-pdf"></i> فتح ملف النتيجة
+                                        </a>
+                                    `}
+                                </div>`;
+                            }).join('')}
                         </div>
                     ` : '<p class="text-sm text-gray-500 mb-4">لم تُرفع نتائج بعد.</p>'}
                     ${o.can_upload_results ? `
@@ -187,7 +203,7 @@ function openQuoteModal() {
     clearFieldErrors();
     const container = document.getElementById('catalogCheckboxes');
     if (!catalogItems.length) {
-        container.innerHTML = '<p class="text-red-600 text-sm">لا توجد تحاليل في كتالوج المعمل. أضف تحاليل أولاً من صفحة التحاليل.</p>';
+        container.innerHTML = '<p class="text-red-600 text-sm">لا توجد تحاليل في كتالوج المختبر. أضف تحاليل أولاً من صفحة التحاليل.</p>';
     } else {
         const selectedIds = new Set((orderData.items || []).map(i => i.laboratory_test_item_id));
         container.innerHTML = catalogItems.map(item => `

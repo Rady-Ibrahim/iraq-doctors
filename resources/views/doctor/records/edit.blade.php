@@ -34,7 +34,7 @@
                             <option value="">اختر النوع</option>
                             <option value="diagnosis">تشخيص</option>
                             <option value="treatment">علاج</option>
-                            <option value="lab_test">اختبار معملي</option>
+                            <option value="lab_test">اختبار مختبري</option>
                             <option value="imaging">تصوير</option>
                             <option value="surgery">جراحة</option>
                             <option value="consultation">استشارة</option>

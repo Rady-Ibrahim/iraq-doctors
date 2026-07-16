@@ -2,12 +2,12 @@
 
 @section('title', 'كتالوج التحاليل')
 @section('page-title', 'كتالوج التحاليل')
-@section('page-description', 'عرض قاموس التحاليل المشترك — الإضافة من المعامل')
+@section('page-description', 'عرض قاموس التحاليل المشترك — الإضافة من المختبرات')
 
 @section('content')
 <div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-6 text-sm">
     <i class="fas fa-info-circle ml-1"></i>
-    التحاليل تُضاف من <strong>المعامل</strong>. هنا عرض وتقارير فقط.
+    التحاليل تُضاف من <strong>المختبرات</strong>. هنا عرض وتقارير فقط.
 </div>
 <div class="mb-6 flex gap-4 border-b">
     <button onclick="showTab('categories')" id="tab-categories" class="px-4 py-3 border-b-2 border-blue-600 text-blue-600 font-semibold">التصنيفات</button>

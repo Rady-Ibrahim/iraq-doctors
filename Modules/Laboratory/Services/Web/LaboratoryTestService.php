@@ -139,7 +139,7 @@ class LaboratoryTestService
                 ->first();
 
             if ($existing) {
-                throw new \InvalidArgumentException('هذا التحليل مُضاف بالفعل لمعملك');
+                throw new \InvalidArgumentException('هذا التحليل مُضاف بالفعل لمختبرك');
             }
 
             return LaboratoryTestItem::create([

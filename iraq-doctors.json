@@ -1,23 +1,47 @@
 {
   "info": {
-    "name": "Iraq Doctors — Patient API",
-    "description": "endpoints تطبيق المريض فقط.\n\n**قبل الاختبار:**\n```bash\nphp artisan migrate\nphp artisan db:seed\n```\n\n**حساب تجريبي:**\n- هاتف: `07708888000`\n- كلمة المرور: `password123`\n\nبعد Login يُحفظ `{{token}}` تلقائياً.\nشغّل **Login (Patient)** أولاً ثم باقي الطلبات.",
+    "name": "Iraq Doctors — Patient Mobile API",
+    "description": "كل endpoints تطبيق المريض (Flutter) تحت `/api/v1`.\n\n**قبل الاختبار:**\n```bash\nphp artisan migrate --force\nphp artisan db:seed\nphp artisan serve\n```\n\n**حساب تجريبي (بعد db:seed):**\n- هاتف: `07708888000`\n- كلمة المرور: `password123`\n\n**الترتيب المقترح:**\n1. Login (Patient) → يحفظ `token`\n2. Search Doctors / Laboratories / Pharmacies → يحفظ IDs\n3. Pharmacy Medicines → يحفظ `medicine_id` و `pharmacy_medicine_id`\n4. إنشاء طلبات + قبول عرض السعر + التقييمات\n\n**ملاحظات:**\n- تفاصيل الطلب (`GET .../orders/{id}`) تُرجع `timeline` و `can_accept_quote`\n- الإشعارات تُرجع `actions` (موافقة/رفض) عند عرض السعر\n- `confirm` و `complete` للمواعيد خاصة بالدكتور (داشبورد) — غير مضمنة هنا",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "base_url", "value": "http://127.0.0.1:8000", "type": "string" },
     { "key": "token", "value": "", "type": "string" },
-    { "key": "doctor_id", "value": "4", "type": "string", "description": "يُحدَّث من Search Doctors أو من مخرجات db:seed" },
-    { "key": "schedule_id", "value": "2", "type": "string" },
-    { "key": "branch_id", "value": "2", "type": "string" },
-    { "key": "appointment_id", "value": "3", "type": "string", "description": "موعد مكتمل — للسجل والتقييم" }
+    { "key": "doctor_id", "value": "1", "type": "string" },
+    { "key": "schedule_id", "value": "1", "type": "string" },
+    { "key": "branch_id", "value": "1", "type": "string" },
+    { "key": "appointment_id", "value": "1", "type": "string" },
+    { "key": "laboratory_id", "value": "1", "type": "string" },
+    { "key": "laboratory_order_id", "value": "1", "type": "string" },
+    { "key": "test_item_id", "value": "1", "type": "string" },
+    { "key": "pharmacy_id", "value": "1", "type": "string" },
+    { "key": "pharmacy_order_id", "value": "1", "type": "string" },
+    { "key": "pharmacy_medicine_id", "value": "1", "type": "string" },
+    { "key": "medicine_id", "value": "1", "type": "string" },
+    { "key": "record_id", "value": "1", "type": "string" },
+    { "key": "notification_id", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });"
+        ]
+      }
+    }
   ],
   "item": [
     {
-      "name": "🚀 البداية",
+      "name": "🚀 البداية السريعة",
       "item": [
         {
-          "name": "Login (Patient)",
+          "name": "Login (Patient) — يحفظ token",
           "event": [
             {
               "listen": "test",
@@ -25,7 +49,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200) {",
-                  "  var json = pm.response.json();",
+                  "  const json = pm.response.json();",
                   "  if (json.data && json.data.token) {",
                   "    pm.collectionVariables.set('token', json.data.token);",
                   "    pm.test('Token saved', () => pm.expect(json.data.token).to.be.a('string'));",
@@ -36,19 +60,18 @@
             }
           ],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"phone\": \"07708888000\",\n  \"password\": \"password123\"\n}"
             },
-            "url": "{{base_url}}/api/v1/auth/login",
-            "description": "مريض تجريبي — شغّل `php artisan db:seed` أولاً"
+            "url": "{{base_url}}/api/v1/auth/login"
           }
         },
         {
-          "name": "Search Doctors (يحفظ doctor_id)",
+          "name": "Search Doctors — يحفظ doctor_id",
           "event": [
             {
               "listen": "test",
@@ -56,10 +79,13 @@
                 "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200) {",
-                  "  var json = pm.response.json();",
-                  "  if (json.data && json.data.length > 0) {",
-                  "    pm.collectionVariables.set('doctor_id', String(json.data[0].id));",
-                  "    pm.test('doctor_id saved', () => pm.expect(json.data.length).to.be.above(0));",
+                  "  const json = pm.response.json();",
+                  "  const list = json.data || [];",
+                  "  if (list.length > 0) {",
+                  "    pm.collectionVariables.set('doctor_id', String(list[0].id));",
+                  "    if (list[0].primary_branch) {",
+                  "      pm.collectionVariables.set('branch_id', String(list[0].primary_branch.id));",
+                  "    }",
                   "  }",
                   "}"
                 ]
@@ -67,21 +93,13 @@
             }
           ],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/v1/doctors?page=1&limit=10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors"],
-              "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
-              ]
-            }
+            "url": "{{base_url}}/api/v1/doctors?page=1&limit=10"
           }
         },
         {
-          "name": "Get Doctor Schedule (يحفظ schedule_id)",
+          "name": "Search Laboratories — يحفظ laboratory_id",
           "event": [
             {
               "listen": "test",
@@ -89,9 +107,10 @@
                 "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200) {",
-                  "  var json = pm.response.json();",
-                  "  if (json.data && json.data.schedules && json.data.schedules.length > 0) {",
-                  "    // schedule id من السيدر — نحتاج id من DB؛ استخدم المتغير من db:seed",
+                  "  const json = pm.response.json();",
+                  "  const list = json.data || [];",
+                  "  if (list.length > 0) {",
+                  "    pm.collectionVariables.set('laboratory_id', String(list[0].id));",
                   "  }",
                   "}"
                 ]
@@ -99,9 +118,85 @@
             }
           ],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": "{{base_url}}/api/v1/doctors/{{doctor_id}}/schedule"
+            "url": "{{base_url}}/api/v1/laboratories?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Laboratory Tests — يحفظ test_item_id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  const list = json.data || [];",
+                  "  if (list.length > 0) {",
+                  "    pm.collectionVariables.set('test_item_id', String(list[0].id));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/laboratories/{{laboratory_id}}/tests"
+          }
+        },
+        {
+          "name": "Search Pharmacies — يحفظ pharmacy_id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  const list = json.data || [];",
+                  "  if (list.length > 0) {",
+                  "    pm.collectionVariables.set('pharmacy_id', String(list[0].id));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/pharmacies?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Pharmacy Medicines — يحفظ pharmacy_medicine_id و medicine_id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  const list = json.data || [];",
+                  "  if (list.length > 0) {",
+                  "    pm.collectionVariables.set('pharmacy_medicine_id', String(list[0].id));",
+                  "    if (list[0].medicine_id) pm.collectionVariables.set('medicine_id', String(list[0].medicine_id));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/pharmacies/{{pharmacy_id}}/medicines"
           }
         }
       ]
@@ -110,13 +205,13 @@
       "name": "🔐 Auth",
       "item": [
         {
-          "name": "Send OTP (register)",
+          "name": "Send OTP",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"email\": \"newpatient@example.com\",\n  \"type\": \"register\"\n}"
             },
             "url": "{{base_url}}/api/v1/auth/send-otp",
@@ -126,11 +221,11 @@
         {
           "name": "Verify OTP",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"email\": \"newpatient@example.com\",\n  \"code\": \"123456\",\n  \"type\": \"register\"\n}"
             },
             "url": "{{base_url}}/api/v1/auth/verify-otp"
@@ -139,15 +234,14 @@
         {
           "name": "Register",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"name\": \"مريض جديد\",\n  \"phone\": \"07709999111\",\n  \"email\": \"newpatient@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\"\n}"
             },
-            "url": "{{base_url}}/api/v1/auth/register",
-            "description": "بعد verify-otp — لا يرجع token، سجّل دخول بعدها"
+            "url": "{{base_url}}/api/v1/auth/register"
           }
         },
         {
@@ -159,7 +253,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200) {",
-                  "  var json = pm.response.json();",
+                  "  const json = pm.response.json();",
                   "  if (json.data && json.data.token) pm.collectionVariables.set('token', json.data.token);",
                   "}"
                 ]
@@ -167,11 +261,11 @@
             }
           ],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"phone\": \"07708888000\",\n  \"password\": \"password123\"\n}"
             },
             "url": "{{base_url}}/api/v1/auth/login"
@@ -181,10 +275,6 @@
           "name": "Get My Profile (me)",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
             "url": "{{base_url}}/api/v1/auth/me"
           }
         },
@@ -192,13 +282,9 @@
           "name": "Update Profile",
           "request": {
             "method": "PUT",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"name\": \"مريض محدّث\",\n  \"birthdate\": \"1995-06-15\",\n  \"gender\": \"male\",\n  \"city\": \"بغداد\",\n  \"district\": \"الكرادة\",\n  \"address\": \"شارع الرشيد\"\n}"
             },
             "url": "{{base_url}}/api/v1/auth/profile"
@@ -208,13 +294,9 @@
           "name": "Update Password",
           "request": {
             "method": "PUT",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"current_password\": \"password123\",\n  \"new_password\": \"newpassword456\",\n  \"new_password_confirmation\": \"newpassword456\"\n}"
             },
             "url": "{{base_url}}/api/v1/auth/password"
@@ -224,10 +306,6 @@
           "name": "Upload Avatar",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -240,11 +318,11 @@
         {
           "name": "Forgot Password",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"phone\": \"07708888000\"\n}"
             },
             "url": "{{base_url}}/api/v1/auth/forgot-password"
@@ -253,11 +331,11 @@
         {
           "name": "Reset Password",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"phone\": \"07708888000\",\n  \"code\": \"123456\",\n  \"new_password\": \"password123\",\n  \"new_password_confirmation\": \"password123\"\n}"
             },
             "url": "{{base_url}}/api/v1/auth/reset-password"
@@ -267,11 +345,38 @@
           "name": "Logout",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
             "url": "{{base_url}}/api/v1/auth/logout"
+          }
+        },
+        {
+          "name": "Register Device (OneSignal)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"player_id\": \"test-onesignal-player-id\",\n  \"platform\": \"android\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/auth/devices/register"
+          }
+        },
+        {
+          "name": "Unregister Device",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"player_id\": \"test-onesignal-player-id\",\n  \"platform\": \"android\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/auth/devices/unregister"
+          }
+        },
+        {
+          "name": "Unregister All Devices",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/v1/auth/devices"
           }
         }
       ]
@@ -281,32 +386,11 @@
       "item": [
         {
           "name": "Search Doctors",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "  var json = pm.response.json();",
-                  "  if (json.data && json.data.length > 0) {",
-                  "    pm.collectionVariables.set('doctor_id', String(json.data[0].id));",
-                  "    if (json.data[0].primary_branch) {",
-                  "      pm.collectionVariables.set('branch_id', String(json.data[0].primary_branch.id));",
-                  "    }",
-                  "  }",
-                  "}"
-                ]
-              }
-            }
-          ],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
             "url": {
               "raw": "{{base_url}}/api/v1/doctors?page=1&limit=10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors"],
               "query": [
                 { "key": "speciality_id", "value": "", "disabled": true },
                 { "key": "name", "value": "", "disabled": true },
@@ -321,98 +405,65 @@
         {
           "name": "Get Specialities",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
             "url": "{{base_url}}/api/v1/doctors/specialities"
           }
         },
         {
-          "name": "Featured Doctors (Premium)",
+          "name": "Featured Doctors",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/v1/doctors/featured?page=1&limit=10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "featured"],
-              "query": [
-                { "key": "speciality_id", "value": "", "disabled": true },
-                { "key": "governorate", "value": "بغداد", "disabled": true },
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
-              ]
-            },
-            "description": "أطباء مشتركون في باقة Premium (is_featured)"
+            "url": "{{base_url}}/api/v1/doctors/featured?page=1&limit=10"
           }
         },
         {
           "name": "Nearby Doctors",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/v1/doctors/nearby?latitude=33.3152&longitude=44.3661&radius=10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "nearby"],
-              "query": [
-                { "key": "latitude", "value": "33.3152" },
-                { "key": "longitude", "value": "44.3661" },
-                { "key": "radius", "value": "10" },
-                { "key": "governorate", "value": "بغداد", "disabled": true },
-                { "key": "limit", "value": "20", "disabled": true }
-              ]
-            },
-            "description": "أطباء بالقرب من موقع المريض — مرتبة حسب المسافة"
+            "url": "{{base_url}}/api/v1/doctors/nearby?latitude=33.3152&longitude=44.3661&radius=10"
           }
         },
         {
           "name": "Get Doctor Details",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
             "url": "{{base_url}}/api/v1/doctors/{{doctor_id}}"
           }
         },
         {
           "name": "Get Doctor Schedule",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
             "url": "{{base_url}}/api/v1/doctors/{{doctor_id}}/schedule"
           }
         },
         {
           "name": "Get Doctor Branches",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
             "url": "{{base_url}}/api/v1/doctors/{{doctor_id}}/branches"
           }
         },
         {
           "name": "Get Branch Details",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
             "url": "{{base_url}}/api/v1/doctors/branches/{{branch_id}}"
           }
         },
         {
           "name": "Find Nearby Branches",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/v1/doctors/branches/nearby?latitude=33.3152&longitude=44.3661&radius=10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "doctors", "branches", "nearby"],
-              "query": [
-                { "key": "latitude", "value": "33.3152" },
-                { "key": "longitude", "value": "44.3661" },
-                { "key": "radius", "value": "10" },
-                { "key": "governorate", "value": "بغداد", "disabled": true }
-              ]
-            }
+            "url": "{{base_url}}/api/v1/doctors/branches/nearby?latitude=33.3152&longitude=44.3661&radius=10"
           }
         }
       ]
@@ -429,7 +480,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 201) {",
-                  "  var json = pm.response.json();",
+                  "  const json = pm.response.json();",
                   "  if (json.data && json.data.id) pm.collectionVariables.set('appointment_id', String(json.data.id));",
                   "}"
                 ]
@@ -438,17 +489,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"doctor_id\": {{doctor_id}},\n  \"schedule_id\": {{schedule_id}},\n  \"appointment_date\": \"2026-12-15\",\n  \"appointment_time\": \"10:00\",\n  \"notes\": \"زيارة أولى\"\n}"
             },
-            "url": "{{base_url}}/api/v1/appointments",
-            "description": "appointment_date يجب أن يكون في المستقبل — عدّل التاريخ"
+            "url": "{{base_url}}/api/v1/appointments"
           }
         },
         {
@@ -460,11 +506,10 @@
                 "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 200) {",
-                  "  var json = pm.response.json();",
-                  "  if (json.data && json.data.length > 0) {",
-                  "    var completed = json.data.find(a => a.status === 'completed');",
-                  "    if (completed) pm.collectionVariables.set('appointment_id', String(completed.id));",
-                  "  }",
+                  "  const json = pm.response.json();",
+                  "  const list = json.data || [];",
+                  "  const completed = list.find(a => a.status === 'completed');",
+                  "  if (completed) pm.collectionVariables.set('appointment_id', String(completed.id));",
                   "}"
                 ]
               }
@@ -472,17 +517,9 @@
           ],
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
             "url": {
               "raw": "{{base_url}}/api/v1/appointments/my",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "appointments", "my"],
-              "query": [
-                { "key": "status", "value": "", "disabled": true, "description": "pending | confirmed | completed | cancelled" }
-              ]
+              "query": [{ "key": "status", "value": "", "disabled": true }]
             }
           }
         },
@@ -490,10 +527,6 @@
           "name": "Get Appointment Details",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
             "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}"
           }
         },
@@ -501,29 +534,387 @@
           "name": "Cancel Appointment",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
-            "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}/cancel",
-            "description": "يعمل على المواعيد pending أو confirmed فقط"
+            "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}/cancel"
           }
         },
         {
           "name": "Reschedule Appointment",
           "request": {
             "method": "PUT",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"appointment_date\": \"2026-12-20\",\n  \"appointment_time\": \"14:00\",\n  \"schedule_id\": {{schedule_id}}\n}"
             },
-            "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}/reschedule",
-            "description": "يعمل على المواعيد pending فقط"
+            "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}/reschedule"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧪 Laboratories",
+      "item": [
+        {
+          "name": "Search Laboratories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/laboratories?page=1&limit=20",
+              "query": [
+                { "key": "governorate_id", "value": "", "disabled": true },
+                { "key": "name", "value": "", "disabled": true },
+                { "key": "home_collection", "value": "", "disabled": true },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Nearby Laboratories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/laboratories/nearby?latitude=33.3152&longitude=44.3661&radius=10&limit=20"
+          }
+        },
+        {
+          "name": "Laboratory Profile",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/laboratories/{{laboratory_id}}"
+          }
+        },
+        {
+          "name": "Laboratory Test Catalog",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/laboratories/{{laboratory_id}}/tests",
+              "query": [{ "key": "category_id", "value": "", "disabled": true }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧪 Laboratory Orders",
+      "item": [
+        {
+          "name": "Create Order (catalog)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) pm.collectionVariables.set('laboratory_order_id', String(json.data.id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"laboratory_id\": {{laboratory_id}},\n  \"items\": [\n    { \"laboratory_test_item_id\": {{test_item_id}}, \"quantity\": 1 }\n  ],\n  \"patient_notes\": \"ملاحظة تجريبية\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/laboratory-orders"
+          }
+        },
+        {
+          "name": "Create Order (prescription image)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "laboratory_id", "value": "{{laboratory_id}}", "type": "text" },
+                { "key": "prescription_image", "type": "file", "src": "" },
+                { "key": "patient_notes", "value": "روشتة من الطبيب", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/api/v1/laboratory-orders"
+          }
+        },
+        {
+          "name": "My Active Orders",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/laboratory-orders/my"
+          }
+        },
+        {
+          "name": "My History (delivered)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/laboratory-orders/my?history=1"
+          }
+        },
+        {
+          "name": "Order Details",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/laboratory-orders/{{laboratory_order_id}}",
+            "description": "يُرجع timeline + can_accept_quote + can_cancel"
+          }
+        },
+        {
+          "name": "Accept Quote",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/laboratory-orders/{{laboratory_order_id}}/accept-quote"
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"تغيير في الموعد\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/laboratory-orders/{{laboratory_order_id}}/cancel"
+          }
+        }
+      ]
+    },
+    {
+      "name": "💊 Pharmacies",
+      "item": [
+        {
+          "name": "Search Pharmacies",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacies?page=1&limit=20",
+              "query": [
+                { "key": "governorate_id", "value": "", "disabled": true },
+                { "key": "name", "value": "", "disabled": true },
+                { "key": "delivery", "value": "1", "disabled": true },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Nearby Pharmacies",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/pharmacies/nearby?latitude=33.3152&longitude=44.3661&radius=10&limit=20"
+          }
+        },
+        {
+          "name": "Pharmacy Profile",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/pharmacies/{{pharmacy_id}}"
+          }
+        },
+        {
+          "name": "Pharmacy Medicine Catalog",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacies/{{pharmacy_id}}/medicines",
+              "query": [{ "key": "category_id", "value": "", "disabled": true }]
+            }
+          }
+        },
+        {
+          "name": "Compare Medicine Prices (all pharmacies)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacies/medicine-prices?medicine_id={{medicine_id}}",
+              "query": [
+                { "key": "medicine_id", "value": "{{medicine_id}}" },
+                { "key": "governorate_id", "value": "", "disabled": true },
+                { "key": "latitude", "value": "33.3152", "disabled": true },
+                { "key": "longitude", "value": "44.3661", "disabled": true }
+              ]
+            },
+            "description": "مقارنة سعر نفس الدواء بين الصيدليات — يُرتّب حسب السعر الأقل"
+          }
+        }
+      ]
+    },
+    {
+      "name": "💊 Pharmacy Orders",
+      "item": [
+        {
+          "name": "Create Order (catalog + pickup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) pm.collectionVariables.set('pharmacy_order_id', String(json.data.id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pharmacy_id\": {{pharmacy_id}},\n  \"fulfillment_type\": \"pickup\",\n  \"items\": [\n    { \"pharmacy_medicine_id\": {{pharmacy_medicine_id}}, \"quantity\": 1 }\n  ],\n  \"patient_notes\": \"استلام من الفرع\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/pharmacy-orders"
+          }
+        },
+        {
+          "name": "Create Order (catalog + delivery)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pharmacy_id\": {{pharmacy_id}},\n  \"fulfillment_type\": \"delivery\",\n  \"delivery_address\": \"بغداد، الكرادة، شارع 62\",\n  \"delivery_latitude\": 33.3152,\n  \"delivery_longitude\": 44.3661,\n  \"delivery_notes\": \"اتصل عند الوصول\",\n  \"items\": [\n    { \"pharmacy_medicine_id\": {{pharmacy_medicine_id}}, \"quantity\": 2 }\n  ],\n  \"patient_notes\": \"توصيل سريع\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/pharmacy-orders"
+          }
+        },
+        {
+          "name": "Create Order (prescription image)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "pharmacy_id", "value": "{{pharmacy_id}}", "type": "text" },
+                { "key": "fulfillment_type", "value": "pickup", "type": "text" },
+                { "key": "prescription_image", "type": "file", "src": "" },
+                { "key": "patient_notes", "value": "روشتة من الطبيب", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/api/v1/pharmacy-orders"
+          }
+        },
+        {
+          "name": "My Active Orders",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/pharmacy-orders/my"
+          }
+        },
+        {
+          "name": "My History (completed)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/pharmacy-orders/my?history=1"
+          }
+        },
+        {
+          "name": "Order Details",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/pharmacy-orders/{{pharmacy_order_id}}",
+            "description": "يُرجع timeline + can_accept_quote + can_cancel"
+          }
+        },
+        {
+          "name": "Accept Quote",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/pharmacy-orders/{{pharmacy_order_id}}/accept-quote"
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"تغيير في الطلب\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/pharmacy-orders/{{pharmacy_order_id}}/cancel"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Patient Hub",
+      "item": [
+        {
+          "name": "Unified Orders (lab + pharmacy)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/patient/orders",
+              "query": [{ "key": "history", "value": "1", "disabled": true }]
+            }
+          }
+        },
+        {
+          "name": "Unified Orders History",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/patient/orders?history=1"
+          }
+        },
+        {
+          "name": "Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  const items = json.data && json.data.items ? json.data.items : [];",
+                  "  if (items.length > 0) pm.collectionVariables.set('notification_id', items[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/patient/notifications?limit=30",
+            "description": "يُرجع actions و can_accept_quote عند إشعار عرض السعر"
+          }
+        },
+        {
+          "name": "Unread Notifications",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/patient/notifications?unread=1"
+          }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/patient/notifications/{{notification_id}}/read"
+          }
+        },
+        {
+          "name": "Mark All Notifications Read",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/patient/notifications/read-all"
           }
         }
       ]
@@ -535,30 +926,54 @@
           "name": "Get Record by Appointment",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
-            "url": "{{base_url}}/api/v1/medical-records/appointment/{{appointment_id}}",
-            "description": "استخدم appointment_id لموعد مكتمل"
+            "url": "{{base_url}}/api/v1/medical-records/appointment/{{appointment_id}}"
           }
         },
         {
-          "name": "Get Patient History",
+          "name": "Get Record by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) pm.collectionVariables.set('record_id', String(json.data.id));",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "url": "{{base_url}}/api/v1/medical-records/{{record_id}}"
+          }
+        },
+        {
+          "name": "Patient History",
+          "request": {
+            "method": "GET",
             "url": {
               "raw": "{{base_url}}/api/v1/medical-records/patient/history",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "medical-records", "patient", "history"],
               "query": [
-                { "key": "record_type", "value": "", "disabled": true }
+                { "key": "record_type", "value": "prescription", "disabled": true, "description": "prescription | lab_result | pharmacy_order | diagnosis" }
               ]
             }
+          }
+        },
+        {
+          "name": "My Prescriptions (كشوفاتي)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/medical-records/patient/prescriptions"
+          }
+        },
+        {
+          "name": "Archive (prescriptions + lab + pharmacy)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/medical-records/patient/archive"
           }
         }
       ]
@@ -567,39 +982,73 @@
       "name": "⭐ Reviews",
       "item": [
         {
-          "name": "Create Review",
+          "name": "Create Review (Doctor)",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"appointment_id\": {{appointment_id}},\n  \"rating\": 5,\n  \"comment\": \"دكتور ممتاز!\"\n}"
             },
             "url": "{{base_url}}/api/v1/reviews",
-            "description": "فقط بعد اكتمال الموعد — مرة واحدة لكل موعد. يبقى بانتظار موافقة الإدارة قبل العرض."
+            "description": "بعد اكتمال الموعد فقط"
+          }
+        },
+        {
+          "name": "Create Review (Pharmacy Order)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pharmacy_order_id\": {{pharmacy_order_id}},\n  \"rating\": 5,\n  \"comment\": \"خدمة ممتازة\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/reviews",
+            "description": "بعد اكتمال الطلب (completed) فقط"
+          }
+        },
+        {
+          "name": "Create Review (Laboratory Order)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"laboratory_order_id\": {{laboratory_order_id}},\n  \"rating\": 4,\n  \"comment\": \"نتائج سريعة\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/reviews",
+            "description": "بعد تسليم الطلب (delivered) فقط"
           }
         },
         {
           "name": "My Reviews",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
             "url": "{{base_url}}/api/v1/reviews/my"
           }
         },
         {
           "name": "Doctor Reviews",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
             "url": "{{base_url}}/api/v1/reviews/doctor/{{doctor_id}}"
+          }
+        },
+        {
+          "name": "Pharmacy Reviews",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/reviews/pharmacy/{{pharmacy_id}}"
+          }
+        },
+        {
+          "name": "Laboratory Reviews",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/reviews/laboratory/{{laboratory_id}}"
           }
         }
       ]
@@ -610,16 +1059,16 @@
         {
           "name": "Get All Pages",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
             "url": "{{base_url}}/api/v1/pages"
           }
         },
         {
           "name": "Get Page by Slug",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
             "url": "{{base_url}}/api/v1/pages/about-us"
           }
         }

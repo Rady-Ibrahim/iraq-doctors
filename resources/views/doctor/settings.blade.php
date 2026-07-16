@@ -59,6 +59,23 @@
                         <textarea id="profileAddress" rows="3"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"></textarea>
                     </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">موقع العيادة على الخريطة</label>
+                        <p class="text-xs text-gray-500 mb-2">اضغط على الخريطة أو اسحب العلامة لتحديث الموقع (GPS)</p>
+                        <div id="clinic-map" class="border border-gray-300 mb-3"></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">خط العرض</label>
+                                <input type="number" step="any" id="profileLatitude" readonly
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">خط الطول</label>
+                                <input type="number" step="any" id="profileLongitude" readonly
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm">
+                            </div>
+                        </div>
+                    </div>
                     <button type="submit" class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
                         حفظ التغييرات
                     </button>
@@ -204,14 +221,64 @@ async function loadProfile() {
             document.getElementById('profilePhone').value = profile.phone || '';
             document.getElementById('profileEmail').value = profile.email || '';
             document.getElementById('profileAddress').value = profile.address || '';
-            document.getElementById('bioAr').value = profile.bio_ar || '';
-            document.getElementById('bioEn').value = profile.bio_en || '';
-            document.getElementById('experienceYears').value = profile.experience_years || '';
-            document.getElementById('consultationFee').value = profile.consultation_fee || '';
+            document.getElementById('profileLatitude').value = profile.latitude || '33.3152';
+            document.getElementById('profileLongitude').value = profile.longitude || '44.3661';
+            const bioAr = document.getElementById('bioAr');
+            const bioEn = document.getElementById('bioEn');
+            if (bioAr) bioAr.value = profile.bio_ar || '';
+            if (bioEn) bioEn.value = profile.bio_en || '';
+            const exp = document.getElementById('experienceYears');
+            const fee = document.getElementById('consultationFee');
+            if (exp) exp.value = profile.experience_years || '';
+            if (fee) fee.value = profile.consultation_fee || '';
+            initClinicMap();
         }
     } catch (error) {
         console.error('Error loading profile:', error);
     }
+}
+
+let clinicMap = null;
+let clinicMarker = null;
+
+function initClinicMap() {
+    const latInput = document.getElementById('profileLatitude');
+    const lngInput = document.getElementById('profileLongitude');
+    if (!latInput || !lngInput || typeof L === 'undefined') return;
+
+    const lat = parseFloat(latInput.value) || 33.3152;
+    const lng = parseFloat(lngInput.value) || 44.3661;
+
+    if (clinicMap) {
+        clinicMap.setView([lat, lng], clinicMap.getZoom());
+        clinicMarker.setLatLng([lat, lng]);
+        return;
+    }
+
+    clinicMap = L.map('clinic-map').setView([lat, lng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(clinicMap);
+
+    clinicMarker = L.marker([lat, lng], { draggable: true }).addTo(clinicMap);
+
+    function updateCoords(latVal, lngVal) {
+        latInput.value = latVal.toFixed(7);
+        lngInput.value = lngVal.toFixed(7);
+    }
+
+    clinicMap.on('click', function (e) {
+        clinicMarker.setLatLng(e.latlng);
+        updateCoords(e.latlng.lat, e.latlng.lng);
+    });
+
+    clinicMarker.on('dragend', function () {
+        const pos = clinicMarker.getLatLng();
+        updateCoords(pos.lat, pos.lng);
+    });
+
+    setTimeout(() => clinicMap.invalidateSize(), 200);
 }
 
 async function updateProfile(event) {
@@ -225,6 +292,8 @@ async function updateProfile(event) {
                 phone: document.getElementById('profilePhone').value,
                 email: document.getElementById('profileEmail').value,
                 address: document.getElementById('profileAddress').value,
+                latitude: parseFloat(document.getElementById('profileLatitude').value),
+                longitude: parseFloat(document.getElementById('profileLongitude').value),
             })
         });
 

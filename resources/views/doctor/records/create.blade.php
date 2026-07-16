@@ -42,7 +42,7 @@
                             <option value="">اختر النوع</option>
                             <option value="diagnosis">تشخيص</option>
                             <option value="treatment">علاج</option>
-                            <option value="lab_test">اختبار معملي</option>
+                            <option value="lab_test">اختبار مختبري</option>
                             <option value="imaging">تصوير</option>
                             <option value="surgery">جراحة</option>
                             <option value="consultation">استشارة</option>
@@ -132,7 +132,7 @@
                     <p class="text-xs text-green-600">خطة العلاج الموصى بها</p>
                 </div>
                 <div class="p-3 bg-purple-50 rounded-lg">
-                    <p class="font-semibold text-purple-800">اختبار معملي</p>
+                    <p class="font-semibold text-purple-800">اختبار مختبري</p>
                     <p class="text-xs text-purple-600">نتائج الفحوصات المخبرية</p>
                 </div>
                 <div class="p-3 bg-orange-50 rounded-lg">

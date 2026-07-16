@@ -19,7 +19,7 @@ class LaboratoryMiddleware
             auth('web')->logout();
 
             return redirect()->route('laboratory.login')
-                ->withErrors(['phone' => 'غير مصرح لك بالدخول كمعمل.']);
+                ->withErrors(['phone' => 'غير مصرح لك بالدخول كمختبر.']);
         }
 
         return $next($request);

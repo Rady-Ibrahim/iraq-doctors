@@ -82,7 +82,7 @@ class LaboratoryOrderService
                     ->keyBy('id');
 
                 if ($catalogItems->count() !== count($catalogIds)) {
-                    throw new \InvalidArgumentException('بعض التحاليل غير متاحة في هذا المعمل');
+                    throw new \InvalidArgumentException('بعض التحاليل غير متاحة في هذا المختبر');
                 }
 
                 foreach ($items as $row) {
