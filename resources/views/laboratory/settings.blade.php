@@ -32,6 +32,25 @@
                 <textarea id="address" name="address" rows="2" class="w-full px-4 py-2 border rounded-lg"></textarea>
             </div>
             <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">موقع المختبر على الخريطة</label>
+                <p class="text-xs text-gray-500 mb-2">اضغط على الخريطة أو اسحب العلامة لتحديث الموقع (GPS)</p>
+                <div id="location-map" class="border border-gray-300 mb-3"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">خط العرض</label>
+                        <input type="number" step="any" id="latitude" name="latitude" readonly
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm">
+                        <span class="text-red-500 text-sm" data-error-for="latitude"></span>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">خط الطول</label>
+                        <input type="number" step="any" id="longitude" name="longitude" readonly
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm">
+                        <span class="text-red-500 text-sm" data-error-for="longitude"></span>
+                    </div>
+                </div>
+            </div>
+            <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">الوصف</label>
                 <textarea id="description_ar" name="description_ar" rows="3" class="w-full px-4 py-2 border rounded-lg"></textarea>
             </div>
@@ -81,6 +100,8 @@ const dayLabels = {
     wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة',
 };
 let profileData = {};
+let locationMap = null;
+let locationMarker = null;
 
 window.addEventListener('load', loadProfile);
 
@@ -92,6 +113,8 @@ async function loadProfile() {
     document.getElementById('governorate_id').value = profileData.governorate_id || '';
     document.getElementById('district').value = profileData.district || '';
     document.getElementById('address').value = profileData.address || '';
+    document.getElementById('latitude').value = profileData.latitude || '33.3152';
+    document.getElementById('longitude').value = profileData.longitude || '44.3661';
     document.getElementById('description_ar').value = profileData.description_ar || '';
     document.getElementById('contact_phone').value = profileData.contact_phone || '';
     document.getElementById('whatsapp').value = profileData.whatsapp || '';
@@ -103,6 +126,47 @@ async function loadProfile() {
         img.classList.remove('hidden');
     }
     renderWorkingHours(profileData.working_hours || {});
+    initLocationMap();
+}
+
+function initLocationMap() {
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+    if (!latInput || !lngInput || typeof L === 'undefined') return;
+
+    const lat = parseFloat(latInput.value) || 33.3152;
+    const lng = parseFloat(lngInput.value) || 44.3661;
+
+    if (locationMap) {
+        locationMap.setView([lat, lng], locationMap.getZoom());
+        locationMarker.setLatLng([lat, lng]);
+        return;
+    }
+
+    locationMap = L.map('location-map').setView([lat, lng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(locationMap);
+
+    locationMarker = L.marker([lat, lng], { draggable: true }).addTo(locationMap);
+
+    function updateCoords(latVal, lngVal) {
+        latInput.value = latVal.toFixed(7);
+        lngInput.value = lngVal.toFixed(7);
+    }
+
+    locationMap.on('click', function (e) {
+        locationMarker.setLatLng(e.latlng);
+        updateCoords(e.latlng.lat, e.latlng.lng);
+    });
+
+    locationMarker.on('dragend', function () {
+        const pos = locationMarker.getLatLng();
+        updateCoords(pos.lat, pos.lng);
+    });
+
+    setTimeout(() => locationMap.invalidateSize(), 200);
 }
 
 function renderWorkingHours(hours) {

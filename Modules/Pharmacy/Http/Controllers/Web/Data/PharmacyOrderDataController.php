@@ -36,11 +36,19 @@ class PharmacyOrderDataController extends Controller
 
     public function show(string $orderId): JsonResponse
     {
-        $pharmacy = $this->resolvePharmacy();
+        try {
+            $pharmacy = $this->resolvePharmacy();
 
-        return $this->success(
-            $this->orderService->getOrder($pharmacy->id, (int) $orderId)
-        );
+            return $this->success(
+                $this->orderService->getOrder($pharmacy->id, (int) $orderId)
+            );
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFound('الطلب غير موجود');
+        } catch (\Exception $e) {
+            report($e);
+
+            return $this->serverError('حدث خطأ أثناء تحميل الطلب');
+        }
     }
 
     public function review(string $orderId): JsonResponse

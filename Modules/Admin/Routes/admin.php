@@ -8,8 +8,10 @@ use Modules\Admin\Http\Controllers\Api\AdminCatalogApiController;
 use Modules\Admin\Http\Controllers\Api\AdminLabTestApiController;
 use Modules\Admin\Http\Controllers\Api\AdminMedicineApiController;
 use Modules\Admin\Http\Controllers\Api\AdminOrdersApiController;
+use Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController;
 use Modules\Admin\Http\Controllers\Web\AdminCsrfController;
 use Modules\Admin\Http\Controllers\Web\AdminDashboardWebController;
+use Modules\Admin\Http\Controllers\Web\AdminReportPdfController;
 use Modules\Auth\Http\Controllers\Admin\AdminUserController;
 
 Route::middleware(['session.scope:admin', 'web'])->group(function () {
@@ -46,6 +48,9 @@ Route::middleware(['session.scope:admin', 'web'])->group(function () {
             Route::get('/dashboard/medicines', [AdminDashboardWebController::class, 'medicines'])->name('medicines.index');
             Route::get('/dashboard/orders', [AdminDashboardWebController::class, 'orders'])->name('orders.index');
             Route::get('/dashboard/reports', [AdminDashboardWebController::class, 'reports'])->name('reports.index');
+            Route::get('/dashboard/reports/orders/pdf', [AdminReportPdfController::class, 'orders'])->name('reports.orders.pdf');
+            Route::get('/dashboard/revenue/pdf', [AdminReportPdfController::class, 'revenue'])->name('revenue.pdf');
+            Route::get('/dashboard/support-contacts', [AdminDashboardWebController::class, 'supportContacts'])->name('support-contacts.index');
             Route::get('/users', [AdminDashboardWebController::class, 'users'])->name('users.index');
             Route::redirect('/subscriptions', '/admin/dashboard/subscriptions')->name('subscriptions');
 
@@ -137,6 +142,11 @@ Route::middleware(['session.scope:admin', 'web'])->group(function () {
                 Route::get('/pharmacy-orders', [AdminOrdersApiController::class, 'pharmacyOrders']);
                 Route::get('/pharmacy-orders/{id}', [AdminOrdersApiController::class, 'pharmacyOrderDetails']);
                 Route::get('/reports/orders', [AdminOrdersApiController::class, 'ordersReport']);
+
+                Route::get('/support-contacts', [AdminSupportContactApiController::class, 'index']);
+                Route::post('/support-contacts', [AdminSupportContactApiController::class, 'store']);
+                Route::put('/support-contacts/{id}', [AdminSupportContactApiController::class, 'update']);
+                Route::delete('/support-contacts/{id}', [AdminSupportContactApiController::class, 'destroy']);
             });
         });
     });

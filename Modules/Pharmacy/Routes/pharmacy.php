@@ -9,6 +9,7 @@ use Modules\Pharmacy\Http\Controllers\Web\Data\PharmacySubscriptionDataControlle
 use Modules\Pharmacy\Http\Controllers\Web\PharmacyAuthController;
 use Modules\Pharmacy\Http\Controllers\Web\PharmacyCsrfController;
 use Modules\Pharmacy\Http\Controllers\Web\PharmacyDashboardWebController;
+use Modules\Pharmacy\Http\Controllers\Web\PharmacyReportPdfController;
 use Modules\Pharmacy\Http\Controllers\Web\PharmacyVerificationController;
 
 Route::middleware(['session.scope:pharmacy', 'web'])->group(function () {
@@ -44,6 +45,7 @@ Route::middleware(['session.scope:pharmacy', 'web'])->group(function () {
                     Route::get('/dashboard/orders', [PharmacyDashboardWebController::class, 'orders'])->name('orders.index');
                     Route::get('/dashboard/orders/{orderId}', [PharmacyDashboardWebController::class, 'orderShow'])->name('orders.show');
                     Route::get('/dashboard/reports', [PharmacyDashboardWebController::class, 'reports'])->name('reports');
+                    Route::get('/dashboard/reports/pdf', [PharmacyReportPdfController::class, 'download'])->name('reports.pdf');
 
                     Route::prefix('api')->group(function () {
                         Route::get('/profile', [PharmacyProfileDataController::class, 'show']);

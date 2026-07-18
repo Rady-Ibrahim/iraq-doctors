@@ -10,6 +10,7 @@ use Modules\Laboratory\Http\Controllers\Web\Data\LaboratoryTestDataController;
 use Modules\Laboratory\Http\Controllers\Web\LaboratoryAuthController;
 use Modules\Laboratory\Http\Controllers\Web\LaboratoryCsrfController;
 use Modules\Laboratory\Http\Controllers\Web\LaboratoryDashboardWebController;
+use Modules\Laboratory\Http\Controllers\Web\LaboratoryReportPdfController;
 use Modules\Laboratory\Http\Controllers\Web\LaboratoryVerificationController;
 
 Route::middleware(['session.scope:laboratory', 'web'])->group(function () {
@@ -45,6 +46,7 @@ Route::middleware(['session.scope:laboratory', 'web'])->group(function () {
                     Route::get('/dashboard/orders', [LaboratoryDashboardWebController::class, 'orders'])->name('orders.index');
                     Route::get('/dashboard/orders/{orderId}', [LaboratoryDashboardWebController::class, 'orderShow'])->name('orders.show');
                     Route::get('/dashboard/reports', [LaboratoryDashboardWebController::class, 'reports'])->name('reports');
+                    Route::get('/dashboard/reports/pdf', [LaboratoryReportPdfController::class, 'download'])->name('reports.pdf');
 
                     Route::prefix('api')->group(function () {
                         Route::get('/profile', [LaboratoryProfileDataController::class, 'show']);

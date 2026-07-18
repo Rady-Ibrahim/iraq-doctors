@@ -30,9 +30,14 @@
         </div>
         <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">&nbsp;</label>
-            <button onclick="applyFilters()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                <i class="fas fa-filter ml-2"></i>تصفية
-            </button>
+            <div class="flex gap-2">
+                <button onclick="applyFilters()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-filter ml-2"></i>تصفية
+                </button>
+                <button onclick="downloadPdf()" class="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition">
+                    <i class="fas fa-file-pdf ml-2"></i>PDF
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -272,6 +277,17 @@ function renderTransactions(transactions) {
 
 function applyFilters() {
     loadRevenueData();
+}
+
+function downloadPdf() {
+    const params = new URLSearchParams();
+    const period = document.getElementById('periodFilter').value;
+    const from = document.getElementById('dateFrom').value;
+    const to = document.getElementById('dateTo').value;
+    if (period) params.set('period', period);
+    if (from) params.set('date_from', from);
+    if (to) params.set('date_to', to);
+    window.location.href = `{{ route('admin.revenue.pdf') }}?${params}`;
 }
 
 function getTransactionTypeClass(type) {
