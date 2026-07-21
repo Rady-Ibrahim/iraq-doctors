@@ -61,7 +61,12 @@
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">موقع العيادة على الخريطة</label>
-                        <p class="text-xs text-gray-500 mb-2">اضغط على الخريطة أو اسحب العلامة لتحديث الموقع (GPS)</p>
+                        <p class="text-xs text-gray-500 mb-2">اضغط على الخريطة أو اسحب العلامة لتحديث الموقع</p>
+                        <button type="button" onclick="detectSettingsLocation()" id="detectSettingsBtnDoc"
+                            class="mb-2 flex items-center gap-2 px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm">
+                            <i class="fas fa-location-arrow"></i>
+                            <span>تحديد موقعي الحالي</span>
+                        </button>
                         <div id="clinic-map" class="border border-gray-300 mb-3"></div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -279,6 +284,32 @@ function initClinicMap() {
     });
 
     setTimeout(() => clinicMap.invalidateSize(), 200);
+}
+
+function detectSettingsLocation() {
+    const btn = document.getElementById('detectSettingsBtnDoc');
+    if (!navigator.geolocation) { alert('المتصفح لا يدعم تحديد الموقع'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحديد...';
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            const latInput = document.getElementById('profileLatitude');
+            const lngInput = document.getElementById('profileLongitude');
+            latInput.value = lat.toFixed(7);
+            lngInput.value = lng.toFixed(7);
+            if (clinicMarker) clinicMarker.setLatLng([lat, lng]);
+            if (clinicMap) clinicMap.setView([lat, lng], 16);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> تحديد موقعي الحالي';
+        },
+        function() {
+            alert('تعذر تحديد الموقع. تأكد من منح الإذن للمتصفح.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> تحديد موقعي الحالي';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
 }
 
 async function updateProfile(event) {

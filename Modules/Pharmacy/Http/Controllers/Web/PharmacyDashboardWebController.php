@@ -37,6 +37,11 @@ class PharmacyDashboardWebController extends Controller
         ]);
     }
 
+    public function support(): View
+    {
+        return view('pharmacy.support');
+    }
+
     public function subscriptionPlans(): View
     {
         return view('pharmacy.subscription.plans', [

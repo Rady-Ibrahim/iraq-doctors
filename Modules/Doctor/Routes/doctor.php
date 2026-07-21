@@ -49,6 +49,9 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
                         Route::get('/dashboard/settings', [DoctorDashboardWebController::class, 'settings'])->name('settings');
                     });
 
+                    // Support page — accessible to all approved doctors
+                    Route::get('/dashboard/support', [DoctorDashboardWebController::class, 'support'])->name('support');
+
                     Route::middleware('doctor.owner')->group(function () {
                         Route::get('/dashboard/staff', [DoctorDashboardWebController::class, 'staff'])->name('staff.index');
                         Route::get('/dashboard/subscription/plans', [DoctorDashboardWebController::class, 'subscriptionPlans'])->name('subscription.plans');
@@ -147,6 +150,12 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
                         Route::get('/notifications/unread', [DoctorDashboardController::class, 'unreadNotifications']);
                         Route::post('/notifications/{notificationId}/read', [DoctorDashboardController::class, 'markNotificationRead']);
                         Route::post('/notifications/read-all', [DoctorDashboardController::class, 'markAllNotificationsRead']);
+
+                        // Support contacts
+                        Route::get('/support-contacts',       [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'index']);
+                        Route::post('/support-contacts',      [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'store']);
+                        Route::put('/support-contacts/{id}',  [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'update']);
+                        Route::delete('/support-contacts/{id}',[\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'destroy']);
 
                         Route::middleware('doctor.owner')->group(function () {
                             Route::get('/subscription', [DoctorDashboardController::class, 'subscription']);

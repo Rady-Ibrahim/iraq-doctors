@@ -123,7 +123,12 @@
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
                         placeholder="الشارع، رقم المبنى، معلم قريب">
                 </div>
-                <p class="text-sm text-gray-500 mt-4 mb-2">اضغط على الخريطة لتحديد موقع العيادة</p>
+                <p class="text-sm text-gray-500 mt-4 mb-2">اضغط على الخريطة لتحديد الموقع، أو</p>
+                <button type="button" onclick="detectLocation()" id="detectLocationBtn"
+                    class="mb-3 flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm">
+                    <i class="fas fa-location-arrow"></i>
+                    <span>تحديد موقعي الحالي</span>
+                </button>
                 <div id="clinic-map" class="border border-gray-300"></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
                     <div>
@@ -196,6 +201,33 @@
             const pos = e.target.getLatLng();
             updateCoords(pos.lat, pos.lng);
         });
+
+        function detectLocation() {
+            const btn = document.getElementById('detectLocationBtn');
+            if (!navigator.geolocation) {
+                alert('المتصفح لا يدعم تحديد الموقع');
+                return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحديد...';
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    marker.setLatLng([lat, lng]);
+                    map.setView([lat, lng], 16);
+                    updateCoords(lat, lng);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> تحديد موقعي الحالي';
+                },
+                function() {
+                    alert('تعذر تحديد الموقع. تأكد من منح الإذن للمتصفح.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> تحديد موقعي الحالي';
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
     </script>
 </body>
 </html>

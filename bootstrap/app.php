@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
 if (! function_exists('expectsStructuredJson')) {
     function expectsStructuredJson(Request $request): bool

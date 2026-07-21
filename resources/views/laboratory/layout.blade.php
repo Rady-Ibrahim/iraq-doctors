@@ -78,6 +78,10 @@
                     <i class="fas fa-chart-bar w-5"></i>
                     <span>التقارير والسجل</span>
                 </a>
+                <a href="{{ route('laboratory.support') }}" class="{{ $navClass(request()->routeIs('laboratory.support')) }}">
+                    <i class="fas fa-headset w-5"></i>
+                    <span>الدعم</span>
+                </a>
             </nav>
 
             <div class="p-4 border-t">
@@ -102,8 +106,34 @@
 
         <div class="flex-1 flex flex-col overflow-hidden">
             <header class="bg-white shadow-sm px-6 py-4">
-                <h2 class="text-xl font-bold text-gray-800">@yield('page-title', 'الرئيسية')</h2>
-                <p class="text-sm text-gray-500">@yield('page-description', '')</p>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">@yield('page-title', 'الرئيسية')</h2>
+                        <p class="text-sm text-gray-500">@yield('page-description', '')</p>
+                    </div>
+                    <!-- Branch Switcher -->
+                    <div class="flex items-center gap-3">
+                        <div class="relative" id="branchSwitcherWrap">
+                            <button onclick="toggleBranchMenu()" id="branchSwitcherBtn"
+                                class="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-sm text-gray-700 transition">
+                                <i class="fas fa-code-branch text-indigo-600"></i>
+                                <span id="activeBranchName">الفرع الرئيسي</span>
+                                <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                            </button>
+                            <div id="branchMenu"
+                                class="hidden absolute left-0 mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                                <p class="px-4 py-2 text-xs text-gray-400 border-b">اختر الفرع</p>
+                                <div id="branchMenuList" class="max-h-60 overflow-y-auto">
+                                    <p class="px-4 py-3 text-sm text-gray-500">جاري التحميل...</p>
+                                </div>
+                                <a href="{{ route('laboratory.branches') }}"
+                                    class="flex items-center gap-2 px-4 py-2 text-xs text-indigo-600 hover:bg-indigo-50 border-t">
+                                    <i class="fas fa-plus"></i> إدارة الفروع
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </header>
 
             <main class="flex-1 overflow-y-auto p-6">
@@ -114,7 +144,77 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     @yield('scripts')
     <script>
+        // ── Branch Switcher ────────────────────────────────────────────
+        let allBranches = [];
+        let activeBranchId = null;
+
+        async function loadBranchSwitcher() {
+            try {
+                const data = await apiCall('/laboratory/api/branches');
+                if (!data?.success) return;
+                allBranches = data.data || [];
+                const primary = allBranches.find(b => b.is_primary) || allBranches[0];
+                if (primary) setActiveBranch(primary.id, primary.branch_name, false);
+                renderBranchMenuList();
+            } catch(e) {}
+        }
+
+        function renderBranchMenuList() {
+            const list = document.getElementById('branchMenuList');
+            if (!list) return;
+            if (!allBranches.length) {
+                list.innerHTML = '<p class="px-4 py-3 text-sm text-gray-500">لا توجد فروع</p>';
+                return;
+            }
+            list.innerHTML = allBranches.map(b => `
+                <button onclick="setActiveBranch(${b.id}, '${b.branch_name.replace(/'/g, "\\'")}', true)"
+                    class="w-full text-right flex items-center gap-2 px-4 py-2 text-sm hover:bg-indigo-50 transition
+                        ${b.id === activeBranchId ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-700'}">
+                    <i class="fas fa-code-branch text-xs ${b.id === activeBranchId ? 'text-indigo-600' : 'text-gray-400'}"></i>
+                    <span class="flex-1">${b.branch_name}</span>
+                    ${b.is_primary ? '<span class="text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded">رئيسي</span>' : ''}
+                </button>
+            `).join('');
+        }
+
+        function setActiveBranch(id, name, reload = true) {
+            activeBranchId = id;
+            const nameEl = document.getElementById('activeBranchName');
+            if (nameEl) nameEl.textContent = name;
+            sessionStorage.setItem('laboratory_active_branch', JSON.stringify({ id, name }));
+            closeBranchMenu();
+            renderBranchMenuList();
+            if (reload) {
+                window.dispatchEvent(new CustomEvent('branchChanged', { detail: { id, name } }));
+            }
+        }
+
+        function toggleBranchMenu() {
+            document.getElementById('branchMenu')?.classList.toggle('hidden');
+        }
+
+        function closeBranchMenu() {
+            document.getElementById('branchMenu')?.classList.add('hidden');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('branchSwitcherWrap')?.contains(e.target)) {
+                closeBranchMenu();
+            }
+        });
+
+        // ── Init ───────────────────────────────────────────────────────
         window.addEventListener('load', async function() {
+            const saved = sessionStorage.getItem('laboratory_active_branch');
+            if (saved) {
+                const { id, name } = JSON.parse(saved);
+                activeBranchId = id;
+                const nameEl = document.getElementById('activeBranchName');
+                if (nameEl) nameEl.textContent = name;
+            }
+
+            loadBranchSwitcher();
+
             try {
                 const data = await apiCall('/laboratory/api/orders?limit=1');
                 const badge = document.getElementById('pendingOrdersBadge');
