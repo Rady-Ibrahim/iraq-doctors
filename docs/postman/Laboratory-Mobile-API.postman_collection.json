@@ -1,0 +1,199 @@
+{
+  "info": {
+    "name": "Iraq Doctors — Laboratory Mobile API",
+    "description": "Patient mobile API for laboratories and lab orders.\nSet `token` after patient auth (Register → Send OTP phone_verify → Verify → Login).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "" },
+    { "key": "laboratory_id", "value": "1" },
+    { "key": "order_id", "value": "1" },
+    { "key": "test_item_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "Search laboratories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/laboratories?governorate_id=&name=&home_collection=&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "laboratories"],
+              "query": [
+                { "key": "governorate_id", "value": "" },
+                { "key": "name", "value": "" },
+                { "key": "home_collection", "value": "" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Nearby laboratories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/laboratories/nearby?latitude=33.3152&longitude=44.3661&radius=10&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "laboratories", "nearby"],
+              "query": [
+                { "key": "latitude", "value": "33.3152" },
+                { "key": "longitude", "value": "44.3661" },
+                { "key": "radius", "value": "10" },
+                { "key": "governorate_id", "value": "", "disabled": true },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Laboratory profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/v1/laboratories/{{laboratory_id}}"
+          }
+        },
+        {
+          "name": "Laboratory test catalog",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/laboratories/{{laboratory_id}}/tests?category_id=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "laboratories", "{{laboratory_id}}", "tests"],
+              "query": [{ "key": "category_id", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient (auth:sanctum)",
+      "item": [
+        {
+          "name": "Create order (catalog)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('order_id', json.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"laboratory_id\": {{laboratory_id}},\n  \"items\": [\n    { \"laboratory_test_item_id\": {{test_item_id}}, \"quantity\": 1 }\n  ],\n  \"patient_notes\": \"ملاحظة تجريبية\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/laboratory-orders"
+          }
+        },
+        {
+          "name": "Create order (prescription image)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "laboratory_id", "value": "{{laboratory_id}}", "type": "text" },
+                { "key": "prescription_image", "type": "file", "src": "" },
+                { "key": "patient_notes", "value": "روشتة من الطبيب", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/api/v1/laboratory-orders"
+          }
+        },
+        {
+          "name": "My active orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/laboratory-orders/my"
+          }
+        },
+        {
+          "name": "My history (delivered only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/laboratory-orders/my?history=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "laboratory-orders", "my"],
+              "query": [{ "key": "history", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Order details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/laboratory-orders/{{order_id}}"
+          }
+        },
+        {
+          "name": "Accept quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/laboratory-orders/{{order_id}}/accept-quote"
+          }
+        },
+        {
+          "name": "Cancel order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"تغيير في الموعد\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/laboratory-orders/{{order_id}}/cancel"
+          }
+        }
+      ]
+    }
+  ]
+}

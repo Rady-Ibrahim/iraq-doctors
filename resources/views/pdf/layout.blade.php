@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <title>{{ $title ?? 'تقرير' }}</title>
@@ -7,7 +7,8 @@
         * { box-sizing: border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
-            direction: rtl;
+            /* Arabic is pre-shaped for DomPDF; keep LTR flow with right alignment */
+            direction: ltr;
             text-align: right;
             color: #1f2937;
             font-size: 12px;

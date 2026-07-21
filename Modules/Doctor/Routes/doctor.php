@@ -25,6 +25,7 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
 
         Route::middleware(['auth:web', 'doctor'])->group(function () {
             Route::get('/verify-phone', [DoctorAuthController::class, 'showVerifyPhone'])->name('verify-phone');
+            Route::post('/verify-phone/send', [DoctorAuthController::class, 'sendPhoneOtp'])->name('verify-phone.send');
             Route::post('/verify-phone', [DoctorAuthController::class, 'verifyPhone'])->name('verify-phone.submit');
             Route::get('/verify-email', [DoctorAuthController::class, 'showVerifyEmail'])->name('verify-email');
             Route::post('/verify-email', [DoctorAuthController::class, 'verifyEmail'])->name('verify-email.submit');

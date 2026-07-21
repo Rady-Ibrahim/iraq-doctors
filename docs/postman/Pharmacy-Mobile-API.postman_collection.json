@@ -1,0 +1,216 @@
+{
+  "info": {
+    "name": "Iraq Doctors — Pharmacy Mobile API",
+    "description": "Patient mobile API for pharmacies and medicine orders.\nSet `token` after patient auth (Register → Send OTP phone_verify → Verify → Login).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "" },
+    { "key": "pharmacy_id", "value": "1" },
+    { "key": "order_id", "value": "1" },
+    { "key": "pharmacy_medicine_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "Search pharmacies",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacies?governorate_id=&name=&delivery=&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacies"],
+              "query": [
+                { "key": "governorate_id", "value": "" },
+                { "key": "name", "value": "" },
+                { "key": "delivery", "value": "" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Nearby pharmacies",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacies/nearby?latitude=33.3152&longitude=44.3661&radius=10&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacies", "nearby"],
+              "query": [
+                { "key": "latitude", "value": "33.3152" },
+                { "key": "longitude", "value": "44.3661" },
+                { "key": "radius", "value": "10" },
+                { "key": "governorate_id", "value": "", "disabled": true },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Pharmacy profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/v1/pharmacies/{{pharmacy_id}}"
+          }
+        },
+        {
+          "name": "Pharmacy medicine catalog",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacies/{{pharmacy_id}}/medicines?category_id=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacies", "{{pharmacy_id}}", "medicines"],
+              "query": [{ "key": "category_id", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient (auth:sanctum)",
+      "item": [
+        {
+          "name": "Create order (catalog + pickup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('order_id', json.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pharmacy_id\": {{pharmacy_id}},\n  \"fulfillment_type\": \"pickup\",\n  \"items\": [\n    { \"pharmacy_medicine_id\": {{pharmacy_medicine_id}}, \"quantity\": 1 }\n  ],\n  \"patient_notes\": \"ملاحظة تجريبية\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/pharmacy-orders"
+          }
+        },
+        {
+          "name": "Create order (catalog + delivery)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pharmacy_id\": {{pharmacy_id}},\n  \"fulfillment_type\": \"delivery\",\n  \"delivery_address\": \"بغداد، الكرادة، شارع 62\",\n  \"delivery_latitude\": 33.3152,\n  \"delivery_longitude\": 44.3661,\n  \"delivery_notes\": \"اتصل عند الوصول\",\n  \"items\": [\n    { \"pharmacy_medicine_id\": {{pharmacy_medicine_id}}, \"quantity\": 2 }\n  ],\n  \"patient_notes\": \"توصيل سريع\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/pharmacy-orders"
+          }
+        },
+        {
+          "name": "Create order (prescription image)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "pharmacy_id", "value": "{{pharmacy_id}}", "type": "text" },
+                { "key": "fulfillment_type", "value": "pickup", "type": "text" },
+                { "key": "prescription_image", "type": "file", "src": "" },
+                { "key": "patient_notes", "value": "روشتة من الطبيب", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/api/v1/pharmacy-orders"
+          }
+        },
+        {
+          "name": "My active orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/pharmacy-orders/my"
+          }
+        },
+        {
+          "name": "My history (completed only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy-orders/my?history=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy-orders", "my"],
+              "query": [{ "key": "history", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Order details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/pharmacy-orders/{{order_id}}"
+          }
+        },
+        {
+          "name": "Accept quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/pharmacy-orders/{{order_id}}/accept-quote"
+          }
+        },
+        {
+          "name": "Cancel order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"تغيير في الطلب\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/pharmacy-orders/{{order_id}}/cancel"
+          }
+        }
+      ]
+    }
+  ]
+}

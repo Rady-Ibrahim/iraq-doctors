@@ -85,6 +85,9 @@ class AdminDashboardService
                 'monthly' => $monthlyRevenue,
                 'growth' => $revenueGrowth,
             ],
+            'charts' => [
+                'monthly_revenue' => $this->getMonthlyRevenueChart(12),
+            ],
             'reviews' => [
                 'average' => round($avgRating, 2),
                 'total' => $totalReviews,
@@ -319,17 +322,58 @@ class AdminDashboardService
 
         $totalCombined = $subscriptionRevenue + $appointmentRevenue;
 
+        $dailySubRevenue = DoctorSubscription::whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('DATE(created_at) as date, SUM(amount_paid) as total')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $dailyApptRevenue = Appointment::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('DATE(created_at) as date, SUM(price) as total')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $mergedDaily = [];
+        foreach ($dailySubRevenue as $row) {
+            $key = Carbon::parse($row->date)->format('Y-m-d');
+            $mergedDaily[$key] = ($mergedDaily[$key] ?? 0) + (float) $row->total;
+        }
+        foreach ($dailyApptRevenue as $row) {
+            $key = Carbon::parse($row->date)->format('Y-m-d');
+            $mergedDaily[$key] = ($mergedDaily[$key] ?? 0) + (float) $row->total;
+        }
+
+        $revenueSeries = $this->fillDailySeriesFromMap($startDate, $endDate, $mergedDaily);
+
+        $periodDays = max(1, (int) $startDate->diffInDays($endDate));
+        $prevStart = $startDate->copy()->subDays($periodDays);
+        $prevEnd = $startDate->copy()->subSecond();
+        $prevSub = DoctorSubscription::whereBetween('created_at', [$prevStart, $prevEnd])->sum('amount_paid');
+        $prevAppt = Appointment::where('status', 'completed')
+            ->whereBetween('created_at', [$prevStart, $prevEnd])
+            ->sum('price');
+        $prevTotal = $prevSub + $prevAppt;
+        $revenueGrowth = $this->percentChange($totalCombined, $prevTotal);
+
         return [
             'total_revenue' => $totalCombined,
             'completed_appointments' => $completedAppointments,
             'subscription_revenue' => $subscriptionRevenue,
             'average_revenue' => $transactionCount > 0 ? round($totalRevenue / $transactionCount, 2) : 0,
+            'growth' => [
+                'total_revenue' => $revenueGrowth,
+            ],
             'revenue_by_category' => [
                 ['name' => 'اشتراكات الأطباء', 'amount' => $subscriptionRevenue, 'percentage' => $totalCombined > 0 ? round(($subscriptionRevenue / $totalCombined) * 100) : 0],
                 ['name' => 'مواعيد مكتملة', 'amount' => $appointmentRevenue, 'percentage' => $totalCombined > 0 ? round(($appointmentRevenue / $totalCombined) * 100) : 0],
             ],
             'top_performers' => $topPerformers,
             'recent_transactions' => $recentTransactions,
+            'charts' => [
+                'daily_revenue' => $revenueSeries,
+            ],
         ];
     }
 
@@ -449,6 +493,7 @@ class AdminDashboardService
     public function getAnalyticsData($period = '30days', $type = null)
     {
         $startDate = $this->resolvePeriodStart($period);
+        $endDate = now()->endOfDay();
 
         $dailyUsers = User::where('created_at', '>=', $startDate)
             ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
@@ -468,11 +513,68 @@ class AdminDashboardService
             ->orderBy('date')
             ->get();
 
+        $usersMap = [];
+        foreach ($dailyUsers as $row) {
+            $usersMap[Carbon::parse($row->date)->format('Y-m-d')] = (int) $row->count;
+        }
+        $appointmentsMap = [];
+        foreach ($dailyAppointments as $row) {
+            $appointmentsMap[Carbon::parse($row->date)->format('Y-m-d')] = (int) $row->count;
+        }
+        $revenueMap = [];
+        foreach ($dailyRevenue as $row) {
+            $revenueMap[Carbon::parse($row->date)->format('Y-m-d')] = (float) $row->total;
+        }
+
+        $statusCounts = Appointment::where('created_at', '>=', $startDate)
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        $statusLabels = [
+            'pending' => 'معلق',
+            'confirmed' => 'مؤكد',
+            'completed' => 'مكتمل',
+            'cancelled' => 'ملغي',
+            'no_show' => 'لم يحضر',
+        ];
+        $appointmentsByStatus = [
+            'labels' => [],
+            'values' => [],
+            'keys' => [],
+        ];
+        foreach ($statusLabels as $key => $label) {
+            $count = (int) ($statusCounts[$key] ?? 0);
+            if ($count > 0 || $statusCounts->has($key)) {
+                $appointmentsByStatus['labels'][] = $label;
+                $appointmentsByStatus['values'][] = $count;
+                $appointmentsByStatus['keys'][] = $key;
+            }
+        }
+        if ($appointmentsByStatus['labels'] === []) {
+            foreach ($statusLabels as $key => $label) {
+                $appointmentsByStatus['labels'][] = $label;
+                $appointmentsByStatus['values'][] = 0;
+                $appointmentsByStatus['keys'][] = $key;
+            }
+        }
+
         $totalUsers = User::count();
         $activeDoctors = Doctor::where('status', 'approved')->count();
         $dailyAppointmentsCount = Appointment::whereDate('appointment_date', today())->count();
         $totalAppointments = Appointment::count();
         $conversionRate = $totalUsers > 0 ? round(($totalAppointments / $totalUsers) * 100, 1) : 0;
+
+        $periodDays = max(1, (int) $startDate->diffInDays($endDate));
+        $prevStart = $startDate->copy()->subDays($periodDays);
+        $prevEnd = $startDate->copy()->subSecond();
+
+        $currNewUsers = User::whereBetween('created_at', [$startDate, $endDate])->count();
+        $prevNewUsers = User::whereBetween('created_at', [$prevStart, $prevEnd])->count();
+        $currNewDoctors = Doctor::whereBetween('created_at', [$startDate, $endDate])->count();
+        $prevNewDoctors = Doctor::whereBetween('created_at', [$prevStart, $prevEnd])->count();
+        $currPeriodAppts = Appointment::whereBetween('created_at', [$startDate, $endDate])->count();
+        $prevPeriodAppts = Appointment::whereBetween('created_at', [$prevStart, $prevEnd])->count();
 
         $specialities = Speciality::withCount('doctors')->orderByDesc('doctors_count')->limit(5)->get();
         $totalDoctorsForSpecialities = max($specialities->sum('doctors_count'), 1);
@@ -485,7 +587,6 @@ class AdminDashboardService
 
         $maleCount = User::where('role', 'patient')->where('gender', 'male')->count();
         $femaleCount = User::where('role', 'patient')->where('gender', 'female')->count();
-        $patientTotal = max($maleCount + $femaleCount, 1);
 
         $peakHoursRaw = Appointment::where('created_at', '>=', $startDate)
             ->selectRaw('HOUR(appointment_time) as hour, COUNT(*) as count')
@@ -525,6 +626,12 @@ class AdminDashboardService
             'active_doctors' => $activeDoctors,
             'daily_appointments' => $dailyAppointmentsCount,
             'conversion_rate' => $conversionRate,
+            'growth' => [
+                'users' => $this->percentChange($currNewUsers, $prevNewUsers),
+                'doctors' => $this->percentChange($currNewDoctors, $prevNewDoctors),
+                'appointments' => $this->percentChange($currPeriodAppts, $prevPeriodAppts),
+                'conversion' => 0,
+            ],
             'top_specialities' => $topSpecialities,
             'demographics' => [
                 'male' => $maleCount,
@@ -539,6 +646,12 @@ class AdminDashboardService
             'users' => $dailyUsers,
             'appointments' => $dailyAppointments,
             'revenue' => $dailyRevenue,
+            'charts' => [
+                'user_growth' => $this->fillDailySeriesFromMap($startDate, $endDate, $usersMap),
+                'appointments_daily' => $this->fillDailySeriesFromMap($startDate, $endDate, $appointmentsMap),
+                'appointments_by_status' => $appointmentsByStatus,
+                'revenue' => $this->fillDailySeriesFromMap($startDate, $endDate, $revenueMap),
+            ],
             'type' => $type,
         ];
     }
@@ -765,11 +878,11 @@ class AdminDashboardService
     {
         return match ($period) {
             'today' => now()->startOfDay(),
-            'week', '7days' => now()->subDays(7),
-            'month', '30days' => now()->subDays(30),
-            'year', '90days' => now()->subDays(90),
-            '1year' => now()->subYear(),
-            default => now()->subDays(30),
+            'week', '7days' => now()->subDays(7)->startOfDay(),
+            'month', '30days' => now()->subDays(30)->startOfDay(),
+            'year', '1year' => now()->subYear()->startOfDay(),
+            '90days' => now()->subDays(90)->startOfDay(),
+            default => now()->subDays(30)->startOfDay(),
         };
     }
 
@@ -791,6 +904,64 @@ class AdminDashboardService
         };
 
         return [$start, now()->endOfDay()];
+    }
+
+    /**
+     * @return array{labels: list<string>, values: list<float|int>}
+     */
+    protected function getMonthlyRevenueChart(int $months = 12): array
+    {
+        $labels = [];
+        $values = [];
+
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $month = now()->subMonths($i);
+            $sub = DoctorSubscription::whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->sum('amount_paid');
+            $appt = Appointment::where('status', 'completed')
+                ->whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->sum('price');
+
+            $labels[] = $month->format('Y-m');
+            $values[] = round((float) $sub + (float) $appt, 2);
+        }
+
+        return [
+            'labels' => $labels,
+            'values' => $values,
+        ];
+    }
+
+    /**
+     * @param  array<string, float|int>  $map
+     * @return array{labels: list<string>, values: list<float|int>}
+     */
+    protected function fillDailySeriesFromMap(Carbon $start, Carbon $end, array $map): array
+    {
+        $labels = [];
+        $values = [];
+
+        for ($day = $start->copy()->startOfDay(); $day->lte($end); $day->addDay()) {
+            $key = $day->format('Y-m-d');
+            $labels[] = $key;
+            $values[] = $map[$key] ?? 0;
+        }
+
+        return [
+            'labels' => $labels,
+            'values' => $values,
+        ];
+    }
+
+    protected function percentChange(float|int $current, float|int $previous): float
+    {
+        if ($previous > 0) {
+            return round((($current - $previous) / $previous) * 100, 1);
+        }
+
+        return $current > 0 ? 100.0 : 0.0;
     }
 
     public function getReviews(array $filters = [])

@@ -41,7 +41,8 @@ class AuthController extends Controller
                     'role' => $user->role,
                     'phone_verified_at' => $user->phone_verified_at,
                 ],
-            ], 'تم التسجيل بنجاح');
+                'requires_phone_verification' => true,
+            ], 'تم التسجيل بنجاح. فعّل رقم الهاتف عبر send-otp قبل تسجيل الدخول');
         } catch (\Exception $e) {
             Log::error('Registration error: ' . $e->getMessage(), [
                 'exception' => $e,
@@ -57,31 +58,24 @@ class AuthController extends Controller
         $identifier = $request->phone;
 
         try {
-            $phoneE164 = PhoneNormalizer::toE164($identifier);
+            PhoneNormalizer::toE164($identifier);
         } catch (InvalidArgumentException) {
             return $this->error('رقم الهاتف غير صحيح', 'INVALID_PHONE', 422);
         }
 
-        $variants = PhoneNormalizer::lookupVariants($phoneE164);
-        $user = User::query()->whereIn('phone', $variants)->first();
+        try {
+            $user = $this->authService->login($identifier, $request->password);
+        } catch (InvalidArgumentException $e) {
+            if ($e->getMessage() === 'PHONE_NOT_VERIFIED') {
+                return $this->error(
+                    'يرجى تفعيل رقم الهاتف أولاً عبر كود واتساب',
+                    'PHONE_NOT_VERIFIED',
+                    403
+                );
+            }
 
-        if (!$user) {
-            return $this->error(
-                'بيانات الدخول غير صحيحة',
-                'AUTH_INVALID_CREDENTIALS',
-                401
-            );
+            throw $e;
         }
-
-        if ($user->isPatient() && !$user->phone_verified_at) {
-            return $this->error(
-                'يرجى تفعيل رقم الهاتف أولاً',
-                'PHONE_NOT_VERIFIED',
-                403
-            );
-        }
-
-        $user = $this->authService->login($identifier, $request->password);
 
         if (!$user) {
             return $this->error(
@@ -100,6 +94,7 @@ class AuthController extends Controller
                 'phone' => $user->phone,
                 'email' => $user->email,
                 'role' => $user->role,
+                'phone_verified_at' => $user->phone_verified_at,
             ],
             'token' => $token,
         ], 'تم الدخول بنجاح');
@@ -123,6 +118,10 @@ class AuthController extends Controller
 
             return $this->success($payload, 'تم إرسال الكود بنجاح');
         } catch (InvalidArgumentException $e) {
+            if ($e->getMessage() === 'USER_NOT_FOUND') {
+                return $this->error('لا يوجد حساب بهذا الرقم', 'USER_NOT_FOUND', 404);
+            }
+
             return $this->error($e->getMessage(), 'INVALID_PHONE', 422);
         } catch (\Exception $e) {
             return $this->serverError($e->getMessage());

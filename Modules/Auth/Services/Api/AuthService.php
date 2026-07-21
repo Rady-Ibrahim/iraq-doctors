@@ -19,36 +19,25 @@ class AuthService
     {
         return DB::transaction(function () use ($data) {
             $phone = PhoneNormalizer::toE164($data['phone']);
-            $phoneVerifiedAt = null;
 
-            $hasVerifiedOtp = Otp::query()
-                ->where('phone', $phone)
-                ->where('type', 'register')
-                ->whereNotNull('verified_at')
-                ->where('verified_at', '>=', now()->subHour())
-                ->exists();
-
-            if ($hasVerifiedOtp) {
-                $phoneVerifiedAt = now();
-                Otp::where('phone', $phone)->where('type', 'register')->delete();
-            }
-
-            $user = User::create([
+            // Register only — phone verification is a separate OTP step before login.
+            return User::create([
                 'name' => $data['name'],
                 'phone' => $phone,
                 'email' => $data['email'] ?? null,
                 'password' => Hash::make($data['password']),
                 'role' => 'patient',
                 'status' => 'active',
-                'phone_verified_at' => $phoneVerifiedAt,
+                'phone_verified_at' => null,
             ]);
-
-            return $user;
         });
     }
 
     /**
      * Login with phone + password.
+     * Returns null if credentials invalid or account inactive.
+     *
+     * @throws InvalidArgumentException when patient phone is not verified
      */
     public function login(string $identifier, string $password): ?User
     {
@@ -69,6 +58,10 @@ class AuthService
             return null;
         }
 
+        if ($user->isPatient() && !$user->phone_verified_at) {
+            throw new InvalidArgumentException('PHONE_NOT_VERIFIED');
+        }
+
         return $user;
     }
 
@@ -79,6 +72,15 @@ class AuthService
     {
         $phone = PhoneNormalizer::toE164($phone);
         $type = $this->normalizeOtpType($type);
+
+        if (in_array($type, ['phone_verify', 'password_reset', 'login'], true)) {
+            $variants = PhoneNormalizer::lookupVariants($phone);
+            $exists = User::query()->whereIn('phone', $variants)->exists();
+
+            if (!$exists) {
+                throw new InvalidArgumentException('USER_NOT_FOUND');
+            }
+        }
 
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
@@ -93,7 +95,13 @@ class AuthService
             'expires_at' => now()->addMinutes((int) config('otp.expires_minutes', 10)),
         ]);
 
-        $this->smsSender->send($phone, $code, $type);
+        try {
+            $this->smsSender->send($phone, $code, $type);
+        } catch (\Throwable $e) {
+            $otp->delete();
+
+            throw $e;
+        }
 
         return $otp;
     }
@@ -121,7 +129,12 @@ class AuthService
 
         $otp->update(['verified_at' => now()]);
 
-        $this->markPhoneVerifiedForUser($phone);
+        if ($type === 'phone_verify') {
+            $this->markPhoneVerifiedForUser($phone);
+            $otp->delete();
+
+            return $otp;
+        }
 
         return $otp->fresh();
     }
@@ -304,6 +317,8 @@ class AuthService
     public function createDoctor(array $data): User
     {
         return DB::transaction(function () use ($data) {
+            $phone = PhoneNormalizer::toE164($data['phone']);
+
             $user = User::create([
                 'name' => $data['name'],
                 'phone' => $phone,

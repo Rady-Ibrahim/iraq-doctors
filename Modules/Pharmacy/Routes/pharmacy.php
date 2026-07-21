@@ -27,6 +27,7 @@ Route::middleware(['session.scope:pharmacy', 'web'])->group(function () {
 
         Route::middleware(['auth:web', 'pharmacy'])->group(function () {
             Route::get('/verify-phone', [PharmacyAuthController::class, 'showVerifyPhone'])->name('verify-phone');
+            Route::post('/verify-phone/send', [PharmacyAuthController::class, 'sendPhoneOtp'])->name('verify-phone.send');
             Route::post('/verify-phone', [PharmacyAuthController::class, 'verifyPhone'])->name('verify-phone.submit');
             Route::post('/logout', [PharmacyAuthController::class, 'logout'])->name('logout');
 

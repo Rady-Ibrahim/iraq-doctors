@@ -2,6 +2,7 @@
 
 namespace Modules\Doctor\Http\Controllers\Web;
 
+use App\Services\OtpSmsSender;
 use App\Support\PhoneNormalizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
@@ -14,6 +15,7 @@ use Modules\Doctor\Http\Requests\Web\VerifyDoctorPhoneRequest;
 use Modules\Doctor\Models\Governorate;
 use Modules\Doctor\Models\Speciality;
 use Modules\Doctor\Services\Web\DoctorAuthService;
+use RuntimeException;
 
 class DoctorAuthController extends Controller
 {
@@ -43,7 +45,7 @@ class DoctorAuthController extends Controller
         if ($this->doctorAuthService->needsPhoneVerification($user)) {
             return redirect()
                 ->route('doctor.verify-phone')
-                ->with('info', 'يرجى تفعيل رقم هاتفك عبر كود SMS من Firebase.');
+                ->with('info', 'يرجى تفعيل رقم هاتفك عبر كود واتساب.');
         }
 
         return redirect()->route($this->doctorAuthService->getPostLoginRoute($user));
@@ -70,7 +72,7 @@ class DoctorAuthController extends Controller
 
         return redirect()
             ->route('doctor.verify-phone')
-            ->with('success', 'تم إنشاء حسابك بنجاح. فعّل رقم هاتفك عبر كود SMS من Firebase.');
+            ->with('success', 'تم إنشاء حسابك بنجاح. فعّل رقم هاتفك عبر كود واتساب.');
     }
 
     public function showVerifyPhone(): View|RedirectResponse
@@ -88,14 +90,29 @@ class DoctorAuthController extends Controller
                 ->withErrors(['phone' => 'رقم الهاتف المسجل في حسابك غير صالح. تواصل مع الدعم.']);
         }
 
-        $firebaseReady = $this->doctorAuthService->isFirebaseWebConfigured()
-            && $this->doctorAuthService->isFirebaseServerConfigured();
-
         return view('doctor.verify-phone', [
             'phoneE164' => $phoneE164,
             'maskedPhone' => PhoneNormalizer::mask($phoneE164),
-            'firebaseConfigured' => $firebaseReady,
+            'otpConfigured' => $this->doctorAuthService->isOtpDeliveryConfigured(),
+            'wasenderReady' => app(OtpSmsSender::class)->isConfigured(),
         ]);
+    }
+
+    public function sendPhoneOtp(): RedirectResponse
+    {
+        $user = Auth::guard('web')->user();
+
+        if (!$this->doctorAuthService->needsPhoneVerification($user)) {
+            return redirect()->route($this->doctorAuthService->getPostLoginRoute($user));
+        }
+
+        try {
+            $this->doctorAuthService->sendPhoneVerificationOtp($user);
+        } catch (RuntimeException|InvalidArgumentException $e) {
+            return back()->withErrors(['code' => $e->getMessage()]);
+        }
+
+        return back()->with('success', 'تم إرسال كود التحقق عبر واتساب.');
     }
 
     public function verifyPhone(VerifyDoctorPhoneRequest $request): RedirectResponse
@@ -107,9 +124,9 @@ class DoctorAuthController extends Controller
         }
 
         try {
-            $this->doctorAuthService->verifyPhoneWithFirebaseToken($user, $request->firebase_token);
+            $this->doctorAuthService->verifyPhoneWithOtp($user, $request->code);
         } catch (InvalidArgumentException $e) {
-            return back()->withErrors(['firebase_token' => $e->getMessage()]);
+            return back()->withErrors(['code' => $e->getMessage()]);
         }
 
         return redirect()
@@ -132,8 +149,7 @@ class DoctorAuthController extends Controller
     /** @deprecated */
     public function resendVerificationOtp(): RedirectResponse
     {
-        return redirect()->route('doctor.verify-phone')
-            ->with('info', 'استخدم زر إرسال كود SMS لتفعيل رقم هاتفك.');
+        return $this->sendPhoneOtp();
     }
 
     public function logout(): RedirectResponse

@@ -2,7 +2,6 @@
 
 namespace Modules\Doctor\Services\Web;
 
-use App\Services\FirebaseTokenVerifier;
 use App\Support\PhoneNormalizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +10,9 @@ use InvalidArgumentException;
 use App\Notifications\DoctorDocumentsResubmitted;
 use App\Notifications\NewDoctorRegistered;
 use App\Services\AdminNotificationService;
+use App\Services\OtpSmsSender;
 use Modules\Auth\Models\User;
+use Modules\Auth\Services\Api\AuthService;
 use Modules\Doctor\Models\Doctor;
 use Modules\Doctor\Models\DoctorBranch;
 use Modules\Doctor\Models\DoctorStaffMember;
@@ -19,7 +20,10 @@ use Modules\Doctor\Models\Governorate;
 
 class DoctorAuthService
 {
-    public function __construct(private FirebaseTokenVerifier $tokenVerifier) {}
+    public function __construct(
+        private AuthService $authService,
+        private OtpSmsSender $otpSender,
+    ) {}
 
     public function register(
         array $data,
@@ -95,31 +99,31 @@ class DoctorAuthService
         return $user->isDoctor() && !$user->phone_verified_at;
     }
 
-    public function isFirebaseWebConfigured(): bool
+    public function isOtpDeliveryConfigured(): bool
     {
-        return (bool) config('firebase.web_api_key')
-            && (bool) config('firebase.auth_domain')
-            && (bool) config('firebase.project_id');
+        return $this->otpSender->isConfigured()
+            || (! app()->environment('production') && (bool) config('wasender.log_fallback', true));
     }
 
-    public function isFirebaseServerConfigured(): bool
+    public function sendPhoneVerificationOtp(User $user): void
     {
-        $credentials = config('firebase.credentials');
-
-        return $credentials && is_file(base_path((string) $credentials));
+        $this->authService->sendOtp($user->phone, 'phone_verify');
     }
 
     /**
      * @throws InvalidArgumentException
      */
-    public function verifyPhoneWithFirebaseToken(User $user, string $firebaseToken): void
+    public function verifyPhoneWithOtp(User $user, string $code): void
     {
-        $verified = $this->tokenVerifier->verifyAndMatchPhone($firebaseToken, $user->phone);
+        $otp = $this->authService->verifyOtp($user->phone, $code, 'phone_verify');
+
+        if (! $otp) {
+            throw new InvalidArgumentException('كود التحقق غير صحيح أو منتهي الصلاحية');
+        }
 
         $user->update([
-            'phone' => $verified['phone'],
+            'phone' => PhoneNormalizer::toE164($user->phone),
             'phone_verified_at' => now(),
-            'firebase_uid' => $verified['uid'],
         ]);
     }
 

@@ -96,18 +96,15 @@
         </div>
     </div>
 
-    <!-- Revenue Chart Placeholder -->
+    <!-- Revenue Chart -->
     <div class="bg-white rounded-xl shadow-sm p-6">
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-bold text-gray-800">الإيرادات الشهرية</h3>
             <a href="/admin/dashboard/analytics" class="text-blue-600 hover:text-blue-700 text-sm">عرض التفاصيل</a>
         </div>
-        <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <div class="text-center text-gray-500">
-                <i class="fas fa-chart-line text-4xl mb-2"></i>
-                <p>الرسم البياني للإيرادات</p>
-                <p class="text-sm">انتقل إلى صفحة التحليلات</p>
-            </div>
+        <div class="h-64 relative">
+            <canvas id="homeRevenueChart"></canvas>
+            <p id="homeRevenueEmpty" class="hidden absolute inset-0 flex items-center justify-center text-gray-500 text-sm">لا توجد بيانات إيرادات بعد</p>
         </div>
     </div>
 </div>
@@ -116,6 +113,8 @@
 
 @section('scripts')
 <script>
+    let homeRevenueChart = null;
+
     window.addEventListener('load', async function() {
         await loadDashboardMetrics();
         await loadPendingDoctors();
@@ -129,7 +128,6 @@
             if (data.success) {
                 const metrics = data.data;
 
-                // Update stats
                 document.getElementById('totalDoctors').textContent = metrics.doctors.total || 0;
                 document.getElementById('activeDoctorsPercent').textContent = `${metrics.doctors.active || 0} نشط`;
 
@@ -140,11 +138,75 @@
                 document.getElementById('completedAppointmentsPercent').textContent = `${metrics.appointments.completed || 0} مكتمل`;
 
                 document.getElementById('totalRevenue').textContent = formatCurrency(metrics.revenue.total || 0);
-                document.getElementById('revenueGrowth').textContent = `${metrics.revenue.growth || 0}% نمو`;
+                const growth = metrics.revenue.growth || 0;
+                const growthEl = document.getElementById('revenueGrowth');
+                growthEl.textContent = `${growth >= 0 ? '+' : ''}${growth}% عن الشهر السابق`;
+                growthEl.className = `text-sm mt-2 ${growth >= 0 ? 'text-green-600' : 'text-red-600'}`;
+
+                renderHomeRevenueChart(metrics.charts?.monthly_revenue);
             }
         } catch (error) {
             console.error('Error loading metrics:', error);
         }
+    }
+
+    function renderHomeRevenueChart(series) {
+        const canvas = document.getElementById('homeRevenueChart');
+        const empty = document.getElementById('homeRevenueEmpty');
+        if (!canvas || typeof Chart === 'undefined') return;
+
+        const labels = series?.labels || [];
+        const values = series?.values || [];
+        const hasData = values.some(v => Number(v) > 0);
+
+        if (!hasData) {
+            empty.classList.remove('hidden');
+            if (homeRevenueChart) {
+                homeRevenueChart.destroy();
+                homeRevenueChart = null;
+            }
+            return;
+        }
+
+        empty.classList.add('hidden');
+        if (homeRevenueChart) homeRevenueChart.destroy();
+
+        homeRevenueChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'الإيرادات',
+                    data: values,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#f59e0b',
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => formatCurrency(ctx.parsed.y || 0),
+                        },
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (v) => Number(v).toLocaleString('ar-IQ'),
+                        },
+                    },
+                },
+            },
+        });
     }
 
     async function loadPendingDoctors() {

@@ -1,0 +1,1637 @@
+{
+    "info": {
+        "_postman_id": "iraq-doctors-mobile-all-in-one",
+        "name": "Iraq Doctors — Mobile API (All-in-One)",
+        "description": "مجموعة موبايل مجمّعة.\n\nAuth: Register → Send OTP (phone_verify) → Verify OTP → Login (token). OTP مش جزء من الريجيستر.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://127.0.0.1:8000"
+        },
+        {
+            "key": "token",
+            "value": ""
+        },
+        {
+            "key": "phone",
+            "value": "07901234567"
+        },
+        {
+            "key": "otp_code",
+            "value": ""
+        },
+        {
+            "key": "password",
+            "value": "Password123"
+        },
+        {
+            "key": "name",
+            "value": "مريض تجريبي"
+        },
+        {
+            "key": "doctor_id",
+            "value": "1"
+        },
+        {
+            "key": "branch_id",
+            "value": "1"
+        },
+        {
+            "key": "appointment_id",
+            "value": ""
+        },
+        {
+            "key": "laboratory_id",
+            "value": "1"
+        },
+        {
+            "key": "lab_order_id",
+            "value": "1"
+        },
+        {
+            "key": "test_item_id",
+            "value": "1"
+        },
+        {
+            "key": "pharmacy_id",
+            "value": "1"
+        },
+        {
+            "key": "pharmacy_order_id",
+            "value": "1"
+        },
+        {
+            "key": "pharmacy_medicine_id",
+            "value": "1"
+        },
+        {
+            "key": "record_id",
+            "value": "1"
+        },
+        {
+            "key": "notification_id",
+            "value": ""
+        },
+        {
+            "key": "page_slug",
+            "value": "about"
+        }
+    ],
+    "item": [
+        {
+            "name": "01. Auth (Wasender OTP)",
+            "item": [
+                {
+                    "name": "1. Register then verify then login",
+                    "item": [
+                        {
+                            "name": "1.1 Register patient",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "pm.test('created', () => pm.expect([200, 201]).to.include(pm.response.code));",
+                                            "pm.test('needs verify', () => pm.expect(json.data.requires_phone_verification).to.eql(true));",
+                                            "pm.test('no otp on register', () => pm.expect(json.data.otp).to.be.undefined);"
+                                        ]
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"name\": \"{{name}}\",\n  \"phone\": \"{{phone}}\",\n  \"password\": \"{{password}}\",\n  \"password_confirmation\": \"{{password}}\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/auth/register",
+                                "description": "ينشئ حساب مريض فقط — بدون إرسال OTP. التفعيل عبر send-otp قبل اللوجين."
+                            }
+                        },
+                        {
+                            "name": "1.2 Login before verify (expect 403)",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "pm.test('blocked', () => pm.expect(pm.response.code).to.eql(403));",
+                                            "pm.test('code', () => pm.expect(json.error.code).to.eql('PHONE_NOT_VERIFIED'));"
+                                        ]
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"password\": \"{{password}}\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/auth/login"
+                            }
+                        },
+                        {
+                            "name": "1.3 Send OTP (phone_verify)",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "pm.test('status 200', () => pm.response.to.have.status(200));",
+                                            "if (json.data && json.data.code) {",
+                                            "  pm.collectionVariables.set('otp_code', String(json.data.code));",
+                                            "}"
+                                        ]
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"type\": \"phone_verify\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/auth/send-otp"
+                            }
+                        },
+                        {
+                            "name": "1.4 Verify OTP (phone_verify)",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "pm.test('status 200', () => pm.response.to.have.status(200));",
+                                            "pm.test('verified', () => pm.expect(json.data.verified).to.eql(true));"
+                                        ]
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otp_code}}\",\n  \"type\": \"phone_verify\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/auth/verify-otp"
+                            }
+                        },
+                        {
+                            "name": "1.5 Login (returns token)",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "pm.test('status 200', () => pm.response.to.have.status(200));",
+                                            "pm.test('has token', () => pm.expect(json.data.token).to.be.a('string'));",
+                                            "if (json.data && json.data.token) {",
+                                            "  pm.collectionVariables.set('token', json.data.token);",
+                                            "}"
+                                        ]
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"password\": \"{{password}}\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/auth/login"
+                            }
+                        },
+                        {
+                            "name": "1.6 Me",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/auth/me"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "2. Forgot / Reset password",
+                    "item": [
+                        {
+                            "name": "2.1 Forgot password",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data && json.data.code) {",
+                                            "  pm.collectionVariables.set('otp_code', String(json.data.code));",
+                                            "}"
+                                        ]
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"phone\": \"{{phone}}\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/auth/forgot-password"
+                            }
+                        },
+                        {
+                            "name": "2.2 Reset password",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otp_code}}\",\n  \"new_password\": \"{{password}}\",\n  \"new_password_confirmation\": \"{{password}}\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/auth/reset-password"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "3. Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/auth/logout"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "02. Doctors & Appointments",
+            "item": [
+                {
+                    "name": "List doctors",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/doctors?page=1&limit=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "doctors"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "speciality_id",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "governorate_id",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Featured doctors",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/doctors/featured"
+                    }
+                },
+                {
+                    "name": "Nearby doctors",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/doctors/nearby?latitude=33.3152&longitude=44.3661&radius=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "doctors",
+                                "nearby"
+                            ],
+                            "query": [
+                                {
+                                    "key": "latitude",
+                                    "value": "33.3152"
+                                },
+                                {
+                                    "key": "longitude",
+                                    "value": "44.3661"
+                                },
+                                {
+                                    "key": "radius",
+                                    "value": "10"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Specialities",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/doctors/specialities"
+                    }
+                },
+                {
+                    "name": "Doctor profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/doctors/{{doctor_id}}"
+                    }
+                },
+                {
+                    "name": "Doctor schedule",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/doctors/{{doctor_id}}/schedule"
+                    }
+                },
+                {
+                    "name": "Book appointment",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "const json = pm.response.json();",
+                                    "if (json.data && json.data.id) { pm.collectionVariables.set(\"appointment_id\", String(json.data.id)); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"doctor_id\": {{doctor_id}},\n  \"branch_id\": {{branch_id}},\n  \"appointment_date\": \"2026-08-01\",\n  \"appointment_time\": \"10:00\",\n  \"notes\": \"حجز تجريبي\"\n}"
+                        },
+                        "url": "{{base_url}}/api/v1/appointments"
+                    }
+                },
+                {
+                    "name": "My appointments",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/appointments/my"
+                    }
+                },
+                {
+                    "name": "Appointment details",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}"
+                    }
+                },
+                {
+                    "name": "Cancel appointment",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"reason\": \"تغيير الموعد\"\n}"
+                        },
+                        "url": "{{base_url}}/api/v1/appointments/{{appointment_id}}/cancel"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "03. Laboratory",
+            "item": [
+                {
+                    "name": "Public",
+                    "item": [
+                        {
+                            "name": "Search laboratories",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/laboratories?governorate_id=&name=&home_collection=&page=1&limit=20",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "laboratories"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "governorate_id",
+                                            "value": ""
+                                        },
+                                        {
+                                            "key": "name",
+                                            "value": ""
+                                        },
+                                        {
+                                            "key": "home_collection",
+                                            "value": ""
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "20"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Nearby laboratories",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/laboratories/nearby?latitude=33.3152&longitude=44.3661&radius=10&limit=20",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "laboratories",
+                                        "nearby"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "latitude",
+                                            "value": "33.3152"
+                                        },
+                                        {
+                                            "key": "longitude",
+                                            "value": "44.3661"
+                                        },
+                                        {
+                                            "key": "radius",
+                                            "value": "10"
+                                        },
+                                        {
+                                            "key": "governorate_id",
+                                            "value": "",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "20"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Laboratory profile",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/laboratories/{{laboratory_id}}"
+                            }
+                        },
+                        {
+                            "name": "Laboratory test catalog",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/laboratories/{{laboratory_id}}/tests?category_id=",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "laboratories",
+                                        "{{laboratory_id}}",
+                                        "tests"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "category_id",
+                                            "value": ""
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Patient (auth:sanctum)",
+                    "item": [
+                        {
+                            "name": "Create order (catalog)",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data && json.data.id) {",
+                                            "  pm.collectionVariables.set('lab_order_id', json.data.id);",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"laboratory_id\": {{laboratory_id}},\n  \"items\": [\n    { \"laboratory_test_item_id\": {{test_item_id}}, \"quantity\": 1 }\n  ],\n  \"patient_notes\": \"ملاحظة تجريبية\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/laboratory-orders"
+                            }
+                        },
+                        {
+                            "name": "Create order (prescription image)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "formdata",
+                                    "formdata": [
+                                        {
+                                            "key": "laboratory_id",
+                                            "value": "{{laboratory_id}}",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "prescription_image",
+                                            "type": "file",
+                                            "src": ""
+                                        },
+                                        {
+                                            "key": "patient_notes",
+                                            "value": "روشتة من الطبيب",
+                                            "type": "text"
+                                        }
+                                    ]
+                                },
+                                "url": "{{base_url}}/api/v1/laboratory-orders"
+                            }
+                        },
+                        {
+                            "name": "My active orders",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/laboratory-orders/my"
+                            }
+                        },
+                        {
+                            "name": "My history (delivered only)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/laboratory-orders/my?history=1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "laboratory-orders",
+                                        "my"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "history",
+                                            "value": "1"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Order details",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/laboratory-orders/{{lab_order_id}}"
+                            }
+                        },
+                        {
+                            "name": "Accept quote",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/laboratory-orders/{{lab_order_id}}/accept-quote"
+                            }
+                        },
+                        {
+                            "name": "Cancel order",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"reason\": \"تغيير في الموعد\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/laboratory-orders/{{lab_order_id}}/cancel"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "04. Pharmacy",
+            "item": [
+                {
+                    "name": "Public",
+                    "item": [
+                        {
+                            "name": "Search pharmacies",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/pharmacies?governorate_id=&name=&delivery=&page=1&limit=20",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "pharmacies"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "governorate_id",
+                                            "value": ""
+                                        },
+                                        {
+                                            "key": "name",
+                                            "value": ""
+                                        },
+                                        {
+                                            "key": "delivery",
+                                            "value": ""
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "20"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Nearby pharmacies",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/pharmacies/nearby?latitude=33.3152&longitude=44.3661&radius=10&limit=20",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "pharmacies",
+                                        "nearby"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "latitude",
+                                            "value": "33.3152"
+                                        },
+                                        {
+                                            "key": "longitude",
+                                            "value": "44.3661"
+                                        },
+                                        {
+                                            "key": "radius",
+                                            "value": "10"
+                                        },
+                                        {
+                                            "key": "governorate_id",
+                                            "value": "",
+                                            "disabled": true
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "20"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Pharmacy profile",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/pharmacies/{{pharmacy_id}}"
+                            }
+                        },
+                        {
+                            "name": "Pharmacy medicine catalog",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/pharmacies/{{pharmacy_id}}/medicines?category_id=",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "pharmacies",
+                                        "{{pharmacy_id}}",
+                                        "medicines"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "category_id",
+                                            "value": ""
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Patient (auth:sanctum)",
+                    "item": [
+                        {
+                            "name": "Create order (catalog + pickup)",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data && json.data.id) {",
+                                            "  pm.collectionVariables.set('pharmacy_order_id', json.data.id);",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"pharmacy_id\": {{pharmacy_id}},\n  \"fulfillment_type\": \"pickup\",\n  \"items\": [\n    { \"pharmacy_medicine_id\": {{pharmacy_medicine_id}}, \"quantity\": 1 }\n  ],\n  \"patient_notes\": \"ملاحظة تجريبية\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/pharmacy-orders"
+                            }
+                        },
+                        {
+                            "name": "Create order (catalog + delivery)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"pharmacy_id\": {{pharmacy_id}},\n  \"fulfillment_type\": \"delivery\",\n  \"delivery_address\": \"بغداد، الكرادة، شارع 62\",\n  \"delivery_latitude\": 33.3152,\n  \"delivery_longitude\": 44.3661,\n  \"delivery_notes\": \"اتصل عند الوصول\",\n  \"items\": [\n    { \"pharmacy_medicine_id\": {{pharmacy_medicine_id}}, \"quantity\": 2 }\n  ],\n  \"patient_notes\": \"توصيل سريع\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/pharmacy-orders"
+                            }
+                        },
+                        {
+                            "name": "Create order (prescription image)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "formdata",
+                                    "formdata": [
+                                        {
+                                            "key": "pharmacy_id",
+                                            "value": "{{pharmacy_id}}",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "fulfillment_type",
+                                            "value": "pickup",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "prescription_image",
+                                            "type": "file",
+                                            "src": ""
+                                        },
+                                        {
+                                            "key": "patient_notes",
+                                            "value": "روشتة من الطبيب",
+                                            "type": "text"
+                                        }
+                                    ]
+                                },
+                                "url": "{{base_url}}/api/v1/pharmacy-orders"
+                            }
+                        },
+                        {
+                            "name": "My active orders",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/pharmacy-orders/my"
+                            }
+                        },
+                        {
+                            "name": "My history (completed only)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/pharmacy-orders/my?history=1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "pharmacy-orders",
+                                        "my"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "history",
+                                            "value": "1"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Order details",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/pharmacy-orders/{{pharmacy_order_id}}"
+                            }
+                        },
+                        {
+                            "name": "Accept quote",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/pharmacy-orders/{{pharmacy_order_id}}/accept-quote"
+                            }
+                        },
+                        {
+                            "name": "Cancel order",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"reason\": \"تغيير في الطلب\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/pharmacy-orders/{{pharmacy_order_id}}/cancel"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "05. Patient (orders / records / notifications)",
+            "item": [
+                {
+                    "name": "Unified Orders",
+                    "item": [
+                        {
+                            "name": "My active orders (lab + pharmacy)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/patient/orders"
+                            }
+                        },
+                        {
+                            "name": "My order history (completed/delivered)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/patient/orders?history=1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "patient",
+                                        "orders"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "history",
+                                            "value": "1"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Medical Records",
+                    "item": [
+                        {
+                            "name": "My prescriptions (كشوفاتي)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/medical-records/patient/prescriptions"
+                            }
+                        },
+                        {
+                            "name": "Medical history",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/medical-records/patient/history?record_type=",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "medical-records",
+                                        "patient",
+                                        "history"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "record_type",
+                                            "value": "",
+                                            "disabled": true
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Archive (prescriptions + lab + pharmacy)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/medical-records/patient/archive"
+                            }
+                        },
+                        {
+                            "name": "Record details",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/medical-records/{{record_id}}"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Notifications (FCM + in-app)",
+                    "item": [
+                        {
+                            "name": "List notifications",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/patient/notifications?unread=0&limit=30",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "patient",
+                                        "notifications"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "unread",
+                                            "value": "0"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "30"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Unread notifications only",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/patient/notifications?unread=1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "patient",
+                                        "notifications"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "unread",
+                                            "value": "1"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Mark notification read",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/patient/notifications/{{notification_id}}/read"
+                            }
+                        },
+                        {
+                            "name": "Mark all read",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": "{{base_url}}/api/v1/patient/notifications/read-all"
+                            }
+                        },
+                        {
+                            "name": "Register device (OneSignal)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"player_id\": \"onesignal-player-id\",\n  \"platform\": \"android\"\n}"
+                                },
+                                "url": "{{base_url}}/api/v1/auth/devices/register"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "06. Support & Pages",
+            "item": [
+                {
+                    "name": "Support contacts",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/support-contacts"
+                    }
+                },
+                {
+                    "name": "Static pages list",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/pages"
+                    }
+                },
+                {
+                    "name": "Static page by slug",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/v1/pages/{{page_slug}}"
+                    }
+                }
+            ]
+        }
+    ]
+}

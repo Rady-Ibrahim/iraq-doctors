@@ -49,7 +49,7 @@
             <div>
                 <p class="text-sm text-gray-600">إجمالي الإيرادات</p>
                 <p class="text-2xl font-bold text-gray-800" id="totalRevenue">0</p>
-                <p class="text-xs text-green-600 mt-1">+12% عن الفترة السابقة</p>
+                <p class="text-xs mt-1" id="totalRevenueGrowth">—</p>
             </div>
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-dollar-sign text-blue-600"></i>
@@ -61,7 +61,7 @@
             <div>
                 <p class="text-sm text-gray-600">المواعيد المكتملة</p>
                 <p class="text-2xl font-bold text-gray-800" id="completedAppointments">0</p>
-                <p class="text-xs text-green-600 mt-1">+8% عن الفترة السابقة</p>
+                <p class="text-xs text-gray-500 mt-1">في الفترة المحددة</p>
             </div>
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-check-circle text-green-600"></i>
@@ -73,7 +73,7 @@
             <div>
                 <p class="text-sm text-gray-600">اشتراكات الأطباء</p>
                 <p class="text-2xl font-bold text-gray-800" id="subscriptionRevenue">0</p>
-                <p class="text-xs text-green-600 mt-1">+5% عن الفترة السابقة</p>
+                <p class="text-xs text-gray-500 mt-1">إيراد الاشتراكات</p>
             </div>
             <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-crown text-purple-600"></i>
@@ -85,7 +85,7 @@
             <div>
                 <p class="text-sm text-gray-600">متوسط الإيراد</p>
                 <p class="text-2xl font-bold text-gray-800" id="averageRevenue">0</p>
-                <p class="text-xs text-green-600 mt-1">+3% عن الفترة السابقة</p>
+                <p class="text-xs text-gray-500 mt-1">لكل معاملة اشتراك</p>
             </div>
             <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-chart-line text-orange-600"></i>
@@ -97,8 +97,9 @@
 <!-- Revenue Chart -->
 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-800 mb-4">تطور الإيرادات</h3>
-    <div class="h-64 flex items-center justify-center" id="revenueChart">
-        <p class="text-gray-500">سيتم عرض الرسم البياني هنا</p>
+    <div class="h-72 relative">
+        <canvas id="revenueTrendCanvas"></canvas>
+        <p id="revenueTrendEmpty" class="hidden absolute inset-0 flex items-center justify-center text-gray-500 text-sm">لا توجد بيانات في هذه الفترة</p>
     </div>
 </div>
 
@@ -150,6 +151,8 @@
 
 @section('scripts')
 <script>
+let revenueTrendChart = null;
+
 window.addEventListener('load', async function() {
     await loadRevenueData();
 });
@@ -184,20 +187,82 @@ async function loadRevenueData() {
 }
 
 function renderRevenueData(data) {
-    // Cards
     document.getElementById('totalRevenue').textContent = formatCurrency(data.total_revenue || 0);
     document.getElementById('completedAppointments').textContent = data.completed_appointments || 0;
     document.getElementById('subscriptionRevenue').textContent = formatCurrency(data.subscription_revenue || 0);
     document.getElementById('averageRevenue').textContent = formatCurrency(data.average_revenue || 0);
 
-    // Revenue by Category
+    const growth = Number(data.growth?.total_revenue || 0);
+    const growthEl = document.getElementById('totalRevenueGrowth');
+    growthEl.textContent = `${growth >= 0 ? '+' : ''}${growth}% عن الفترة السابقة`;
+    growthEl.className = `text-xs mt-1 ${growth >= 0 ? 'text-green-600' : 'text-red-600'}`;
+
+    renderRevenueTrendChart(data.charts?.daily_revenue);
     renderRevenueByCategory(data.revenue_by_category || []);
-
-    // Top Performers
     renderTopPerformers(data.top_performers || []);
-
-    // Recent Transactions
     renderTransactions(data.recent_transactions || []);
+}
+
+function renderRevenueTrendChart(series) {
+    const canvas = document.getElementById('revenueTrendCanvas');
+    const empty = document.getElementById('revenueTrendEmpty');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const labels = series?.labels || [];
+    const values = series?.values || [];
+    const hasData = values.some(v => Number(v) > 0);
+
+    if (!hasData) {
+        empty.classList.remove('hidden');
+        if (revenueTrendChart) {
+            revenueTrendChart.destroy();
+            revenueTrendChart = null;
+        }
+        return;
+    }
+
+    empty.classList.add('hidden');
+    if (revenueTrendChart) revenueTrendChart.destroy();
+
+    revenueTrendChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'الإيرادات',
+                data: values,
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderRadius: 6,
+                maxBarThickness: 28,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => formatCurrency(ctx.parsed.y || 0),
+                    },
+                },
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (v) => Number(v).toLocaleString('ar-IQ'),
+                    },
+                },
+                x: {
+                    ticks: {
+                        maxTicksLimit: 10,
+                        maxRotation: 0,
+                    },
+                },
+            },
+        },
+    });
 }
 
 function renderRevenueByCategory(categories) {

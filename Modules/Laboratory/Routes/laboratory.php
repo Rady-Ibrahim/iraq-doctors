@@ -28,6 +28,7 @@ Route::middleware(['session.scope:laboratory', 'web'])->group(function () {
 
         Route::middleware(['auth:web', 'laboratory'])->group(function () {
             Route::get('/verify-phone', [LaboratoryAuthController::class, 'showVerifyPhone'])->name('verify-phone');
+            Route::post('/verify-phone/send', [LaboratoryAuthController::class, 'sendPhoneOtp'])->name('verify-phone.send');
             Route::post('/verify-phone', [LaboratoryAuthController::class, 'verifyPhone'])->name('verify-phone.submit');
             Route::post('/logout', [LaboratoryAuthController::class, 'logout'])->name('logout');
 

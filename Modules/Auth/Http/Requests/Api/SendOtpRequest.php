@@ -15,7 +15,7 @@ class SendOtpRequest extends ApiFormRequest
     {
         return [
             'phone' => 'required|string',
-            'type' => 'required|in:register,login,password_reset,phone_verify',
+            'type' => 'required|in:login,password_reset,phone_verify',
         ];
     }
 

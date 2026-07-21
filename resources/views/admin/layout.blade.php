@@ -7,6 +7,7 @@
     <title>@yield('title', 'لوحة تحكم الإدارة')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     @include('partials.dashboard-ui', ['confirmColor' => '#3b82f6'])
     @include('partials.dashboard-api', [
         'loginUrl' => route('admin.login'),
