@@ -19,7 +19,8 @@ class ForgotPasswordRequest extends ApiFormRequest
                 'required',
                 'string',
                 function ($attribute, $value, $fail) {
-                    $user = \Modules\Auth\Models\User::where('phone', $value)->first();
+                    $variants = \App\Support\PhoneNormalizer::lookupVariants($value);
+                    $user = \Modules\Auth\Models\User::whereIn('phone', $variants)->first();
                     if (!$user) {
                         $fail('رقم الهاتف غير موجود');
                     }
