@@ -160,6 +160,46 @@ class DoctorDashboardController extends Controller
         }
     }
 
+    /**
+     * Update profile + avatar (multipart/form-data)
+     * POST /doctor/api/profile/avatar
+     */
+    public function updateProfileWithAvatar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'name'      => 'sometimes|string|max:255',
+            'phone'     => 'sometimes|string|regex:/^[0-9]{10,15}$/',
+            'email'     => 'sometimes|email',
+            'address'   => 'nullable|string',
+            'latitude'  => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'avatar'    => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+        ]);
+
+        try {
+            $userId = auth('web')->id();
+            $data   = $request->only(['name','phone','email','address','latitude','longitude']);
+
+            // Handle avatar upload
+            if ($request->hasFile('avatar')) {
+                $user = \Modules\Auth\Models\User::findOrFail($userId);
+                // Delete old avatar
+                if ($user->avatar && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+                }
+                $path = $request->file('avatar')->store('avatars/doctors', 'public');
+                $data['avatar'] = $path;
+            }
+
+            $this->doctorDashboardService->updateProfile($userId, $data);
+
+            $profile = $this->doctorDashboardService->getProfile($userId);
+            return $this->success($profile, 'تم تحديث الملف الشخصي بنجاح');
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث الملف الشخصي');
+        }
+    }
+
     public function updateProfessional(Request $request): JsonResponse
     {
         $request->validate([

@@ -16,16 +16,17 @@ class DoctorBranchService
             }
 
             return DoctorBranch::create([
-                'doctor_id' => $doctorId,
-                'branch_name' => $data['branch_name'],
-                'governorate' => $data['governorate'] ?? null,
-                'district' => $data['district'] ?? null,
-                'address' => $data['address'] ?? null,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
-                'phone' => $data['phone'] ?? null,
-                'is_primary' => $data['is_primary'] ?? false,
-                'is_active' => $data['is_active'] ?? true,
+                'doctor_id'      => $doctorId,
+                'branch_name'    => $data['branch_name'],
+                'governorate_id' => $data['governorate_id'] ?? null,
+                'governorate'    => $data['governorate'] ?? null,
+                'district'       => $data['district'] ?? null,
+                'address'        => $data['address'] ?? null,
+                'latitude'       => $data['latitude'] ?? null,
+                'longitude'      => $data['longitude'] ?? null,
+                'phone'          => $data['phone'] ?? null,
+                'is_primary'     => $data['is_primary'] ?? false,
+                'is_active'      => $data['is_active'] ?? true,
             ]);
         });
     }
@@ -58,7 +59,8 @@ class DoctorBranchService
 
     public function getBranches(string $doctorId)
     {
-        return DoctorBranch::where('doctor_id', $doctorId)
+        return DoctorBranch::with('governorateModel')
+            ->where('doctor_id', $doctorId)
             ->where('is_active', true)
             ->orderBy('is_primary', 'desc')
             ->get();
@@ -66,21 +68,21 @@ class DoctorBranchService
 
     public function getBranch(string $branchId): ?DoctorBranch
     {
-        return DoctorBranch::with('schedules')
+        return DoctorBranch::with(['schedules', 'governorateModel'])
             ->where('id', $branchId)
             ->where('is_active', true)
             ->first();
     }
 
-    public function searchNearbyBranches(float $latitude, float $longitude, float $radius, string $governorate = null)
+    public function searchNearbyBranches(float $latitude, float $longitude, float $radius, ?int $governorateId = null)
     {
-        $query = DoctorBranch::with(['doctor.user', 'doctor.speciality'])
+        $query = DoctorBranch::with(['doctor.user', 'doctor.speciality', 'governorateModel'])
             ->where('is_active', true)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude');
 
-        if ($governorate) {
-            $query->where('governorate', $governorate);
+        if ($governorateId) {
+            $query->where('governorate_id', $governorateId);
         }
 
         $query->whereRaw("

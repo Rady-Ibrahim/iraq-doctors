@@ -123,6 +123,8 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
                         Route::get('/profile', [DoctorDashboardController::class, 'profile']);
                         Route::put('/profile', [DoctorDashboardController::class, 'updateProfile'])
                             ->middleware('doctor.permission:settings.view');
+                        Route::post('/profile/avatar', [DoctorDashboardController::class, 'updateProfileWithAvatar'])
+                            ->middleware('doctor.permission:settings.view');
                         Route::put('/professional', [DoctorDashboardController::class, 'updateProfessional'])
                             ->middleware('doctor.owner');
                         Route::post('/change-password', [DoctorDashboardController::class, 'changePassword'])

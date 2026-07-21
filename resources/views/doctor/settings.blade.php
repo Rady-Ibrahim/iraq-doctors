@@ -37,8 +37,24 @@
         <!-- Profile Form -->
         <div class="bg-white rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-6">معلومات شخصية</h3>
-            <form id="profileForm" onsubmit="updateProfile(event)">
+            <form id="profileForm" onsubmit="updateProfile(event)" enctype="multipart/form-data">
                 <div class="space-y-4">
+                    {{-- Avatar --}}
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">الصورة الشخصية</label>
+                        <div class="flex items-center gap-4">
+                            <div id="avatarPreviewWrap" class="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                <i id="avatarIcon" class="fas fa-user text-teal-500 text-2xl"></i>
+                                <img id="avatarPreview" src="" alt="" class="hidden w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1">
+                                <input type="file" id="profileAvatar" name="avatar" accept=".jpg,.jpeg,.png"
+                                    onchange="previewAvatar(this)"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500">
+                                <p class="text-xs text-gray-400 mt-1">JPG أو PNG — حتى 5 ميجا</p>
+                            </div>
+                        </div>
+                    </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">الاسم</label>
                         <input type="text" id="profileName" 
@@ -236,6 +252,16 @@ async function loadProfile() {
             const fee = document.getElementById('consultationFee');
             if (exp) exp.value = profile.experience_years || '';
             if (fee) fee.value = profile.consultation_fee || '';
+
+            // Show current avatar
+            if (profile.avatar) {
+                const img = document.getElementById('avatarPreview');
+                const icon = document.getElementById('avatarIcon');
+                img.src = profile.avatar;
+                img.classList.remove('hidden');
+                icon.classList.add('hidden');
+            }
+
             initClinicMap();
         }
     } catch (error) {
@@ -314,27 +340,56 @@ function detectSettingsLocation() {
 
 async function updateProfile(event) {
     event.preventDefault();
-    
+
+    const formData = new FormData();
+    formData.append('name',      document.getElementById('profileName').value);
+    formData.append('phone',     document.getElementById('profilePhone').value);
+    formData.append('email',     document.getElementById('profileEmail').value);
+    formData.append('address',   document.getElementById('profileAddress').value);
+    formData.append('latitude',  document.getElementById('profileLatitude').value);
+    formData.append('longitude', document.getElementById('profileLongitude').value);
+
+    const avatarFile = document.getElementById('profileAvatar').files[0];
+    if (avatarFile) formData.append('avatar', avatarFile);
+
+    // Use _method override for PUT since FormData needs POST
+    formData.append('_method', 'PUT');
+
     try {
-        const data = await apiCall('/doctor/api/profile', {
-            method: 'PUT',
-            body: JSON.stringify({
-                name: document.getElementById('profileName').value,
-                phone: document.getElementById('profilePhone').value,
-                email: document.getElementById('profileEmail').value,
-                address: document.getElementById('profileAddress').value,
-                latitude: parseFloat(document.getElementById('profileLatitude').value),
-                longitude: parseFloat(document.getElementById('profileLongitude').value),
-            })
+        const data = await apiCall('/doctor/api/profile/avatar', {
+            method: 'POST',
+            body: formData,
+            // No Content-Type — browser sets it automatically with boundary for FormData
         });
 
-        if (data.success) {
-            alert('تم تحديث الملف الشخصي بنجاح');
+        if (data && data.success) {
+            showSuccess('تم تحديث الملف الشخصي بنجاح');
+            if (data.data?.avatar) {
+                const img = document.getElementById('avatarPreview');
+                const icon = document.getElementById('avatarIcon');
+                img.src = data.data.avatar;
+                img.classList.remove('hidden');
+                icon.classList.add('hidden');
+            }
         } else {
-            alert(data.error?.message || 'فشل التحديث');
+            showError(data?.error?.message || 'فشل التحديث');
         }
     } catch (error) {
-        alert('حدث خطأ أثناء التحديث');
+        showError('حدث خطأ أثناء التحديث');
+    }
+}
+
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById('avatarPreview');
+            const icon = document.getElementById('avatarIcon');
+            img.src = e.target.result;
+            img.classList.remove('hidden');
+            icon.classList.add('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
     }
 }
 
