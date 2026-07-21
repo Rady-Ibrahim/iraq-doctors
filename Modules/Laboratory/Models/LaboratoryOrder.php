@@ -20,12 +20,16 @@ class LaboratoryOrder extends Model
         'laboratory_branch_id',
         'prescription_id',
         'prescription_image',
+        'collection_type',
+        'patient_address',
+        'patient_latitude',
+        'patient_longitude',
+        'patient_notes',
         'status',
         'source',
         'subtotal',
         'home_collection_fee',
         'total_amount',
-        'patient_notes',
         'quote_notes',
         'lab_notes',
         'cancel_reason',
@@ -36,14 +40,16 @@ class LaboratoryOrder extends Model
     ];
 
     protected $casts = [
-        'subtotal' => 'decimal:2',
-        'home_collection_fee' => 'decimal:2',
-        'total_amount' => 'decimal:2',
-        'quoted_at' => 'datetime',
-        'scheduled_at' => 'datetime',
-        'completed_at' => 'datetime',
-        'cancelled_at' => 'datetime',
-        'status' => LaboratoryOrderStatus::class,
+        'subtotal'           => 'decimal:2',
+        'home_collection_fee'=> 'decimal:2',
+        'total_amount'       => 'decimal:2',
+        'patient_latitude'   => 'decimal:7',
+        'patient_longitude'  => 'decimal:7',
+        'quoted_at'          => 'datetime',
+        'scheduled_at'       => 'datetime',
+        'completed_at'       => 'datetime',
+        'cancelled_at'       => 'datetime',
+        'status'             => LaboratoryOrderStatus::class,
     ];
 
     public function laboratory(): BelongsTo

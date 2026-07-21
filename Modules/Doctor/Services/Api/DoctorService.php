@@ -10,7 +10,7 @@ class DoctorService
 {
     public function search(array $filters): Builder
     {
-        $query = Doctor::with(['user', 'speciality', 'primaryBranch'])
+        $query = Doctor::with(['user', 'speciality', 'primaryBranch.governorateModel'])
             ->where('status', 'approved');
 
         if (isset($filters['speciality_id'])) {
@@ -57,9 +57,9 @@ class DoctorService
             }
         }
 
-        if (isset($filters['governorate'])) {
+        if (isset($filters['governorate_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
-                $q->where('governorate', $filters['governorate']);
+                $q->where('governorate_id', $filters['governorate_id']);
             });
         }
 
@@ -146,16 +146,16 @@ class DoctorService
             $query->where('speciality_id', $filters['speciality_id']);
         }
 
-        if (!empty($filters['governorate'])) {
+        if (!empty($filters['governorate_id'])) {
             $query->whereHas('branches', function ($q) use ($filters) {
-                $q->where('governorate', $filters['governorate']);
+                $q->where('governorate_id', $filters['governorate_id']);
             });
         }
 
         return $query->orderByDesc('rating');
     }
 
-    public function getNearby(float $latitude, float $longitude, float $radius = 10, ?string $governorate = null): array
+    public function getNearby(float $latitude, float $longitude, float $radius = 10, ?int $governorate = null): array
     {
         $branchQuery = \Modules\Doctor\Models\DoctorBranch::query()
             ->selectRaw("
@@ -171,7 +171,7 @@ class DoctorService
             ->whereHas('doctor', fn ($q) => $q->where('status', 'approved'));
 
         if ($governorate) {
-            $branchQuery->where('governorate', $governorate);
+            $branchQuery->where('governorate_id', $governorate);
         }
 
         $branchQuery->whereRaw("

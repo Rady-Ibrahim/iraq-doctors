@@ -14,22 +14,22 @@ class SearchDoctorsRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'speciality_id' => 'nullable|integer|exists:specialities,id',
-            'name' => 'nullable|string|max:255',
-            'min_rating' => 'nullable|numeric|min:0|max:5',
-            'max_rating' => 'nullable|numeric|min:0|max:5',
-            'min_fee' => 'nullable|numeric|min:0',
-            'max_fee' => 'nullable|numeric|min:0',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'distance_range' => 'nullable|integer|in:5,10,20,50',
-            'governorate' => 'nullable|string|max:255',
-            'availability' => 'nullable|in:today,tomorrow,this_week',
-            'consultation_type' => 'nullable|in:clinic,home,online',
+            'speciality_id'    => 'nullable|integer|exists:specialities,id',
+            'governorate_id'   => 'nullable|integer|exists:governorates,id',
+            'name'             => 'nullable|string|max:255',
+            'min_rating'       => 'nullable|numeric|min:0|max:5',
+            'max_rating'       => 'nullable|numeric|min:0|max:5',
+            'min_fee'          => 'nullable|numeric|min:0',
+            'max_fee'          => 'nullable|numeric|min:0',
+            'latitude'         => 'nullable|numeric|between:-90,90',
+            'longitude'        => 'nullable|numeric|between:-180,180',
+            'distance_range'   => 'nullable|integer|in:5,10,20,50',
+            'availability'     => 'nullable|in:today,tomorrow,this_week',
+            'consultation_type'=> 'nullable|in:clinic,home,online',
             'experience_level' => 'nullable|in:junior,intermediate,senior',
-            'sort_by' => 'nullable|in:rating,fee_asc,fee_desc,experience,distance',
-            'page' => 'nullable|integer|min:1',
-            'limit' => 'nullable|integer|min:1|max:100',
+            'sort_by'          => 'nullable|in:rating,fee_asc,fee_desc,experience,distance',
+            'page'             => 'nullable|integer|min:1',
+            'limit'            => 'nullable|integer|min:1|max:100',
         ];
     }
 

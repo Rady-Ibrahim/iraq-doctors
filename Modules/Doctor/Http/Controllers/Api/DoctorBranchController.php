@@ -16,23 +16,39 @@ class DoctorBranchController extends Controller
     {
     }
 
+    private function formatBranch($branch, bool $withSchedules = false): array
+    {
+        $data = [
+            'id'               => $branch->id,
+            'branch_name'      => $branch->branch_name,
+            'governorate_id'   => $branch->governorate_id,
+            'governorate_name' => $branch->governorateModel?->name_ar ?? $branch->governorate,
+            'district'         => $branch->district,
+            'address'          => $branch->address,
+            'latitude'         => $branch->latitude,
+            'longitude'        => $branch->longitude,
+            'phone'            => $branch->phone,
+            'is_primary'       => $branch->is_primary,
+        ];
+
+        if ($withSchedules) {
+            $data['schedules'] = $branch->schedules->map(function ($schedule) {
+                return [
+                    'day_of_week' => $schedule->day_of_week,
+                    'start_time'  => $schedule->start_time,
+                    'end_time'    => $schedule->end_time,
+                ];
+            });
+        }
+
+        return $data;
+    }
+
     public function index(string $doctorId): JsonResponse
     {
         $branches = $this->branchService->getBranches($doctorId);
 
-        return $this->success($branches->map(function ($branch) {
-            return [
-                'id' => $branch->id,
-                'branch_name' => $branch->branch_name,
-                'governorate' => $branch->governorate,
-                'district' => $branch->district,
-                'address' => $branch->address,
-                'latitude' => $branch->latitude,
-                'longitude' => $branch->longitude,
-                'phone' => $branch->phone,
-                'is_primary' => $branch->is_primary,
-            ];
-        }));
+        return $this->success($branches->map(fn ($branch) => $this->formatBranch($branch)));
     }
 
     public function store(string $doctorId, CreateBranchRequest $request): JsonResponse
@@ -50,17 +66,7 @@ class DoctorBranchController extends Controller
 
         $branch = $this->branchService->create($doctorId, $request->validated());
 
-        return $this->created([
-            'id' => $branch->id,
-            'branch_name' => $branch->branch_name,
-            'governorate' => $branch->governorate,
-            'district' => $branch->district,
-            'address' => $branch->address,
-            'latitude' => $branch->latitude,
-            'longitude' => $branch->longitude,
-            'phone' => $branch->phone,
-            'is_primary' => $branch->is_primary,
-        ], 'تم إضافة الفرع بنجاح');
+        return $this->created($this->formatBranch($branch), 'تم إضافة الفرع بنجاح');
     }
 
     public function show(string $branchId): JsonResponse
@@ -71,24 +77,7 @@ class DoctorBranchController extends Controller
             return $this->notFound('الفرع غير موجود', 'BRANCH_NOT_FOUND');
         }
 
-        return $this->success([
-            'id' => $branch->id,
-            'branch_name' => $branch->branch_name,
-            'governorate' => $branch->governorate,
-            'district' => $branch->district,
-            'address' => $branch->address,
-            'latitude' => $branch->latitude,
-            'longitude' => $branch->longitude,
-            'phone' => $branch->phone,
-            'is_primary' => $branch->is_primary,
-            'schedules' => $branch->schedules->map(function ($schedule) {
-                return [
-                    'day_of_week' => $schedule->day_of_week,
-                    'start_time' => $schedule->start_time,
-                    'end_time' => $schedule->end_time,
-                ];
-            }),
-        ]);
+        return $this->success($this->formatBranch($branch, true));
     }
 
     public function update(string $branchId, CreateBranchRequest $request): JsonResponse
@@ -111,17 +100,7 @@ class DoctorBranchController extends Controller
 
         $updatedBranch = $this->branchService->update($branchId, $request->validated());
 
-        return $this->success([
-            'id' => $updatedBranch->id,
-            'branch_name' => $updatedBranch->branch_name,
-            'governorate' => $updatedBranch->governorate,
-            'district' => $updatedBranch->district,
-            'address' => $updatedBranch->address,
-            'latitude' => $updatedBranch->latitude,
-            'longitude' => $updatedBranch->longitude,
-            'phone' => $updatedBranch->phone,
-            'is_primary' => $updatedBranch->is_primary,
-        ], 'تم تعديل الفرع بنجاح');
+        return $this->success($this->formatBranch($updatedBranch), 'تم تعديل الفرع بنجاح');
     }
 
     public function destroy(string $branchId): JsonResponse
@@ -149,10 +128,10 @@ class DoctorBranchController extends Controller
 
     public function nearby(): JsonResponse
     {
-        $latitude = request('latitude');
-        $longitude = request('longitude');
-        $radius = request('radius', 10);
-        $governorate = request('governorate');
+        $latitude      = request('latitude');
+        $longitude     = request('longitude');
+        $radius        = request('radius', 10);
+        $governorateId = request('governorate_id') ? (int) request('governorate_id') : null;
 
         if (!$latitude || !$longitude) {
             return $this->error('الموقع الجغرافي مطلوب', 'LOCATION_REQUIRED', 400);
@@ -162,23 +141,24 @@ class DoctorBranchController extends Controller
             $latitude,
             $longitude,
             $radius,
-            $governorate
+            $governorateId
         );
 
         return $this->success($branches->map(function ($branch) {
             return [
-                'id' => $branch->id,
-                'doctor_id' => $branch->doctor_id,
-                'doctor_name' => $branch->doctor->user->name,
-                'speciality' => $branch->doctor->speciality->name_ar,
-                'branch_name' => $branch->branch_name,
-                'governorate' => $branch->governorate,
-                'district' => $branch->district,
-                'address' => $branch->address,
-                'latitude' => $branch->latitude,
-                'longitude' => $branch->longitude,
-                'phone' => $branch->phone,
-                'rating' => $branch->doctor->rating,
+                'id'               => $branch->id,
+                'doctor_id'        => $branch->doctor_id,
+                'doctor_name'      => $branch->doctor->user->name,
+                'speciality'       => $branch->doctor->speciality->name_ar,
+                'branch_name'      => $branch->branch_name,
+                'governorate_id'   => $branch->governorate_id,
+                'governorate_name' => $branch->governorateModel?->name_ar ?? $branch->governorate,
+                'district'         => $branch->district,
+                'address'          => $branch->address,
+                'latitude'         => $branch->latitude,
+                'longitude'        => $branch->longitude,
+                'phone'            => $branch->phone,
+                'rating'           => $branch->doctor->rating,
                 'consultation_fee' => $branch->doctor->consultation_fee,
             ];
         }));

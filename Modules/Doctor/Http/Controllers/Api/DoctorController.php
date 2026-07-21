@@ -50,7 +50,7 @@ class DoctorController extends Controller
         $latitude = request('latitude');
         $longitude = request('longitude');
         $radius = (float) request('radius', 10);
-        $governorate = request('governorate');
+        $governorateId = request('governorate_id') ? (int) request('governorate_id') : null;
         $limit = (int) request('limit', 20);
 
         if (!$latitude || !$longitude) {
@@ -61,7 +61,7 @@ class DoctorController extends Controller
             (float) $latitude,
             (float) $longitude,
             $radius,
-            $governorate
+            $governorateId
         );
 
         $items = collect($results)
@@ -106,6 +106,21 @@ class DoctorController extends Controller
         }));
     }
 
+    public function governorates(): JsonResponse
+    {
+        $governorates = \Modules\Doctor\Models\Governorate::where('is_active', true)
+            ->orderBy('name_ar')
+            ->get();
+
+        return $this->success($governorates->map(function ($gov) {
+            return [
+                'id'      => $gov->id,
+                'name_ar' => $gov->name_ar,
+                'name_en' => $gov->name_en,
+            ];
+        }));
+    }
+
     public function schedule(string $id): JsonResponse
     {
         $doctor = $this->doctorService->getDoctorSchedule($id);
@@ -141,13 +156,16 @@ class DoctorController extends Controller
             'bio' => $doctor->bio_ar,
             'experience_years' => $doctor->experience_years,
             'consultation_fee' => $doctor->consultation_fee,
-            'rating' => $doctor->rating,
-            'rating_count' => $doctor->rating_count,
-            'avatar' => storage_public_url($doctor->user?->avatar),
-            'address' => $doctor->primaryBranch?->address ?? $doctor->address,
-            'latitude' => $doctor->primaryBranch?->latitude ?? $doctor->latitude,
-            'longitude' => $doctor->primaryBranch?->longitude ?? $doctor->longitude,
-            'is_featured' => $doctor->hasFeaturedSubscription(),
+            'rating'           => $doctor->rating,
+            'rating_count'     => $doctor->rating_count,
+            'avatar'           => storage_public_url($doctor->user?->avatar),
+            'clinic_image'     => storage_public_url($doctor->clinic_image),
+            'governorate_id'   => $doctor->primaryBranch?->governorate_id,
+            'governorate_name' => $doctor->primaryBranch?->governorateModel?->name_ar,
+            'address'          => $doctor->primaryBranch?->address ?? $doctor->address,
+            'latitude'         => $doctor->primaryBranch?->latitude ?? $doctor->latitude,
+            'longitude'        => $doctor->primaryBranch?->longitude ?? $doctor->longitude,
+            'is_featured'      => $doctor->hasFeaturedSubscription(),
         ];
 
         if ($includePlan && $activeSub?->subscription) {
