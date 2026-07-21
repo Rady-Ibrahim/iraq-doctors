@@ -25,6 +25,7 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
 
         Route::middleware(['auth:web', 'doctor'])->group(function () {
             Route::get('/verify-phone', [DoctorAuthController::class, 'showVerifyPhone'])->name('verify-phone');
+            Route::post('/verify-phone/send', [DoctorAuthController::class, 'sendPhoneOtp'])->name('verify-phone.send');
             Route::post('/verify-phone', [DoctorAuthController::class, 'verifyPhone'])->name('verify-phone.submit');
             Route::get('/verify-email', [DoctorAuthController::class, 'showVerifyEmail'])->name('verify-email');
             Route::post('/verify-email', [DoctorAuthController::class, 'verifyEmail'])->name('verify-email.submit');
@@ -47,6 +48,9 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
                     Route::middleware('doctor.permission:settings.view')->group(function () {
                         Route::get('/dashboard/settings', [DoctorDashboardWebController::class, 'settings'])->name('settings');
                     });
+
+                    // Support page — accessible to all approved doctors
+                    Route::get('/dashboard/support', [DoctorDashboardWebController::class, 'support'])->name('support');
 
                     Route::middleware('doctor.owner')->group(function () {
                         Route::get('/dashboard/staff', [DoctorDashboardWebController::class, 'staff'])->name('staff.index');
@@ -146,6 +150,12 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
                         Route::get('/notifications/unread', [DoctorDashboardController::class, 'unreadNotifications']);
                         Route::post('/notifications/{notificationId}/read', [DoctorDashboardController::class, 'markNotificationRead']);
                         Route::post('/notifications/read-all', [DoctorDashboardController::class, 'markAllNotificationsRead']);
+
+                        // Support contacts
+                        Route::get('/support-contacts',       [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'index']);
+                        Route::post('/support-contacts',      [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'store']);
+                        Route::put('/support-contacts/{id}',  [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'update']);
+                        Route::delete('/support-contacts/{id}',[\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'destroy']);
 
                         Route::middleware('doctor.owner')->group(function () {
                             Route::get('/subscription', [DoctorDashboardController::class, 'subscription']);

@@ -28,8 +28,13 @@
 <div class="bg-white rounded-xl shadow-sm overflow-hidden">
     <div class="px-6 py-4 border-b flex flex-wrap gap-4 justify-between items-center">
         <h3 class="font-semibold text-gray-800"><i class="fas fa-history text-emerald-600 ml-2"></i>سجل الطلبات المكتملة</h3>
-        <input type="text" id="historySearch" placeholder="بحث برقم الطلب أو المريض..." oninput="loadHistory()"
-            class="px-3 py-2 border rounded-lg text-sm min-w-[220px]">
+        <div class="flex flex-wrap gap-2 items-center">
+            <input type="text" id="historySearch" placeholder="بحث برقم الطلب أو المريض..." oninput="loadHistory()"
+                class="px-3 py-2 border rounded-lg text-sm min-w-[220px]">
+            <button type="button" onclick="downloadPdf()" class="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 text-sm">
+                <i class="fas fa-file-pdf ml-1"></i>تحميل PDF
+            </button>
+        </div>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full">
@@ -145,6 +150,13 @@ async function loadHistory() {
             <td class="px-6 py-4 text-sm">${row.completed_at || '—'}</td>
         </tr>
     `).join('');
+}
+
+function downloadPdf() {
+    const params = new URLSearchParams({ limit: 100 });
+    const search = document.getElementById('historySearch').value;
+    if (search) params.set('search', search);
+    window.location.href = `{{ route('pharmacy.reports.pdf') }}?${params}`;
 }
 </script>
 @endsection

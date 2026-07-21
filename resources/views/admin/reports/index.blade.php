@@ -10,6 +10,9 @@
         <input type="date" id="dateFrom" class="w-full px-4 py-2 border rounded-lg">
         <input type="date" id="dateTo" class="w-full px-4 py-2 border rounded-lg">
         <button onclick="loadReport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">تحديث</button>
+        <button onclick="downloadPdf()" class="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">
+            <i class="fas fa-file-pdf ml-2"></i>تحميل PDF
+        </button>
     </div>
 </div>
 
@@ -79,6 +82,15 @@ async function loadReport() {
 
     renderBreakdown('labStatusBreakdown', r.laboratory?.by_status);
     renderBreakdown('pharmacyStatusBreakdown', r.pharmacy?.by_status);
+}
+
+function downloadPdf() {
+    const params = new URLSearchParams();
+    const from = document.getElementById('dateFrom').value;
+    const to = document.getElementById('dateTo').value;
+    if (from) params.set('date_from', from);
+    if (to) params.set('date_to', to);
+    window.location.href = `{{ route('admin.reports.orders.pdf') }}?${params}`;
 }
 
 document.addEventListener('DOMContentLoaded', loadReport);

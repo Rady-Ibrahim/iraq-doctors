@@ -27,7 +27,6 @@ class User extends Authenticatable
         'district',
         'address',
         'phone',
-        'firebase_uid',
         'email',
         'password',
         'role',

@@ -107,6 +107,11 @@ class AdminDashboardWebController extends Controller
         return view('admin.reports.index');
     }
 
+    public function supportContacts(): View
+    {
+        return view('admin.support-contacts.index');
+    }
+
     public function users(): View
     {
         return view('admin.users.index');

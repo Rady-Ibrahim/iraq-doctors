@@ -42,7 +42,7 @@
             <div>
                 <p class="text-sm text-gray-600">إجمالي المستخدمين</p>
                 <p class="text-2xl font-bold text-gray-800" id="totalUsers">0</p>
-                <p class="text-xs text-green-600 mt-1">+15% عن الفترة السابقة</p>
+                <p class="text-xs mt-1" id="usersGrowth">—</p>
             </div>
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-users text-blue-600"></i>
@@ -54,7 +54,7 @@
             <div>
                 <p class="text-sm text-gray-600">الأطباء النشطين</p>
                 <p class="text-2xl font-bold text-gray-800" id="activeDoctors">0</p>
-                <p class="text-xs text-green-600 mt-1">+10% عن الفترة السابقة</p>
+                <p class="text-xs mt-1" id="doctorsGrowth">—</p>
             </div>
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-user-md text-green-600"></i>
@@ -66,7 +66,7 @@
             <div>
                 <p class="text-sm text-gray-600">المواعيد اليومية</p>
                 <p class="text-2xl font-bold text-gray-800" id="dailyAppointments">0</p>
-                <p class="text-xs text-green-600 mt-1">+20% عن الفترة السابقة</p>
+                <p class="text-xs mt-1" id="appointmentsGrowth">—</p>
             </div>
             <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-calendar-check text-purple-600"></i>
@@ -78,7 +78,7 @@
             <div>
                 <p class="text-sm text-gray-600">معدل التحويل</p>
                 <p class="text-2xl font-bold text-gray-800" id="conversionRate">0%</p>
-                <p class="text-xs text-green-600 mt-1">+5% عن الفترة السابقة</p>
+                <p class="text-xs text-gray-500 mt-1">مواعيد / مستخدمين</p>
             </div>
             <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-percentage text-orange-600"></i>
@@ -92,16 +92,16 @@
     <!-- User Growth Chart -->
     <div class="bg-white rounded-xl shadow-sm p-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">نمو المستخدمين</h3>
-        <div class="h-64 flex items-center justify-center" id="userGrowthChart">
-            <p class="text-gray-500">سيتم عرض الرسم البياني هنا</p>
+        <div class="h-64 relative">
+            <canvas id="userGrowthCanvas"></canvas>
         </div>
     </div>
 
     <!-- Appointments Chart -->
     <div class="bg-white rounded-xl shadow-sm p-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">المواعيد حسب الحالة</h3>
-        <div class="h-64 flex items-center justify-center" id="appointmentsChart">
-            <p class="text-gray-500">سيتم عرض الرسم البياني هنا</p>
+        <div class="h-64 relative">
+            <canvas id="appointmentsStatusCanvas"></canvas>
         </div>
     </div>
 </div>
@@ -145,6 +145,9 @@
 
 @section('scripts')
 <script>
+let userGrowthChart = null;
+let appointmentsStatusChart = null;
+
 window.addEventListener('load', async function() {
     await loadAnalyticsData();
 });
@@ -176,24 +179,99 @@ async function loadAnalyticsData() {
     }
 }
 
+function formatGrowth(elId, value) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const n = Number(value || 0);
+    el.textContent = `${n >= 0 ? '+' : ''}${n}% عن الفترة السابقة`;
+    el.className = `text-xs mt-1 ${n >= 0 ? 'text-green-600' : 'text-red-600'}`;
+}
+
 function renderAnalyticsData(data) {
-    // Stats Cards
     document.getElementById('totalUsers').textContent = data.total_users || 0;
     document.getElementById('activeDoctors').textContent = data.active_doctors || 0;
     document.getElementById('dailyAppointments').textContent = data.daily_appointments || 0;
     document.getElementById('conversionRate').textContent = (data.conversion_rate || 0) + '%';
 
-    // Top Specialities
+    formatGrowth('usersGrowth', data.growth?.users);
+    formatGrowth('doctorsGrowth', data.growth?.doctors);
+    formatGrowth('appointmentsGrowth', data.growth?.appointments);
+
+    renderUserGrowthChart(data.charts?.user_growth);
+    renderAppointmentsStatusChart(data.charts?.appointments_by_status);
+
     renderTopSpecialities(data.top_specialities || []);
-
-    // Demographics
     renderDemographics(data.demographics || {});
-
-    // Peak Hours
     renderPeakHours(data.peak_hours || []);
-
-    // Geographic Distribution
     renderGeographicDistribution(data.geographic_distribution || []);
+}
+
+function renderUserGrowthChart(series) {
+    const canvas = document.getElementById('userGrowthCanvas');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    if (userGrowthChart) userGrowthChart.destroy();
+
+    userGrowthChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: series?.labels || [],
+            datasets: [{
+                label: 'مستخدمون جدد',
+                data: series?.values || [],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                fill: true,
+                tension: 0.35,
+                pointRadius: 2,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } },
+                x: {
+                    ticks: {
+                        maxTicksLimit: 8,
+                        maxRotation: 0,
+                    },
+                },
+            },
+        },
+    });
+}
+
+function renderAppointmentsStatusChart(series) {
+    const canvas = document.getElementById('appointmentsStatusCanvas');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    if (appointmentsStatusChart) appointmentsStatusChart.destroy();
+
+    const colors = ['#f59e0b', '#3b82f6', '#22c55e', '#ef4444', '#6b7280'];
+
+    appointmentsStatusChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: series?.labels || [],
+            datasets: [{
+                data: series?.values || [],
+                backgroundColor: colors,
+                borderWidth: 0,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, font: { family: 'Cairo' } },
+                },
+            },
+        },
+    });
 }
 
 function renderTopSpecialities(specialities) {

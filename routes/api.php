@@ -31,4 +31,6 @@ Route::prefix('v1')->group(function () {
     require __DIR__.'/../Modules/Subscription/Routes/api.php';
     require __DIR__.'/../Modules/Laboratory/Routes/api.php';
     require __DIR__.'/../Modules/Pharmacy/Routes/api.php';
+
+    Route::get('/support-contacts', [\App\Http\Controllers\Api\SupportContactController::class, 'index']);
 });

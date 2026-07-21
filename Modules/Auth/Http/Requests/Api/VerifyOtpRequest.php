@@ -16,7 +16,7 @@ class VerifyOtpRequest extends ApiFormRequest
         return [
             'phone' => 'required|string',
             'code' => ['required', 'digits:6'],
-            'type' => 'required|in:register,login,password_reset,reset_password,phone_verify',
+            'type' => 'required|in:login,password_reset,reset_password,phone_verify',
         ];
     }
 

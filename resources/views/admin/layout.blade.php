@@ -7,6 +7,7 @@
     <title>@yield('title', 'لوحة تحكم الإدارة')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     @include('partials.dashboard-ui', ['confirmColor' => '#3b82f6'])
     @include('partials.dashboard-api', [
         'loginUrl' => route('admin.login'),
@@ -113,6 +114,10 @@
                 <a href="/admin/dashboard/reports" class="{{ $navClass(request()->routeIs('admin.reports.*')) }}">
                     <i class="fas fa-file-alt w-5"></i>
                     <span>التقارير</span>
+                </a>
+                <a href="/admin/dashboard/support-contacts" class="{{ $navClass(request()->routeIs('admin.support-contacts.*')) }}">
+                    <i class="fas fa-headset w-5"></i>
+                    <span>الدعم</span>
                 </a>
                 <a href="/admin/users" class="{{ $navClass(request()->routeIs('admin.users.*')) }}">
                     <i class="fas fa-user-cog w-5"></i>

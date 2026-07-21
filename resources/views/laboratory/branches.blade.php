@@ -47,6 +47,27 @@
                 <textarea id="branch_address" rows="2" class="w-full px-4 py-2 border rounded-lg"></textarea>
             </div>
             <div>
+                <label class="block text-sm font-semibold mb-1">موقع الفرع على الخريطة</label>
+                <button type="button" onclick="detectBranchLocation()" id="detectBranchBtn"
+                    class="mb-2 flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm">
+                    <i class="fas fa-location-arrow"></i>
+                    <span>تحديد موقعي الحالي</span>
+                </button>
+                <div id="branch-map" style="height:200px;border-radius:0.5rem;z-index:0;" class="border border-gray-300 mb-2"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">خط العرض</label>
+                        <input type="number" step="any" id="branch_latitude" readonly
+                            class="w-full px-3 py-1.5 border rounded-lg bg-gray-50 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">خط الطول</label>
+                        <input type="number" step="any" id="branch_longitude" readonly
+                            class="w-full px-3 py-1.5 border rounded-lg bg-gray-50 text-sm">
+                    </div>
+                </div>
+            </div>
+            <div>
                 <label class="block text-sm font-semibold mb-1">الهاتف</label>
                 <input type="text" id="branch_phone" class="w-full px-4 py-2 border rounded-lg">
             </div>
@@ -105,11 +126,14 @@ function openBranchModal(branch = null) {
     document.getElementById('branch_address').value = branch?.address || '';
     document.getElementById('branch_phone').value = branch?.phone || '';
     document.getElementById('branch_is_primary').checked = !!branch?.is_primary;
+    document.getElementById('branch_latitude').value = branch?.latitude || '';
+    document.getElementById('branch_longitude').value = branch?.longitude || '';
     renderBranchWorkingHours(branch?.working_hours || {});
     document.getElementById('branchModalTitle').textContent = branch ? 'تعديل فرع' : 'إضافة فرع';
     clearFieldErrors();
     document.getElementById('branchModal').classList.remove('hidden');
     document.getElementById('branchModal').classList.add('flex');
+    setTimeout(() => initBranchMap(branch?.latitude, branch?.longitude), 150);
 }
 
 function editBranch(branch) { openBranchModal(branch); }
@@ -117,6 +141,7 @@ function editBranch(branch) { openBranchModal(branch); }
 function closeBranchModal() {
     document.getElementById('branchModal').classList.add('hidden');
     document.getElementById('branchModal').classList.remove('flex');
+    if (branchMap) { branchMap.remove(); branchMap = null; branchMarker = null; }
 }
 
 function renderBranchWorkingHours(hours) {
@@ -160,6 +185,8 @@ async function saveBranch(e) {
         phone: document.getElementById('branch_phone').value,
         is_primary: document.getElementById('branch_is_primary').checked,
         working_hours: collectBranchWorkingHours(),
+        latitude: document.getElementById('branch_latitude').value || null,
+        longitude: document.getElementById('branch_longitude').value || null,
     };
     const url = id ? `/laboratory/api/branches/${id}` : '/laboratory/api/branches';
     const data = await apiCall(url, { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) });
@@ -176,6 +203,53 @@ async function deleteBranch(id) {
     const data = await apiCall(`/laboratory/api/branches/${id}`, { method: 'DELETE' });
     if (data?.success) loadBranches();
     else if (data) alert(data.message || 'تعذر الحذف');
+}
+
+let branchMap = null, branchMarker = null;
+
+function initBranchMap(lat, lng) {
+    const latInput = document.getElementById('branch_latitude');
+    const lngInput = document.getElementById('branch_longitude');
+    const defLat = parseFloat(lat) || 33.3152;
+    const defLng = parseFloat(lng) || 44.3661;
+    if (!latInput.value) { latInput.value = defLat.toFixed(7); lngInput.value = defLng.toFixed(7); }
+
+    if (branchMap) { branchMap.remove(); branchMap = null; }
+    branchMap = L.map('branch-map').setView([defLat, defLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(branchMap);
+    branchMarker = L.marker([defLat, defLng], { draggable: true }).addTo(branchMap);
+
+    function updateCoords(la, lo) {
+        latInput.value = la.toFixed(7);
+        lngInput.value = lo.toFixed(7);
+    }
+    branchMap.on('click', e => { branchMarker.setLatLng(e.latlng); updateCoords(e.latlng.lat, e.latlng.lng); });
+    branchMarker.on('dragend', () => { const p = branchMarker.getLatLng(); updateCoords(p.lat, p.lng); });
+    setTimeout(() => branchMap.invalidateSize(), 200);
+}
+
+function detectBranchLocation() {
+    const btn = document.getElementById('detectBranchBtn');
+    if (!navigator.geolocation) { alert('المتصفح لا يدعم تحديد الموقع'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحديد...';
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            document.getElementById('branch_latitude').value = lat.toFixed(7);
+            document.getElementById('branch_longitude').value = lng.toFixed(7);
+            if (branchMarker) branchMarker.setLatLng([lat, lng]);
+            if (branchMap) branchMap.setView([lat, lng], 16);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> تحديد موقعي الحالي';
+        },
+        function() {
+            alert('تعذر تحديد الموقع.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> تحديد موقعي الحالي';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
 }
 </script>
 @endsection

@@ -2,6 +2,7 @@
 
 namespace Modules\Laboratory\Http\Controllers\Web;
 
+use App\Services\OtpSmsSender;
 use App\Support\PhoneNormalizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
@@ -13,6 +14,7 @@ use Modules\Laboratory\Http\Requests\Web\LoginLaboratoryRequest;
 use Modules\Laboratory\Http\Requests\Web\RegisterLaboratoryRequest;
 use Modules\Laboratory\Http\Requests\Web\VerifyLaboratoryPhoneRequest;
 use Modules\Laboratory\Services\Web\LaboratoryAuthService;
+use RuntimeException;
 
 class LaboratoryAuthController extends Controller
 {
@@ -42,7 +44,7 @@ class LaboratoryAuthController extends Controller
         if ($this->laboratoryAuthService->needsPhoneVerification($user)) {
             return redirect()
                 ->route('laboratory.verify-phone')
-                ->with('info', 'يرجى تفعيل رقم هاتفك عبر كود SMS من Firebase.');
+                ->with('info', 'يرجى تفعيل رقم هاتفك عبر كود واتساب.');
         }
 
         return redirect()->route($this->laboratoryAuthService->getPostLoginRoute($user));
@@ -70,7 +72,7 @@ class LaboratoryAuthController extends Controller
 
         return redirect()
             ->route('laboratory.verify-phone')
-            ->with('success', 'تم إنشاء حساب المختبر بنجاح. فعّل رقم هاتفك عبر كود SMS من Firebase.');
+            ->with('success', 'تم إنشاء حساب المختبر بنجاح. فعّل رقم هاتفك عبر كود واتساب.');
     }
 
     public function showVerifyPhone(): View|RedirectResponse
@@ -88,14 +90,29 @@ class LaboratoryAuthController extends Controller
                 ->withErrors(['phone' => 'رقم الهاتف المسجل في حسابك غير صالح. تواصل مع الدعم.']);
         }
 
-        $firebaseReady = $this->laboratoryAuthService->isFirebaseWebConfigured()
-            && $this->laboratoryAuthService->isFirebaseServerConfigured();
-
         return view('laboratory.verify-phone', [
             'phoneE164' => $phoneE164,
             'maskedPhone' => PhoneNormalizer::mask($phoneE164),
-            'firebaseConfigured' => $firebaseReady,
+            'otpConfigured' => $this->laboratoryAuthService->isOtpDeliveryConfigured(),
+            'wasenderReady' => app(OtpSmsSender::class)->isConfigured(),
         ]);
+    }
+
+    public function sendPhoneOtp(): RedirectResponse
+    {
+        $user = Auth::guard('web')->user();
+
+        if (! $this->laboratoryAuthService->needsPhoneVerification($user)) {
+            return redirect()->route($this->laboratoryAuthService->getPostLoginRoute($user));
+        }
+
+        try {
+            $this->laboratoryAuthService->sendPhoneVerificationOtp($user);
+        } catch (RuntimeException|InvalidArgumentException $e) {
+            return back()->withErrors(['code' => $e->getMessage()]);
+        }
+
+        return back()->with('success', 'تم إرسال كود التحقق عبر واتساب.');
     }
 
     public function verifyPhone(VerifyLaboratoryPhoneRequest $request): RedirectResponse
@@ -107,9 +124,9 @@ class LaboratoryAuthController extends Controller
         }
 
         try {
-            $this->laboratoryAuthService->verifyPhoneWithFirebaseToken($user, $request->firebase_token);
+            $this->laboratoryAuthService->verifyPhoneWithOtp($user, $request->code);
         } catch (InvalidArgumentException $e) {
-            return back()->withErrors(['firebase_token' => $e->getMessage()]);
+            return back()->withErrors(['code' => $e->getMessage()]);
         }
 
         return redirect()

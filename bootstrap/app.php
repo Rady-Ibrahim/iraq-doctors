@@ -8,16 +8,17 @@ use Illuminate\Http\Request;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
-function expectsStructuredJson(Request $request): bool
-{
-    return $request->expectsJson()
-        || $request->is('api/*')
-        || $request->is('admin/api/*')
-        || $request->is('doctor/api/*')
-        || $request->is('laboratory/api/*')
-        || $request->is('pharmacy/api/*');
+if (! function_exists('expectsStructuredJson')) {
+    function expectsStructuredJson(Request $request): bool
+    {
+        return $request->expectsJson()
+            || $request->is('api/*')
+            || $request->is('admin/api/*')
+            || $request->is('doctor/api/*')
+            || $request->is('laboratory/api/*')
+            || $request->is('pharmacy/api/*');
+    }
 }
 
 return Application::configure(basePath: dirname(__DIR__))

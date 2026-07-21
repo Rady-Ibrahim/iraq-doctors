@@ -60,6 +60,29 @@ class PharmacyProfileService
 
             $pharmacy->update($payload);
 
+            $primaryBranch = $pharmacy->branches()->where('is_primary', true)->first();
+            if ($primaryBranch) {
+                $branchPayload = [];
+                if (array_key_exists('address', $payload)) {
+                    $branchPayload['address'] = $payload['address'];
+                }
+                if (array_key_exists('latitude', $payload)) {
+                    $branchPayload['latitude'] = $payload['latitude'];
+                }
+                if (array_key_exists('longitude', $payload)) {
+                    $branchPayload['longitude'] = $payload['longitude'];
+                }
+                if (array_key_exists('district', $payload)) {
+                    $branchPayload['district'] = $payload['district'];
+                }
+                if (array_key_exists('governorate_id', $payload)) {
+                    $branchPayload['governorate_id'] = $payload['governorate_id'];
+                }
+                if ($branchPayload !== []) {
+                    $primaryBranch->update($branchPayload);
+                }
+            }
+
             if (! empty($data['user_name']) || array_key_exists('user_email', $data)) {
                 $userPayload = [];
                 if (! empty($data['user_name'])) {

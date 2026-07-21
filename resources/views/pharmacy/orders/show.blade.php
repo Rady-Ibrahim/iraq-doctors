@@ -51,144 +51,194 @@ window.addEventListener('load', async () => {
 });
 
 async function loadOrder() {
-    const data = await apiCall(`/pharmacy/api/orders/${orderId}`);
     const box = document.getElementById('orderContent');
-    if (!data?.success) {
-        box.innerHTML = '<p class="text-red-600">تعذر تحميل الطلب</p>';
-        return;
+    try {
+        const data = await apiCall(`/pharmacy/api/orders/${orderId}`);
+        if (!data?.success) {
+            box.innerHTML = `<p class="text-red-600">${data?.error?.message || 'تعذر تحميل الطلب'}</p>`;
+            return;
+        }
+        orderData = data.data;
+        renderOrder();
+    } catch (e) {
+        console.error(e);
+        box.innerHTML = '<p class="text-red-600">حدث خطأ أثناء تحميل الطلب. حدّث الصفحة أو راجع الكونسول.</p>';
     }
-    orderData = data.data;
-    renderOrder();
 }
 
 async function loadCatalog() {
-    const data = await apiCall('/pharmacy/api/medicines');
-    if (data?.success) catalogItems = data.data || [];
+    try {
+        const data = await apiCall('/pharmacy/api/medicines');
+        if (data?.success) catalogItems = data.data || [];
+    } catch (e) {
+        console.error(e);
+        catalogItems = [];
+    }
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function renderPrescriptionBlock(o) {
+    if (o.prescription_image) {
+        return `
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h4 class="font-semibold mb-3"><i class="fas fa-image text-amber-600 ml-1"></i> صورة الروشتة</h4>
+                <a href="${escapeHtml(o.prescription_image)}" target="_blank" class="block">
+                    <img src="${escapeHtml(o.prescription_image)}" alt="روشتة"
+                        class="w-full max-w-md max-h-96 object-contain rounded-lg border bg-gray-50 mx-auto">
+                </a>
+            </div>`;
+    }
+
+    if (o.source === 'doctor_referral' && o.doctor_prescription) {
+        const dp = o.doctor_prescription;
+        const medicines = Array.isArray(dp.medicines) ? dp.medicines : [];
+        let medicinesHtml = '<p class="text-sm text-blue-700">طلب مرتبط بروشتة الطبيب — حدد الأدوية عند عرض السعر</p>';
+        if (medicines.length) {
+            const rows = medicines.map(m => {
+                const row = typeof m === 'string' ? { name: m } : (m || {});
+                return `<tr class="border-b border-blue-100">
+                    <td class="px-3 py-2">${escapeHtml(row.name || row.medicine_name || '')}</td>
+                    <td class="px-3 py-2">${escapeHtml(row.dosage || '')}</td>
+                    <td class="px-3 py-2">${escapeHtml(row.frequency || '')}</td>
+                    <td class="px-3 py-2">${escapeHtml(row.duration || '')}</td>
+                </tr>`;
+            }).join('');
+            medicinesHtml = `<table class="w-full text-sm mb-3">
+                <thead class="bg-blue-100"><tr>
+                    <th class="px-3 py-2 text-right">الدواء</th>
+                    <th class="px-3 py-2 text-right">الجرعة</th>
+                    <th class="px-3 py-2 text-right">التكرار</th>
+                    <th class="px-3 py-2 text-right">المدة</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+        }
+
+        return `<div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <h4 class="font-semibold text-blue-800 mb-3"><i class="fas fa-user-md ml-1"></i> روشتة الطبيب — ${escapeHtml(dp.doctor_name || 'طبيب')}</h4>
+            ${dp.diagnosis ? `<p class="text-sm mb-3"><strong>التشخيص:</strong> ${escapeHtml(dp.diagnosis)}</p>` : ''}
+            ${medicinesHtml}
+            ${dp.notes ? `<p class="text-sm text-gray-600"><strong>ملاحظات:</strong> ${escapeHtml(dp.notes)}</p>` : ''}
+        </div>`;
+    }
+
+    if (o.source === 'prescription') {
+        return `<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+            طلب بروشتة — لم تُرفع صورة بعد أو بانتظار تحديد الأدوية من الصيدلية.
+        </div>`;
+    }
+
+    return '';
 }
 
 function renderOrder() {
-    const o = orderData;
-    const canReview = o.status === 'new';
-    const canQuote = ['new', 'reviewing'].includes(o.status);
-    const awaitingPatient = o.status === 'quoted' || o.awaiting_patient_acceptance;
-    const nextActions = (o.next_statuses || []).filter(s => s.value !== 'cancelled').map(s => `
-        <button onclick="transition('${s.value}')" class="px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">${s.label}</button>
-    `).join('');
+    const box = document.getElementById('orderContent');
+    try {
+        const o = orderData || {};
+        const items = Array.isArray(o.items) ? o.items : [];
+        const nextStatuses = Array.isArray(o.next_statuses) ? o.next_statuses : [];
+        const canReview = o.status === 'new';
+        const canQuote = ['new', 'reviewing'].includes(o.status);
+        const awaitingPatient = o.status === 'quoted' || o.awaiting_patient_acceptance;
+        const nextActions = nextStatuses.filter(s => s.value !== 'cancelled').map(s => `
+            <button onclick="transition('${escapeHtml(s.value)}')" class="px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">${escapeHtml(s.label)}</button>
+        `).join('');
 
-    const deliveryBlock = o.fulfillment_type === 'delivery' ? `
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm">
-            <h4 class="font-semibold text-blue-800 mb-2"><i class="fas fa-truck ml-1"></i> عنوان التوصيل</h4>
-            <p class="text-gray-800">${o.delivery_address || '—'}</p>
-            ${o.delivery_notes ? `<p class="text-gray-600 mt-2"><strong>ملاحظات التوصيل:</strong> ${o.delivery_notes}</p>` : ''}
-        </div>
-    ` : '';
+        const deliveryBlock = o.fulfillment_type === 'delivery' ? `
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm">
+                <h4 class="font-semibold text-blue-800 mb-2"><i class="fas fa-truck ml-1"></i> عنوان التوصيل</h4>
+                <p class="text-gray-800">${escapeHtml(o.delivery_address || '—')}</p>
+                ${o.delivery_notes ? `<p class="text-gray-600 mt-2"><strong>ملاحظات التوصيل:</strong> ${escapeHtml(o.delivery_notes)}</p>` : ''}
+            </div>
+        ` : '';
 
-    document.getElementById('orderContent').innerHTML = `
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex flex-wrap justify-between gap-4 mb-4">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-800">${o.order_number}</h3>
-                            <p class="text-sm text-gray-500">${o.created_at}</p>
+        box.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex flex-wrap justify-between gap-4 mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">${escapeHtml(o.order_number)}</h3>
+                                <p class="text-sm text-gray-500">${escapeHtml(o.created_at)}</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2 items-start">
+                                <span class="px-2 py-1 rounded-full text-xs ${o.fulfillment_type === 'delivery' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}">
+                                    ${escapeHtml(o.fulfillment_label || (o.fulfillment_type === 'delivery' ? 'توصيل' : 'استلام'))}
+                                </span>
+                                <span class="px-3 py-1 rounded-full text-sm font-semibold h-fit ${statusClass(o.status)}">${escapeHtml(o.status_label)}</span>
+                            </div>
                         </div>
-                        <div class="flex flex-wrap gap-2 items-start">
-                            <span class="px-2 py-1 rounded-full text-xs ${o.fulfillment_type === 'delivery' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}">
-                                ${o.fulfillment_label || (o.fulfillment_type === 'delivery' ? 'توصيل' : 'استلام')}
-                            </span>
-                            <span class="px-3 py-1 rounded-full text-sm font-semibold h-fit ${statusClass(o.status)}">${o.status_label}</span>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div><span class="text-gray-500">المريض:</span> <strong>${escapeHtml(o.patient_name)}</strong></div>
+                            <div><span class="text-gray-500">الهاتف:</span> ${escapeHtml(o.patient_phone || '—')}</div>
                         </div>
+                        ${o.patient_notes ? `<p class="mt-4 text-sm bg-gray-50 p-3 rounded-lg"><strong>ملاحظات المريض:</strong> ${escapeHtml(o.patient_notes)}</p>` : ''}
                     </div>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div><span class="text-gray-500">المريض:</span> <strong>${o.patient_name}</strong></div>
-                        <div><span class="text-gray-500">الهاتف:</span> ${o.patient_phone || '—'}</div>
+
+                    ${deliveryBlock}
+                    ${renderPrescriptionBlock(o)}
+
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="px-6 py-4 border-b font-semibold">الأدوية (${items.length})</div>
+                        ${items.length ? `
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50"><tr>
+                                <th class="px-6 py-2 text-right">الدواء</th>
+                                <th class="px-6 py-2 text-right">السعر</th>
+                                <th class="px-6 py-2 text-right">الكمية</th>
+                                <th class="px-6 py-2 text-right">الإجمالي</th>
+                            </tr></thead>
+                            <tbody>${items.map(i => `
+                                <tr class="border-b">
+                                    <td class="px-6 py-3">${escapeHtml(i.medicine_name)}</td>
+                                    <td class="px-6 py-3">${formatCurrency(i.price)}</td>
+                                    <td class="px-6 py-3">${escapeHtml(i.quantity)}</td>
+                                    <td class="px-6 py-3 font-semibold">${formatCurrency(i.line_total)}</td>
+                                </tr>`).join('')}</tbody>
+                        </table>` : '<p class="px-6 py-8 text-center text-gray-500">لا توجد أدوية — حددها عند عرض السعر</p>'}
                     </div>
-                    ${o.patient_notes ? `<p class="mt-4 text-sm bg-gray-50 p-3 rounded-lg"><strong>ملاحظات المريض:</strong> ${o.patient_notes}</p>` : ''}
                 </div>
 
-                ${deliveryBlock}
+                <div class="space-y-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h4 class="font-semibold mb-4">الملخص المالي</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between"><span>المجموع الفرعي</span><span>${o.subtotal ? formatCurrency(o.subtotal) : '—'}</span></div>
+                            <div class="flex justify-between"><span>رسوم التوصيل</span><span>${o.delivery_fee ? formatCurrency(o.delivery_fee) : (o.fulfillment_type === 'delivery' ? '—' : 'لا ينطبق')}</span></div>
+                            <div class="flex justify-between font-bold text-lg border-t pt-2"><span>الإجمالي</span><span class="text-emerald-600">${o.total_amount ? formatCurrency(o.total_amount) : '—'}</span></div>
+                        </div>
+                        ${o.quote_notes ? `<p class="mt-4 text-xs text-gray-500">${escapeHtml(o.quote_notes)}</p>` : ''}
+                    </div>
 
-                ${o.prescription_image ? `
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h4 class="font-semibold mb-3"><i class="fas fa-image text-amber-600 ml-1"></i> صورة الروشتة</h4>
-                    <a href="${o.prescription_image}" target="_blank">
-                        <img src="${o.prescription_image}" alt="روشتة" class="max-h-80 rounded-lg border">
-                    </a>
-                </div>` : (o.source === 'doctor_referral' && o.doctor_prescription ? `
-                <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                    <h4 class="font-semibold text-blue-800 mb-3"><i class="fas fa-user-md ml-1"></i> روشتة الطبيب — ${o.doctor_prescription.doctor_name || 'طبيب'}</h4>
-                    ${o.doctor_prescription.diagnosis ? `<p class="text-sm mb-3"><strong>التشخيص:</strong> ${o.doctor_prescription.diagnosis}</p>` : ''}
-                    ${(o.doctor_prescription.medicines || []).length ? `
-                    <table class="w-full text-sm mb-3">
-                        <thead class="bg-blue-100"><tr>
-                            <th class="px-3 py-2 text-right">الدواء</th>
-                            <th class="px-3 py-2 text-right">الجرعة</th>
-                            <th class="px-3 py-2 text-right">التكرار</th>
-                            <th class="px-3 py-2 text-right">المدة</th>
-                        </tr></thead>
-                        <tbody>${o.doctor_prescription.medicines.map(m => `
-                            <tr class="border-b border-blue-100">
-                                <td class="px-3 py-2">${m.name || ''}</td>
-                                <td class="px-3 py-2">${m.dosage || ''}</td>
-                                <td class="px-3 py-2">${m.frequency || ''}</td>
-                                <td class="px-3 py-2">${m.duration || ''}</td>
-                            </tr>`).join('')}</tbody>
-                    </table>` : '<p class="text-sm text-blue-700">طلب مرتبط بروشتة الطبيب — حدد الأدوية عند عرض السعر</p>'}
-                    ${o.doctor_prescription.notes ? `<p class="text-sm text-gray-600"><strong>ملاحظات:</strong> ${o.doctor_prescription.notes}</p>` : ''}
-                </div>` : (o.source === 'prescription' ? `
-                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-                    طلب بروشتة — لم تُرفع صورة بعد أو بانتظار تحديد الأدوية من الصيدلية.
-                </div>` : '')}
-
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b font-semibold">الأدوية (${o.items.length})</div>
-                    ${o.items.length ? `
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50"><tr>
-                            <th class="px-6 py-2 text-right">الدواء</th>
-                            <th class="px-6 py-2 text-right">السعر</th>
-                            <th class="px-6 py-2 text-right">الكمية</th>
-                            <th class="px-6 py-2 text-right">الإجمالي</th>
-                        </tr></thead>
-                        <tbody>${o.items.map(i => `
-                            <tr class="border-b">
-                                <td class="px-6 py-3">${i.medicine_name}</td>
-                                <td class="px-6 py-3">${formatCurrency(i.price)}</td>
-                                <td class="px-6 py-3">${i.quantity}</td>
-                                <td class="px-6 py-3 font-semibold">${formatCurrency(i.line_total)}</td>
-                            </tr>`).join('')}</tbody>
-                    </table>` : '<p class="px-6 py-8 text-center text-gray-500">لا توجد أدوية — حددها عند عرض السعر</p>'}
+                    <div class="bg-white rounded-xl shadow-sm p-6 space-y-3">
+                        <h4 class="font-semibold mb-2">الإجراءات</h4>
+                        ${awaitingPatient ? `
+                        <div class="rounded-lg border border-purple-200 bg-purple-50 p-4 text-sm text-purple-900">
+                            <p class="font-semibold mb-1"><i class="fas fa-clock ml-1"></i> بانتظار موافقة المريض على السعر</p>
+                            <p class="text-purple-700">تم إرسال عرض السعر للمريض. أكمل التجهيز بعد موافقته من التطبيق.</p>
+                        </div>` : ''}
+                        ${canReview ? `<button onclick="startReview()" class="w-full py-2 bg-yellow-500 text-white rounded-lg text-sm hover:bg-yellow-600">بدء المراجعة</button>` : ''}
+                        ${canQuote ? `<button onclick="openQuoteModal()" class="w-full py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">عرض السعر / تحديد الأدوية</button>` : ''}
+                        <div class="flex flex-wrap gap-2">${nextActions}</div>
+                        ${nextStatuses.some(s => s.value === 'cancelled') ? `
+                            <button onclick="cancelOrder()" class="w-full py-2 border border-red-300 text-red-600 rounded-lg text-sm mt-2 hover:bg-red-50">إلغاء الطلب</button>
+                        ` : ''}
+                    </div>
                 </div>
             </div>
-
-            <div class="space-y-6">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h4 class="font-semibold mb-4">الملخص المالي</h4>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between"><span>المجموع الفرعي</span><span>${o.subtotal ? formatCurrency(o.subtotal) : '—'}</span></div>
-                        <div class="flex justify-between"><span>رسوم التوصيل</span><span>${o.delivery_fee ? formatCurrency(o.delivery_fee) : (o.fulfillment_type === 'delivery' ? '—' : 'لا ينطبق')}</span></div>
-                        <div class="flex justify-between font-bold text-lg border-t pt-2"><span>الإجمالي</span><span class="text-emerald-600">${o.total_amount ? formatCurrency(o.total_amount) : '—'}</span></div>
-                    </div>
-                    ${o.quote_notes ? `<p class="mt-4 text-xs text-gray-500">${o.quote_notes}</p>` : ''}
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm p-6 space-y-3">
-                    <h4 class="font-semibold mb-2">الإجراءات</h4>
-                    ${awaitingPatient ? `
-                    <div class="rounded-lg border border-purple-200 bg-purple-50 p-4 text-sm text-purple-900">
-                        <p class="font-semibold mb-1"><i class="fas fa-clock ml-1"></i> بانتظار موافقة المريض على السعر</p>
-                        <p class="text-purple-700">تم إرسال عرض السعر للمريض. أكمل التجهيز بعد موافقته من التطبيق.</p>
-                    </div>` : ''}
-                    ${canReview ? `<button onclick="startReview()" class="w-full py-2 bg-yellow-500 text-white rounded-lg text-sm hover:bg-yellow-600">بدء المراجعة</button>` : ''}
-                    ${canQuote ? `<button onclick="openQuoteModal()" class="w-full py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">عرض السعر / تحديد الأدوية</button>` : ''}
-                    <div class="flex flex-wrap gap-2">${nextActions}</div>
-                    ${(o.next_statuses || []).some(s => s.value === 'cancelled') ? `
-                        <button onclick="cancelOrder()" class="w-full py-2 border border-red-300 text-red-600 rounded-lg text-sm mt-2 hover:bg-red-50">إلغاء الطلب</button>
-                    ` : ''}
-                </div>
-            </div>
-        </div>
-    `;
+        `;
+    } catch (e) {
+        console.error(e);
+        box.innerHTML = '<p class="text-red-600">تعذر عرض بيانات الطلب. حدّث الصفحة.</p>';
+    }
 }
 
 function openQuoteModal() {

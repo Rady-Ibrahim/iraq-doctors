@@ -99,7 +99,12 @@
                     <input type="text" name="address" value="{{ old('address') }}" required class="w-full px-4 py-3 border rounded-lg">
                     @error('address')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
-                <p class="text-sm text-gray-500 mt-4 mb-2">اضغط على الخريطة لتحديد موقع المختبر</p>
+                <p class="text-sm text-gray-500 mt-4 mb-2">اضغط على الخريطة لتحديد الموقع، أو</p>
+                <button type="button" onclick="detectLocation()" id="detectLocationBtn"
+                    class="mb-3 flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm">
+                    <i class="fas fa-location-arrow"></i>
+                    <span>تحديد موقعي الحالي</span>
+                </button>
                 <div id="lab-map" class="border border-gray-300"></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
                     <input type="number" step="any" name="latitude" id="latitude" value="{{ old('latitude', '33.3152') }}" required readonly class="w-full px-4 py-3 border rounded-lg bg-gray-50">
@@ -162,6 +167,27 @@
         }
         map.on('click', (e) => { marker.setLatLng(e.latlng); updateCoords(e.latlng.lat, e.latlng.lng); });
         marker.on('dragend', (e) => { const p = e.target.getLatLng(); updateCoords(p.lat, p.lng); });
+
+        function detectLocation() {
+            const btn = document.getElementById('detectLocationBtn');
+            if (!navigator.geolocation) { alert('المتصفح لا يدعم تحديد الموقع'); return; }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحديد...';
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                    marker.setLatLng([lat, lng]); map.setView([lat, lng], 16); updateCoords(lat, lng);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> تحديد موقعي الحالي';
+                },
+                function() {
+                    alert('تعذر تحديد الموقع. تأكد من منح الإذن للمتصفح.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> تحديد موقعي الحالي';
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
     </script>
 </body>
 </html>

@@ -14,21 +14,22 @@ class VerifyLaboratoryPhoneRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'firebase_token' => 'required|string',
+            'code' => 'required|string|size:6',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'firebase_token.required' => 'رمز التحقق من Firebase مطلوب. أرسل كود SMS أولاً ثم أكّد التفعيل.',
+            'code.required' => 'أدخل كود التحقق المكون من 6 أرقام',
+            'code.size' => 'كود التحقق يجب أن يكون 6 أرقام',
         ];
     }
 
     public function attributes(): array
     {
         return [
-            'firebase_token' => 'رمز التحقق',
+            'code' => 'كود التحقق',
         ];
     }
 }

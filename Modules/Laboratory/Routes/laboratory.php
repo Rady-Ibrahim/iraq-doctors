@@ -10,6 +10,7 @@ use Modules\Laboratory\Http\Controllers\Web\Data\LaboratoryTestDataController;
 use Modules\Laboratory\Http\Controllers\Web\LaboratoryAuthController;
 use Modules\Laboratory\Http\Controllers\Web\LaboratoryCsrfController;
 use Modules\Laboratory\Http\Controllers\Web\LaboratoryDashboardWebController;
+use Modules\Laboratory\Http\Controllers\Web\LaboratoryReportPdfController;
 use Modules\Laboratory\Http\Controllers\Web\LaboratoryVerificationController;
 
 Route::middleware(['session.scope:laboratory', 'web'])->group(function () {
@@ -27,6 +28,7 @@ Route::middleware(['session.scope:laboratory', 'web'])->group(function () {
 
         Route::middleware(['auth:web', 'laboratory'])->group(function () {
             Route::get('/verify-phone', [LaboratoryAuthController::class, 'showVerifyPhone'])->name('verify-phone');
+            Route::post('/verify-phone/send', [LaboratoryAuthController::class, 'sendPhoneOtp'])->name('verify-phone.send');
             Route::post('/verify-phone', [LaboratoryAuthController::class, 'verifyPhone'])->name('verify-phone.submit');
             Route::post('/logout', [LaboratoryAuthController::class, 'logout'])->name('logout');
 
@@ -40,11 +42,13 @@ Route::middleware(['session.scope:laboratory', 'web'])->group(function () {
                     Route::get('/dashboard', [LaboratoryDashboardWebController::class, 'dashboard'])->name('dashboard');
                     Route::get('/dashboard/settings', [LaboratoryDashboardWebController::class, 'settings'])->name('settings');
                     Route::get('/dashboard/branches', [LaboratoryDashboardWebController::class, 'branches'])->name('branches');
+                    Route::get('/dashboard/support', [LaboratoryDashboardWebController::class, 'support'])->name('support');
                     Route::get('/dashboard/subscription/plans', [LaboratoryDashboardWebController::class, 'subscriptionPlans'])->name('subscription.plans');
                     Route::get('/dashboard/tests', [LaboratoryDashboardWebController::class, 'tests'])->name('tests.index');
                     Route::get('/dashboard/orders', [LaboratoryDashboardWebController::class, 'orders'])->name('orders.index');
                     Route::get('/dashboard/orders/{orderId}', [LaboratoryDashboardWebController::class, 'orderShow'])->name('orders.show');
                     Route::get('/dashboard/reports', [LaboratoryDashboardWebController::class, 'reports'])->name('reports');
+                    Route::get('/dashboard/reports/pdf', [LaboratoryReportPdfController::class, 'download'])->name('reports.pdf');
 
                     Route::prefix('api')->group(function () {
                         Route::get('/profile', [LaboratoryProfileDataController::class, 'show']);
@@ -83,6 +87,12 @@ Route::middleware(['session.scope:laboratory', 'web'])->group(function () {
                         Route::get('/orders/{orderId}/results', [LaboratoryOrderResultDataController::class, 'index']);
                         Route::post('/orders/{orderId}/results', [LaboratoryOrderResultDataController::class, 'store']);
                         Route::delete('/orders/{orderId}/results/{resultId}', [LaboratoryOrderResultDataController::class, 'destroy']);
+
+                        // Support contacts — shared SupportContact model
+                        Route::get('/support-contacts', [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'index']);
+                        Route::post('/support-contacts', [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'store']);
+                        Route::put('/support-contacts/{id}', [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'update']);
+                        Route::delete('/support-contacts/{id}', [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'destroy']);
                     });
                 });
             });

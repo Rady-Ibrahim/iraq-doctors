@@ -2,6 +2,7 @@
 
 namespace Modules\Pharmacy\Http\Controllers\Web;
 
+use App\Services\OtpSmsSender;
 use App\Support\PhoneNormalizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
@@ -13,6 +14,7 @@ use Modules\Pharmacy\Http\Requests\Web\LoginPharmacyRequest;
 use Modules\Pharmacy\Http\Requests\Web\RegisterPharmacyRequest;
 use Modules\Pharmacy\Http\Requests\Web\VerifyPharmacyPhoneRequest;
 use Modules\Pharmacy\Services\Web\PharmacyAuthService;
+use RuntimeException;
 
 class PharmacyAuthController extends Controller
 {
@@ -42,7 +44,7 @@ class PharmacyAuthController extends Controller
         if ($this->pharmacyAuthService->needsPhoneVerification($user)) {
             return redirect()
                 ->route('pharmacy.verify-phone')
-                ->with('info', 'يرجى تفعيل رقم هاتفك عبر كود SMS من Firebase.');
+                ->with('info', 'يرجى تفعيل رقم هاتفك عبر كود واتساب.');
         }
 
         return redirect()->route($this->pharmacyAuthService->getPostLoginRoute($user));
@@ -69,7 +71,7 @@ class PharmacyAuthController extends Controller
 
         return redirect()
             ->route('pharmacy.verify-phone')
-            ->with('success', 'تم إنشاء حساب الصيدلية بنجاح. فعّل رقم هاتفك عبر كود SMS من Firebase.');
+            ->with('success', 'تم إنشاء حساب الصيدلية بنجاح. فعّل رقم هاتفك عبر كود واتساب.');
     }
 
     public function showVerifyPhone(): View|RedirectResponse
@@ -87,14 +89,29 @@ class PharmacyAuthController extends Controller
                 ->withErrors(['phone' => 'رقم الهاتف المسجل في حسابك غير صالح. تواصل مع الدعم.']);
         }
 
-        $firebaseReady = $this->pharmacyAuthService->isFirebaseWebConfigured()
-            && $this->pharmacyAuthService->isFirebaseServerConfigured();
-
         return view('pharmacy.verify-phone', [
             'phoneE164' => $phoneE164,
             'maskedPhone' => PhoneNormalizer::mask($phoneE164),
-            'firebaseConfigured' => $firebaseReady,
+            'otpConfigured' => $this->pharmacyAuthService->isOtpDeliveryConfigured(),
+            'wasenderReady' => app(OtpSmsSender::class)->isConfigured(),
         ]);
+    }
+
+    public function sendPhoneOtp(): RedirectResponse
+    {
+        $user = Auth::guard('web')->user();
+
+        if (! $this->pharmacyAuthService->needsPhoneVerification($user)) {
+            return redirect()->route($this->pharmacyAuthService->getPostLoginRoute($user));
+        }
+
+        try {
+            $this->pharmacyAuthService->sendPhoneVerificationOtp($user);
+        } catch (RuntimeException|InvalidArgumentException $e) {
+            return back()->withErrors(['code' => $e->getMessage()]);
+        }
+
+        return back()->with('success', 'تم إرسال كود التحقق عبر واتساب.');
     }
 
     public function verifyPhone(VerifyPharmacyPhoneRequest $request): RedirectResponse
@@ -106,9 +123,9 @@ class PharmacyAuthController extends Controller
         }
 
         try {
-            $this->pharmacyAuthService->verifyPhoneWithFirebaseToken($user, $request->firebase_token);
+            $this->pharmacyAuthService->verifyPhoneWithOtp($user, $request->code);
         } catch (InvalidArgumentException $e) {
-            return back()->withErrors(['firebase_token' => $e->getMessage()]);
+            return back()->withErrors(['code' => $e->getMessage()]);
         }
 
         return redirect()

@@ -1,0 +1,179 @@
+{
+  "info": {
+    "name": "Iraq Doctors — Patient Integration API",
+    "description": "Patient mobile integration: unified orders, prescriptions, medical archive, notifications.\nSet `token` after patient auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "" },
+    { "key": "record_id", "value": "1" },
+    { "key": "notification_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Unified Orders",
+      "item": [
+        {
+          "name": "My active orders (lab + pharmacy)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/patient/orders"
+          }
+        },
+        {
+          "name": "My order history (completed/delivered)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/patient/orders?history=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "patient", "orders"],
+              "query": [{ "key": "history", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Medical Records",
+      "item": [
+        {
+          "name": "My prescriptions (كشوفاتي)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/medical-records/patient/prescriptions"
+          }
+        },
+        {
+          "name": "Medical history",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/medical-records/patient/history?record_type=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "medical-records", "patient", "history"],
+              "query": [{ "key": "record_type", "value": "", "disabled": true }]
+            }
+          }
+        },
+        {
+          "name": "Archive (prescriptions + lab + pharmacy)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/medical-records/patient/archive"
+          }
+        },
+        {
+          "name": "Record details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/medical-records/{{record_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications (FCM + in-app)",
+      "item": [
+        {
+          "name": "List notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/patient/notifications?unread=0&limit=30",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "patient", "notifications"],
+              "query": [
+                { "key": "unread", "value": "0" },
+                { "key": "limit", "value": "30" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unread notifications only",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/patient/notifications?unread=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "patient", "notifications"],
+              "query": [{ "key": "unread", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Mark notification read",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/patient/notifications/{{notification_id}}/read"
+          }
+        },
+        {
+          "name": "Mark all read",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/v1/patient/notifications/read-all"
+          }
+        },
+        {
+          "name": "Register device (OneSignal)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"player_id\": \"onesignal-player-id\",\n  \"platform\": \"android\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/auth/devices/register"
+          }
+        }
+      ]
+    }
+  ]
+}
