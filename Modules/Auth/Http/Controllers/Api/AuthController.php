@@ -136,10 +136,12 @@ class AuthController extends Controller
             return $this->error($e->getMessage(), 'INVALID_PHONE', 422);
         }
 
+        $type = $request->type;
+
         $otp = $this->authService->verifyOtp(
             $request->phone,
             $request->code,
-            $request->type
+            $type
         );
 
         if (!$otp) {
@@ -153,10 +155,43 @@ class AuthController extends Controller
         $variants = PhoneNormalizer::lookupVariants($phone);
         $user = User::query()->whereIn('phone', $variants)->first();
 
+        // OTP Login: تسجيل دخول مباشر بعد التحقق من الكود
+        if ($type === 'login') {
+            if (!$user) {
+                return $this->error('المستخدم غير موجود', 'USER_NOT_FOUND', 404);
+            }
+
+            if (!$user->isActive()) {
+                return $this->error('الحساب موقوف', 'ACCOUNT_INACTIVE', 403);
+            }
+
+            // تفعيل الهاتف تلقائياً إذا لم يكن مُفعَّلاً بعد
+            if (!$user->phone_verified_at) {
+                $this->authService->markPhoneVerifiedForUser($phone);
+                $user = $user->fresh();
+            }
+
+            $token = $this->authService->createToken($user);
+
+            return $this->success([
+                'verified' => true,
+                'token'    => $token,
+                'user'     => [
+                    'id'                => $user->id,
+                    'name'              => $user->name,
+                    'phone'             => $user->phone,
+                    'email'             => $user->email,
+                    'role'              => $user->role,
+                    'phone_verified_at' => $user->phone_verified_at,
+                ],
+            ], 'تم تسجيل الدخول بنجاح');
+        }
+
+        // phone_verify / password_reset: تأكيد فقط بدون token
         return $this->success([
-            'verified' => true,
-            'phone' => $phone,
-            'user_exists' => (bool) $user,
+            'verified'          => true,
+            'phone'             => $phone,
+            'user_exists'       => (bool) $user,
             'phone_verified_at' => $user?->fresh()->phone_verified_at,
         ], 'تم التحقق بنجاح');
     }

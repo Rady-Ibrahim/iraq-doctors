@@ -114,6 +114,7 @@ class AuthService
         $otp = Otp::query()
             ->where('type', $type)
             ->where('phone', $phone)
+            ->whereNull('verified_at')  // لا نقبل OTP تم استخدامه مسبقاً
             ->latest()
             ->first();
 
@@ -131,12 +132,12 @@ class AuthService
 
         if ($type === 'phone_verify') {
             $this->markPhoneVerifiedForUser($phone);
-            $otp->delete();
-
-            return $otp;
         }
 
-        return $otp->fresh();
+        // احذف الـ OTP دائماً بعد التحقق الناجح لمنع إعادة الاستخدام
+        $otp->delete();
+
+        return $otp;
     }
 
     public function markPhoneVerifiedForUser(string $phoneE164): void
@@ -163,8 +164,6 @@ class AuthService
         if (!$user) {
             return null;
         }
-
-        $otp->delete();
 
         return $user;
     }
