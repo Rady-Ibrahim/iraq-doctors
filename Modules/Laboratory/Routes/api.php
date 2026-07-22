@@ -2,13 +2,17 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Laboratory\Http\Controllers\Api\LaboratoryController;
+use Modules\Laboratory\Http\Controllers\Api\LaboratoryBranchController;
 use Modules\Laboratory\Http\Controllers\Api\LaboratoryOrderController;
 
 Route::prefix('laboratories')->group(function () {
     Route::get('/', [LaboratoryController::class, 'index']);
     Route::get('/nearby', [LaboratoryController::class, 'nearby']);
+    Route::get('/branches/nearby', [LaboratoryBranchController::class, 'nearby']);
+    Route::get('/branches/{branchId}', [LaboratoryBranchController::class, 'show']);
     Route::get('/{id}', [LaboratoryController::class, 'show']);
     Route::get('/{id}/tests', [LaboratoryController::class, 'tests']);
+    Route::get('/{id}/branches', [LaboratoryBranchController::class, 'index']);
 });
 
 Route::middleware('auth:sanctum')->prefix('laboratory-orders')->group(function () {

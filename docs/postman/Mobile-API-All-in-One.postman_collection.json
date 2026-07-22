@@ -1,8 +1,8 @@
-﻿{
+{
     "info":  {
                  "_postman_id":  "iraq-doctors-mobile-all-in-one",
                  "name":  "Iraq Doctors — Mobile API (All-in-One)",
-                 "description":  "مجموعة موبايل مجمّعة.\n\nAuth: Register → Send OTP (phone_verify) → Verify OTP → Login (token). OTP مش جزء من الريجيستر.",
+                 "description":  "مجموعة موبايل مجمّعة.\n\nAuth: Register → Send OTP (phone_verify) → Verify OTP → Login (token). OTP مش جزء من الريجيستر.\n\n🆕 التحديثات:\n- فروع الصيدليات: GET /pharmacies/{id}/branches\n- فروع المعامل: GET /laboratories/{id}/branches\n- أقرب فروع: /branches/nearby (governorate_id filter)\n- احداثيات المريض في طلبات المعمل (collection_type: clinic|home)\n- governorate_id بدل نص حر في كل endpoints",
                  "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
              },
     "variable":  [
@@ -797,6 +797,50 @@
                                                                                              ]
                                                                                }
                                                                    }
+                                                   },
+                                                   {
+                                                       "name": "Laboratory branches",
+                                                       "description": "GET /laboratories/{id}/branches — فروع معمل معيّن",
+                                                       "request": {
+                                                           "method": "GET",
+                                                           "header": [
+                                                               { "key": "Accept", "value": "application/json" }
+                                                           ],
+                                                           "url": "{{base_url}}/api/v1/laboratories/{{laboratory_id}}/branches"
+                                                       }
+                                                   },
+                                                   {
+                                                       "name": "Laboratory branch details",
+                                                       "description": "GET /laboratories/branches/{branchId}",
+                                                       "request": {
+                                                           "method": "GET",
+                                                           "header": [
+                                                               { "key": "Accept", "value": "application/json" }
+                                                           ],
+                                                           "url": "{{base_url}}/api/v1/laboratories/branches/{{branch_id}}"
+                                                       }
+                                                   },
+                                                   {
+                                                       "name": "Nearby laboratory branches",
+                                                       "description": "GET /laboratories/branches/nearby — أقرب فروع المعامل",
+                                                       "request": {
+                                                           "method": "GET",
+                                                           "header": [
+                                                               { "key": "Accept", "value": "application/json" }
+                                                           ],
+                                                           "url": {
+                                                               "raw": "{{base_url}}/api/v1/laboratories/branches/nearby?latitude=33.3152&longitude=44.3661&radius=10&limit=20",
+                                                               "host": [ "{{base_url}}" ],
+                                                               "path": [ "api", "v1", "laboratories", "branches", "nearby" ],
+                                                               "query": [
+                                                                   { "key": "latitude",      "value": "33.3152" },
+                                                                   { "key": "longitude",     "value": "44.3661" },
+                                                                   { "key": "radius",        "value": "10" },
+                                                                   { "key": "governorate_id","value": "", "disabled": true },
+                                                                   { "key": "limit",         "value": "20" }
+                                                               ]
+                                                           }
+                                                       }
                                                    }
                                                ]
                                   },
@@ -804,7 +848,8 @@
                                       "name":  "Patient (auth:sanctum)",
                                       "item":  [
                                                    {
-                                                       "name":  "Create order (catalog)",
+                                                       "name":  "Create order (catalog — clinic)",
+                                                       "description": "collection_type=clinic — المريض يراجع المعمل",
                                                        "event":  [
                                                                      {
                                                                          "listen":  "test",
@@ -837,7 +882,37 @@
                                                                                   ],
                                                                        "body":  {
                                                                                     "mode":  "raw",
-                                                                                    "raw":  "{\n  \"laboratory_id\": {{laboratory_id}},\n  \"items\": [\n    { \"laboratory_test_item_id\": {{test_item_id}}, \"quantity\": 1 }\n  ],\n  \"patient_notes\": \"ملاحظة تجريبية\"\n}"
+                                                                                    "raw":  "{\n  \"laboratory_id\": {{laboratory_id}},\n  \"collection_type\": \"clinic\",\n  \"items\": [\n    { \"laboratory_test_item_id\": {{test_item_id}}, \"quantity\": 1 }\n  ],\n  \"patient_notes\": \"ملاحظة تجريبية\"\n}"
+                                                                                },
+                                                                       "url":  "{{base_url}}/api/v1/laboratory-orders"
+                                                                   }
+                                                   },
+                                                   {
+                                                       "name":  "Create order (home collection — أخذ عينة في المنزل) ⭐",
+                                                       "description": "collection_type=home — الفني يأتي لعنوان المريض",
+                                                       "request":  {
+                                                                       "method":  "POST",
+                                                                       "header":  [
+                                                                                      {
+                                                                                          "key":  "Accept",
+                                                                                          "value":  "application/json"
+                                                                                      },
+                                                                                      {
+                                                                                          "key":  "Authorization",
+                                                                                          "value":  "Bearer {{token}}"
+                                                                                      }
+                                                                                  ],
+                                                                       "body":  {
+                                                                                    "mode":  "formdata",
+                                                                                    "formdata":  [
+                                                                                                     { "key": "laboratory_id",    "value": "{{laboratory_id}}", "type": "text" },
+                                                                                                     { "key": "collection_type",  "value": "home",               "type": "text" },
+                                                                                                     { "key": "patient_address",  "value": "بغداد، الكرادة، شارع 62", "type": "text" },
+                                                                                                     { "key": "patient_latitude", "value": "33.3152",            "type": "text" },
+                                                                                                     { "key": "patient_longitude","value": "44.3661",            "type": "text" },
+                                                                                                     { "key": "items",            "value": "[{\"laboratory_test_item_id\": 1, \"quantity\": 1}]", "type": "text" },
+                                                                                                     { "key": "patient_notes",    "value": "خذ العينة الساعة 8 صباحاً", "type": "text" }
+                                                                                                 ]
                                                                                 },
                                                                        "url":  "{{base_url}}/api/v1/laboratory-orders"
                                                                    }
