@@ -308,18 +308,19 @@ class DoctorDashboardService
         $doctor = Doctor::where('user_id', $userId)->with('speciality')->firstOrFail();
 
         return [
-            'name' => $user->name,
-            'phone' => $user->phone,
-            'email' => $user->email,
-            'address' => $doctor->address ?? $user->address,
-            'latitude' => $doctor->latitude,
-            'longitude' => $doctor->longitude,
-            'bio_ar' => $doctor->bio_ar,
-            'bio_en' => $doctor->bio_en,
+            'name'             => $user->name,
+            'phone'            => $user->phone,
+            'email'            => $user->email,
+            'address'          => $doctor->address ?? $user->address,
+            'avatar'           => $user->avatar ? asset('storage/' . $user->avatar) : null,
+            'latitude'         => $doctor->latitude,
+            'longitude'        => $doctor->longitude,
+            'bio_ar'           => $doctor->bio_ar,
+            'bio_en'           => $doctor->bio_en,
             'experience_years' => $doctor->experience_years,
             'consultation_fee' => $doctor->consultation_fee,
-            'speciality' => $doctor->speciality?->name_ar,
-            'status' => $doctor->status,
+            'speciality'       => $doctor->speciality?->name_ar,
+            'status'           => $doctor->status,
         ];
     }
 
@@ -328,12 +329,19 @@ class DoctorDashboardService
         $user = User::findOrFail($userId);
         $doctor = Doctor::where('user_id', $userId)->with('primaryBranch')->firstOrFail();
 
-        $user->update([
-            'name' => $data['name'] ?? $user->name,
-            'phone' => $data['phone'] ?? $user->phone,
-            'email' => $data['email'] ?? $user->email,
+        $userPayload = [
+            'name'    => $data['name']    ?? $user->name,
+            'phone'   => $data['phone']   ?? $user->phone,
+            'email'   => $data['email']   ?? $user->email,
             'address' => $data['address'] ?? $user->address,
-        ]);
+        ];
+
+        // Persist avatar path if provided
+        if (!empty($data['avatar'])) {
+            $userPayload['avatar'] = $data['avatar'];
+        }
+
+        $user->update($userPayload);
 
         $doctorPayload = [];
         if (array_key_exists('address', $data)) {

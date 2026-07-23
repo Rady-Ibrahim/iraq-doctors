@@ -41,7 +41,6 @@ Route::middleware(['session.scope:pharmacy', 'web'])->group(function () {
                     Route::get('/dashboard', [PharmacyDashboardWebController::class, 'dashboard'])->name('dashboard');
                     Route::get('/dashboard/settings', [PharmacyDashboardWebController::class, 'settings'])->name('settings');
                     Route::get('/dashboard/branches', [PharmacyDashboardWebController::class, 'branches'])->name('branches');
-                    Route::get('/dashboard/support', [PharmacyDashboardWebController::class, 'support'])->name('support');
                     Route::get('/dashboard/subscription/plans', [PharmacyDashboardWebController::class, 'subscriptionPlans'])->name('subscription.plans');
                     Route::get('/dashboard/medicines', [PharmacyDashboardWebController::class, 'medicines'])->name('medicines.index');
                     Route::get('/dashboard/orders', [PharmacyDashboardWebController::class, 'orders'])->name('orders.index');
@@ -83,11 +82,6 @@ Route::middleware(['session.scope:pharmacy', 'web'])->group(function () {
                         Route::get('/metrics', [PharmacyMetricsDataController::class, 'index']);
                         Route::get('/reports/history', [PharmacyMetricsDataController::class, 'history']);
 
-                        // Support contacts — read & manage (uses shared SupportContact model)
-                        Route::get('/support-contacts', [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'index']);
-                        Route::post('/support-contacts', [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'store']);
-                        Route::put('/support-contacts/{id}', [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'update']);
-                        Route::delete('/support-contacts/{id}', [\Modules\Admin\Http\Controllers\Api\AdminSupportContactApiController::class, 'destroy']);
                     });
                 });
             });

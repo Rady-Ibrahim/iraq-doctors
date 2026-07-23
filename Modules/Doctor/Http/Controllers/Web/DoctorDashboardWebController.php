@@ -25,10 +25,6 @@ class DoctorDashboardWebController extends Controller
         return view('doctor.settings', ['doctor' => $this->resolveDoctor()]);
     }
 
-    public function support(): View
-    {
-        return view('doctor.support');
-    }
 
     public function patients(): View
     {

@@ -112,10 +112,6 @@
                     <span>الإعدادات</span>
                 </a>
                 @endif
-                <a href="/doctor/dashboard/support" class="{{ $navClass(request()->routeIs('doctor.support')) }}">
-                    <i class="fas fa-headset w-5"></i>
-                    <span>الدعم</span>
-                </a>
             </nav>
 
             <!-- User Info -->

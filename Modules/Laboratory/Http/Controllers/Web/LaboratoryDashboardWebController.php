@@ -36,10 +36,6 @@ class LaboratoryDashboardWebController extends Controller
         ]);
     }
 
-    public function support(): View
-    {
-        return view('laboratory.support');
-    }
 
     public function subscriptionPlans(): View
     {
