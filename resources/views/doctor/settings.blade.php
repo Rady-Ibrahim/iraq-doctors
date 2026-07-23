@@ -352,20 +352,14 @@ async function updateProfile(event) {
     const avatarFile = document.getElementById('profileAvatar').files[0];
     if (avatarFile) formData.append('avatar', avatarFile);
 
-    // Use _method override for PUT since FormData needs POST
-    formData.append('_method', 'PUT');
-
     try {
-        const data = await apiCall('/doctor/api/profile/avatar', {
-            method: 'POST',
-            body: formData,
-            // No Content-Type — browser sets it automatically with boundary for FormData
-        });
+        // Use apiUpload (not apiCall) — preserves multipart/form-data boundary
+        const data = await apiUpload('/doctor/api/profile/avatar', formData, 'POST');
 
         if (data && data.success) {
             showSuccess('تم تحديث الملف الشخصي بنجاح');
             if (data.data?.avatar) {
-                const img = document.getElementById('avatarPreview');
+                const img  = document.getElementById('avatarPreview');
                 const icon = document.getElementById('avatarIcon');
                 img.src = data.data.avatar;
                 img.classList.remove('hidden');

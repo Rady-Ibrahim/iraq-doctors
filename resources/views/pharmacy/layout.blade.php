@@ -78,10 +78,6 @@
                     <i class="fas fa-chart-bar w-5"></i>
                     <span>التقارير والسجل</span>
                 </a>
-                <a href="{{ route('pharmacy.support') }}" class="{{ $navClass(request()->routeIs('pharmacy.support')) }}">
-                    <i class="fas fa-headset w-5"></i>
-                    <span>الدعم</span>
-                </a>
             </nav>
 
             <div class="p-4 border-t">
