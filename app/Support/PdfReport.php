@@ -45,4 +45,15 @@ class PdfReport
     {
         return number_format((float) $amount, 0).' د.ع';
     }
+
+    public static function formatFileSize(int|string|null $bytes): string
+    {
+        $bytes = (int) $bytes;
+        if ($bytes <= 0) {
+            return '-';
+        }
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $i = (int) floor(log($bytes, 1024));
+        return round($bytes / pow(1024, $i), 1).' '.($units[$i] ?? '');
+    }
 }

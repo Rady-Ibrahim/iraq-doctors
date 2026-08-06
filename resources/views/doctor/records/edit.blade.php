@@ -139,7 +139,7 @@
 
 @section('scripts')
 <script>
-const recordId = window.location.pathname.split('/').pop();
+const recordId = window.location.pathname.split('/').filter(Boolean).at(-2);
 let selectedFiles = [];
 let existingFileIds = [];
 
@@ -296,11 +296,11 @@ async function updateRecord(event) {
 }
 
 function printRecord() {
-    window.print();
+    window.open(`/doctor/dashboard/records/${recordId}/print`, '_blank');
 }
 
 function downloadPDF() {
-    alert('سيتم تحميل السجل بصيغة PDF');
+    window.open(`/doctor/dashboard/records/${recordId}/pdf`, '_blank');
 }
 
 async function deleteRecord() {

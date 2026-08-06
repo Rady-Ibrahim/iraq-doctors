@@ -45,6 +45,8 @@ async function loadRecord() {
             <div class="mb-6"><p class="text-sm text-gray-500 mb-1">ملاحظات</p><p class="text-gray-800">${r.notes || '-'}</p></div>
             <div class="flex gap-3">
                 <a href="/doctor/dashboard/records/${recordId}/edit" class="px-4 py-2 bg-teal-600 text-white rounded-lg">تعديل</a>
+                <a href="/doctor/dashboard/records/${recordId}/print" target="_blank" class="px-4 py-2 bg-blue-600 text-white rounded-lg">طباعة</a>
+                <a href="/doctor/dashboard/records/${recordId}/pdf" target="_blank" class="px-4 py-2 bg-green-600 text-white rounded-lg">تحميل PDF</a>
             </div>
         `;
     } catch (e) {

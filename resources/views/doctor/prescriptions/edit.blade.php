@@ -108,7 +108,7 @@
 
 @section('scripts')
 <script>
-const prescriptionId = window.location.pathname.split('/').pop();
+const prescriptionId = window.location.pathname.split('/').filter(Boolean).at(-2);
 let medicineCounter = 0;
 
 window.addEventListener('load', async function() {
@@ -254,11 +254,11 @@ async function updatePrescription(event) {
 }
 
 function printPrescription() {
-    window.print();
+    window.open(`/doctor/dashboard/prescriptions/${prescriptionId}/print`, '_blank');
 }
 
 function downloadPDF() {
-    alert('سيتم تحميل الوصفة بصيغة PDF');
+    window.open(`/doctor/dashboard/prescriptions/${prescriptionId}/pdf`, '_blank');
 }
 
 async function deletePrescription() {

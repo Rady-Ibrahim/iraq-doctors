@@ -2,13 +2,18 @@
 
 namespace Modules\Doctor\Http\Controllers\Web;
 
+use App\Support\PdfReport;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 use App\Traits\ResolvesDoctorDashboard;
+use Modules\Doctor\Services\DoctorDashboardService;
 
 class DoctorDashboardWebController extends Controller
 {
     use ResolvesDoctorDashboard;
+
+    public function __construct(private DoctorDashboardService $doctorDashboardService) {}
 
     public function dashboard(): View
     {
@@ -61,6 +66,29 @@ class DoctorDashboardWebController extends Controller
         return view('doctor.prescriptions.edit', ['prescriptionId' => $id]);
     }
 
+    public function prescriptionPdf(int $id): Response
+    {
+        $doctor = $this->resolveDoctor();
+        $prescription = $this->doctorDashboardService->getPrescription($doctor->id, $id);
+
+        return PdfReport::download('pdf.doctor.prescription', [
+            'doctor' => $doctor,
+            'prescription' => $prescription,
+        ], 'prescription-'.$id.'.pdf');
+    }
+
+    public function prescriptionPrint(int $id): View
+    {
+        $doctor = $this->resolveDoctor();
+        $prescription = $this->doctorDashboardService->getPrescription($doctor->id, $id);
+
+        return view('pdf.doctor.prescription', [
+            'doctor' => $doctor,
+            'prescription' => $prescription,
+            'print' => true,
+        ]);
+    }
+
     public function records(): View
     {
         return view('doctor.records.index');
@@ -79,6 +107,46 @@ class DoctorDashboardWebController extends Controller
     public function recordEdit(int $id): View
     {
         return view('doctor.records.edit', ['recordId' => $id]);
+    }
+
+    public function recordPdf(int $id): Response
+    {
+        $doctor = $this->resolveDoctor();
+        $record = $this->doctorDashboardService->getRecord($doctor->id, $id);
+
+        return PdfReport::download('pdf.doctor.record', [
+            'doctor' => $doctor,
+            'record' => $record,
+            'typeLabel' => $this->recordTypeLabel($record['type'] ?? ''),
+        ], 'record-'.$id.'.pdf');
+    }
+
+    public function recordPrint(int $id): View
+    {
+        $doctor = $this->resolveDoctor();
+        $record = $this->doctorDashboardService->getRecord($doctor->id, $id);
+
+        return view('pdf.doctor.record', [
+            'doctor' => $doctor,
+            'record' => $record,
+            'typeLabel' => $this->recordTypeLabel($record['type'] ?? ''),
+            'print' => true,
+        ]);
+    }
+
+    protected function recordTypeLabel(?string $type): string
+    {
+        return match ($type) {
+            'diagnosis' => 'تشخيص',
+            'treatment' => 'علاج',
+            'lab_test' => 'اختبار مختبري',
+            'imaging' => 'تصوير',
+            'surgery' => 'جراحة',
+            'consultation' => 'استشارة',
+            'report' => 'تقرير',
+            'prescription' => 'وصفة طبية',
+            default => $type ?: 'سجل طبي',
+        };
     }
 
     public function subscriptionPlans(): View

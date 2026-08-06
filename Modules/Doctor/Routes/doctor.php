@@ -64,6 +64,8 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
                     Route::middleware('doctor.permission:prescriptions.view')->group(function () {
                         Route::get('/dashboard/prescriptions', [DoctorDashboardWebController::class, 'prescriptions'])->name('prescriptions.index');
                         Route::get('/dashboard/prescriptions/create', [DoctorDashboardWebController::class, 'prescriptionCreate'])->name('prescriptions.create');
+                        Route::get('/dashboard/prescriptions/{id}/pdf', [DoctorDashboardWebController::class, 'prescriptionPdf'])->name('prescriptions.pdf');
+                        Route::get('/dashboard/prescriptions/{id}/print', [DoctorDashboardWebController::class, 'prescriptionPrint'])->name('prescriptions.print');
                         Route::get('/dashboard/prescriptions/{id}', [DoctorDashboardWebController::class, 'prescriptionShow'])->name('prescriptions.show');
                         Route::get('/dashboard/prescriptions/{id}/edit', [DoctorDashboardWebController::class, 'prescriptionEdit'])->name('prescriptions.edit');
                     });
@@ -71,6 +73,8 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
                     Route::middleware('doctor.permission:records.view')->group(function () {
                         Route::get('/dashboard/records', [DoctorDashboardWebController::class, 'records'])->name('records.index');
                         Route::get('/dashboard/records/create', [DoctorDashboardWebController::class, 'recordCreate'])->name('records.create');
+                        Route::get('/dashboard/records/{id}/pdf', [DoctorDashboardWebController::class, 'recordPdf'])->name('records.pdf');
+                        Route::get('/dashboard/records/{id}/print', [DoctorDashboardWebController::class, 'recordPrint'])->name('records.print');
                         Route::get('/dashboard/records/{id}', [DoctorDashboardWebController::class, 'recordShow'])->name('records.show');
                         Route::get('/dashboard/records/{id}/edit', [DoctorDashboardWebController::class, 'recordEdit'])->name('records.edit');
                     });
