@@ -130,6 +130,8 @@ Route::middleware(['session.scope:doctor', 'web'])->group(function () {
 
                         Route::middleware('doctor.permission:schedule.manage')->group(function () {
                             Route::get('/schedules', [DoctorDashboardController::class, 'schedules']);
+                            Route::post('/schedules', [DoctorDashboardController::class, 'storeSchedule']);
+                            Route::put('/schedules/{scheduleId}', [DoctorDashboardController::class, 'updateSchedule']);
                             Route::delete('/schedules/{scheduleId}', [DoctorDashboardController::class, 'deleteSchedule']);
                         });
 

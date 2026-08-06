@@ -147,9 +147,49 @@
         <div class="space-y-4" id="schedulesList">
             <p class="text-gray-500">جاري التحميل...</p>
         </div>
-        <button onclick="addSchedule()" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+        <button onclick="openScheduleModal()" class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
             <i class="fas fa-plus ml-2"></i>إضافة موعد
         </button>
+    </div>
+</div>
+
+<!-- Add/Edit Schedule Modal -->
+<div id="scheduleModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+        <div class="p-6 border-b flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-800" id="scheduleModalTitle">إضافة موعد</h3>
+            <button onclick="closeScheduleModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="scheduleForm" onsubmit="saveSchedule(event)" class="p-6 space-y-4">
+            <input type="hidden" id="scheduleId" value="">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">اليوم</label>
+                <select id="scheduleDay" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
+                    <option value="">اختر اليوم</option>
+                    <option value="saturday">السبت</option>
+                    <option value="sunday">الأحد</option>
+                    <option value="monday">الاثنين</option>
+                    <option value="tuesday">الثلاثاء</option>
+                    <option value="wednesday">الأربعاء</option>
+                    <option value="thursday">الخميس</option>
+                    <option value="friday">الجمعة</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">وقت البدء</label>
+                    <input type="time" id="scheduleStartTime" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">وقت الانتهاء</label>
+                    <input type="time" id="scheduleEndTime" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
+                </div>
+            </div>
+            <p data-error-for="day_of_week" class="text-red-500 text-sm"></p>
+            <p data-error-for="start_time" class="text-red-500 text-sm"></p>
+            <p data-error-for="end_time" class="text-red-500 text-sm"></p>
+            <button type="submit" class="w-full py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">حفظ</button>
+        </form>
     </div>
 </div>
 
@@ -411,12 +451,15 @@ async function updateProfessional(event) {
     }
 }
 
+let schedulesData = [];
+
 async function loadSchedules() {
     try {
         const data = await apiCall('/doctor/api/schedules');
         
         if (data.success) {
-            renderSchedules(data.data);
+            schedulesData = data.data || [];
+            renderSchedules(schedulesData);
         }
     } catch (error) {
         console.error('Error loading schedules:', error);
@@ -448,16 +491,81 @@ function renderSchedules(schedules) {
                     <p class="font-semibold text-gray-800">${daysAr[schedule.day_of_week] || schedule.day_of_week}</p>
                     <p class="text-sm text-gray-600">${schedule.start_time} - ${schedule.end_time}</p>
                 </div>
-                <button onclick="deleteSchedule('${schedule.id}')" class="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200 transition text-sm">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="editSchedule('${schedule.id}')" class="px-3 py-1 bg-teal-100 text-teal-600 rounded hover:bg-teal-200 transition text-sm">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteSchedule('${schedule.id}')" class="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200 transition text-sm">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
         </div>
     `).join('');
 }
 
-function addSchedule() {
-    alert('سيتم فتح نموذج إضافة جدول جديد');
+function openScheduleModal() {
+    document.getElementById('scheduleModalTitle').textContent = 'إضافة موعد';
+    document.getElementById('scheduleId').value = '';
+    document.getElementById('scheduleForm').reset();
+    document.getElementById('scheduleModal').classList.remove('hidden');
+    document.getElementById('scheduleModal').classList.add('flex');
+}
+
+function editSchedule(scheduleId) {
+    const schedule = schedulesData.find(s => s.id == scheduleId);
+    if (!schedule) return;
+
+    document.getElementById('scheduleModalTitle').textContent = 'تعديل الموعد';
+    document.getElementById('scheduleId').value = schedule.id;
+    document.getElementById('scheduleDay').value = schedule.day_of_week.toLowerCase();
+    document.getElementById('scheduleStartTime').value = schedule.start_time;
+    document.getElementById('scheduleEndTime').value = schedule.end_time;
+    document.getElementById('scheduleModal').classList.remove('hidden');
+    document.getElementById('scheduleModal').classList.add('flex');
+}
+
+function closeScheduleModal() {
+    document.getElementById('scheduleModal').classList.add('hidden');
+    document.getElementById('scheduleModal').classList.remove('flex');
+}
+
+async function saveSchedule(event) {
+    event.preventDefault();
+
+    const scheduleId = document.getElementById('scheduleId').value;
+    const payload = {
+        day_of_week: document.getElementById('scheduleDay').value,
+        start_time: document.getElementById('scheduleStartTime').value,
+        end_time: document.getElementById('scheduleEndTime').value,
+    };
+
+    if (!payload.day_of_week || !payload.start_time || !payload.end_time) {
+        showError('يرجى إكمال جميع الحقول');
+        return;
+    }
+
+    if (payload.start_time >= payload.end_time) {
+        showError('يجب أن يكون وقت الانتهاء بعد وقت البدء');
+        return;
+    }
+
+    showLoading();
+    const endpoint = scheduleId ? `/doctor/api/schedules/${scheduleId}` : '/doctor/api/schedules';
+    const data = scheduleId
+        ? await apiCall(endpoint, { method: 'PUT', body: JSON.stringify(payload) })
+        : await apiCall(endpoint, { method: 'POST', body: JSON.stringify(payload) });
+    hideLoading();
+
+    if (!data?.success) {
+        showError(data?.error?.message || data?.message || 'فشل حفظ الموعد');
+        return;
+    }
+
+    showSuccess(data.message || 'تم الحفظ بنجاح');
+    closeScheduleModal();
+    schedulesData = data.data || [];
+    renderSchedules(schedulesData);
 }
 
 async function deleteSchedule(scheduleId) {

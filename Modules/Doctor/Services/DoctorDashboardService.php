@@ -412,6 +412,71 @@ class DoctorDashboardService
         return (bool) $schedule->delete();
     }
 
+    public function storeSchedule(int $doctorId, array $data): DoctorSchedule
+    {
+        $this->validateSchedule($doctorId, $data);
+
+        return DoctorSchedule::create([
+            'doctor_id' => $doctorId,
+            'day_of_week' => $data['day_of_week'],
+            'start_time' => $data['start_time'],
+            'end_time' => $data['end_time'],
+            'is_active' => true,
+        ]);
+    }
+
+    public function updateSchedule(int $doctorId, int $scheduleId, array $data): DoctorSchedule
+    {
+        $schedule = DoctorSchedule::where('doctor_id', $doctorId)->findOrFail($scheduleId);
+
+        $this->validateSchedule($doctorId, $data, $scheduleId);
+
+        $schedule->update([
+            'day_of_week' => $data['day_of_week'],
+            'start_time' => $data['start_time'],
+            'end_time' => $data['end_time'],
+        ]);
+
+        return $schedule->fresh();
+    }
+
+    protected function validateSchedule(int $doctorId, array $data, ?int $ignoreId = null): void
+    {
+        $allowedDays = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+        $dayOfWeek = strtolower($data['day_of_week'] ?? '');
+        $startTime = $data['start_time'] ?? null;
+        $endTime = $data['end_time'] ?? null;
+
+        if (!in_array($dayOfWeek, $allowedDays)) {
+            throw new \InvalidArgumentException('اليوم غير صالح');
+        }
+
+        if (!$startTime || !$endTime) {
+            throw new \InvalidArgumentException('وقت البدء ووقت الانتهاء مطلوبان');
+        }
+
+        $start = Carbon::parse($startTime);
+        $end = Carbon::parse($endTime);
+
+        if ($end->lte($start)) {
+            throw new \InvalidArgumentException('يجب أن يكون وقت الانتهاء بعد وقت البدء');
+        }
+
+        $overlap = DoctorSchedule::where('doctor_id', $doctorId)
+            ->where('day_of_week', $dayOfWeek)
+            ->where('is_active', true)
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->where(function ($q) use ($start, $end) {
+                $q->whereTime('start_time', '<', $end->format('H:i:s'))
+                    ->whereTime('end_time', '>', $start->format('H:i:s'));
+            })
+            ->exists();
+
+        if ($overlap) {
+            throw new \InvalidArgumentException('يوجد موعد متداخل مع هذا التوقيت في نفس اليوم');
+        }
+    }
+
     public function getCalendar(int $doctorId, int $year, int $month): array
     {
         $start = Carbon::create($year, $month, 1)->startOfMonth();

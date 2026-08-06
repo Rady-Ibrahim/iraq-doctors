@@ -227,6 +227,51 @@ class DoctorDashboardController extends Controller
         }
     }
 
+    public function storeSchedule(Request $request): JsonResponse
+    {
+        $request->validate([
+            'day_of_week' => 'required|string',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i',
+        ]);
+
+        try {
+            $doctor = $this->resolveDoctor();
+            $schedule = $this->doctorDashboardService->storeSchedule(
+                $doctor->id,
+                $request->only(['day_of_week', 'start_time', 'end_time'])
+            );
+            return $this->created($this->doctorDashboardService->getSchedules($doctor->id), 'تم إضافة الموعد بنجاح');
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 'VALIDATION_ERROR', 422);
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء إضافة الموعد');
+        }
+    }
+
+    public function updateSchedule(Request $request, $scheduleId): JsonResponse
+    {
+        $request->validate([
+            'day_of_week' => 'required|string',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i',
+        ]);
+
+        try {
+            $doctor = $this->resolveDoctor();
+            $this->doctorDashboardService->updateSchedule(
+                $doctor->id,
+                (int) $scheduleId,
+                $request->only(['day_of_week', 'start_time', 'end_time'])
+            );
+            return $this->success($this->doctorDashboardService->getSchedules($doctor->id), 'تم تحديث الموعد بنجاح');
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 'VALIDATION_ERROR', 422);
+        } catch (\Exception $e) {
+            return $this->serverError('حدث خطأ أثناء تحديث الموعد');
+        }
+    }
+
     public function deleteSchedule($scheduleId): JsonResponse
     {
         try {
