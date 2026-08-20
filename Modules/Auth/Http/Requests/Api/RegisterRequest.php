@@ -17,7 +17,7 @@ class RegisterRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|min:2|max:255',
             'phone' => 'required|string|unique:users,phone',
             'email' => 'nullable|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
@@ -57,6 +57,7 @@ class RegisterRequest extends ApiFormRequest
     public function messages(): array
     {
         return [
+            'name.min' => 'الاسم يجب أن يكون حرفين على الأقل',
             'phone.unique' => 'رقم الهاتف مسجل بالفعل',
             'password.confirmed' => 'كلمات المرور غير متطابقة',
             'password.min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
