@@ -222,7 +222,7 @@ class DoctorService
             default => now(),
         };
 
-        $dayOfWeek = $targetDate->format('l');
+        $dayOfWeek = strtolower($targetDate->format('l'));
         $dateStr = $targetDate->toDateString();
 
         $query->whereHas('schedules', function ($q) use ($dayOfWeek) {
@@ -247,7 +247,8 @@ class DoctorService
 
     public function getProfile(string $doctorId): ?Doctor
     {
-        return Doctor::with(['user', 'speciality', 'schedules', 'approvedReviews'])
+        return Doctor::with(['user', 'speciality', 'approvedReviews'])
+            ->with(['schedules' => fn ($q) => $q->where('is_active', true)])
             ->where('id', $doctorId)
             ->where('status', 'approved')
             ->first();

@@ -13,6 +13,7 @@ use Modules\Review\Services\Api\ReviewService;
 use Modules\Review\Models\Review;
 use Modules\Auth\Models\User;
 use App\Traits\ApiResponse;
+use Carbon\Carbon;
 
 class AdminDashboardApiController extends Controller
 {
@@ -93,7 +94,24 @@ class AdminDashboardApiController extends Controller
     {
         try {
             $patient = \Modules\Auth\Models\User::where('role', 'patient')->findOrFail($id);
-            return $this->success($patient);
+
+            $data = [
+                'id' => $patient->id,
+                'name' => $patient->name,
+                'phone' => $patient->phone,
+                'email' => $patient->email,
+                'gender' => $patient->gender,
+                'age' => $patient->birthdate ? Carbon::parse($patient->birthdate)->age : null,
+                'birthdate' => $patient->birthdate?->format('Y-m-d'),
+                'city' => $patient->city,
+                'district' => $patient->district,
+                'address' => $patient->address,
+                'is_ghost' => (bool) $patient->is_ghost,
+                'status' => $patient->status,
+                'created_at' => $patient->created_at,
+            ];
+
+            return $this->success($data);
         } catch (\Exception $e) {
             return $this->notFound('المريض غير موجود');
         }

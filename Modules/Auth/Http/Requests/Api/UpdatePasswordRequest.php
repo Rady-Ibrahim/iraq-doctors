@@ -3,7 +3,6 @@
 namespace Modules\Auth\Http\Requests\Api;
 
 use App\Http\Requests\ApiFormRequest;
-use Illuminate\Support\Facades\Hash;
 
 class UpdatePasswordRequest extends ApiFormRequest
 {
@@ -15,15 +14,7 @@ class UpdatePasswordRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'current_password' => [
-                'required',
-                function ($attribute, $value, $fail) {
-                    if (!Hash::check($value, $this->user()->password)) {
-                        $fail('كلمة المرور الحالية غير صحيحة');
-                    }
-                },
-            ],
-            'new_password' => 'required|string|min:8|different:current_password',
+            'new_password' => 'required|string|min:8',
             'new_password_confirmation' => 'required|string|same:new_password',
         ];
     }
@@ -31,10 +22,8 @@ class UpdatePasswordRequest extends ApiFormRequest
     public function messages(): array
     {
         return [
-            'current_password.required' => 'كلمة المرور الحالية مطلوبة',
             'new_password.required' => 'كلمة المرور الجديدة مطلوبة',
             'new_password.min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
-            'new_password.different' => 'كلمة المرور الجديدة يجب أن تكون مختلفة عن الحالية',
             'new_password_confirmation.required' => 'تأكيد كلمة المرور مطلوب',
             'new_password_confirmation.same' => 'تأكيد كلمة المرور لا يطابق كلمة المرور الجديدة',
         ];
